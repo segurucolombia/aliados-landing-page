@@ -1,0 +1,22 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.vue';
+import Hero from '../components/Hero.vue';
+import Features from '../components/Features.vue';
+import Products from '../components/Products.vue';
+import Team from '../components/Team.vue';
+import FAQ from '../components/FAQ.vue';
+import CTA from '../components/CTA.vue';
+import Footer from '../components/Footer.vue';
+---
+
+<Layout title='Seguru - Seguros para tu Tranquilidad'>
+	<Navbar client:load/>
+	<Hero client:only="vue"/>
+	<Features client:only="vue"/>
+	<Products client:only="vue"/>
+	<Team client:only="vue"/>
+	<FAQ client:only="vue"/>
+	<!-- <CTA client:only="vue"/> -->
+	<Footer client:only="vue"/>
+</Layout>

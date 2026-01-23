@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.vue';
+import PlanesView from '../components/PlanesView.vue';
+import Footer from '../components/Footer.vue';
+---
+
+<Layout title='Planes de Seguro - Seguru'>
+	<Navbar client:load/>
+	<PlanesView client:only="vue"/>
+	<Footer client:only="vue"/>
+</Layout>

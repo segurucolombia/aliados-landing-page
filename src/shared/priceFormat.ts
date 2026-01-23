@@ -1,0 +1,2 @@
+export const formatPrice = (value:number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 1 }).format(value)
+export const formatPriceNoDecimal = (value:number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value)

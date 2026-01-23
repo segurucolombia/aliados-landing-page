@@ -1,0 +1,28 @@
+
+.input-text {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid gray;
+    background-color: red;
+}
+
+.bg-blue-seguru {
+    background-color: #3331B4;
+}
+.border-blue-seguru {
+    border: 1px solid #3331B4;
+}
+.bg-blue-seguru-hover {
+    background-color: white;
+}
+.bg-blue-seguru-hover:hover {
+    background-color: #3331b42d;
+}
+
+.bg-orange-seguru {
+    background-color: #FF8800;
+}
+
+.text-blue-seguru {
+    color: #3331B4;
+}

@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.vue';
+import ProductosView from '../components/ProductosView.vue';
+import Footer from '../components/Footer.vue';
+---
+
+<Layout title='Nuestros Productos - Seguru'>
+	<Navbar client:load/>
+	<ProductosView client:only="vue"/>
+	<Footer client:only="vue"/>
+</Layout>

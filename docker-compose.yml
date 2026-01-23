@@ -1,0 +1,8 @@
+version: '3.3'
+services:
+  compras-reservas-segurucolombia-landing:
+    build: .
+    ports: 
+      - "${PORT}:${PORT}"
+    env_file:
+      - .env
