@@ -1,5 +1,5 @@
 import axios from "axios"
-import type { TCrearPreventaAtt, TGetPreventaAtt, TGetTransactionAtt } from "../types/pre-venta"
+import type { TCrearPreventaAtt, TGetPreventaAtt } from "../types/pre-venta"
 const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/nuevo-back/pre-venta'
 export class PreVentaService {
     crearPreVenta(body:TCrearPreventaAtt):Promise<{data:{ id_transaction: string, hash: string }}> {

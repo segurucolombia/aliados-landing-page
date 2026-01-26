@@ -105,16 +105,12 @@
     var a = document.querySelectorAll("a");
 
     document.addEventListener("mousemove", function (e) {
-      var x = e.clientX;
-      var y = e.clientY;
       cursor.style.transform = `translate3d(calc(${e.clientX}px - 50%), calc(${e.clientY}px - 50%), 0)`;
     });
 
     document.addEventListener("mousemove", function (e) {
-      var x = e.clientX;
-      var y = e.clientY;
-      cursorinner.style.left = x + "px";
-      cursorinner.style.top = y + "px";
+      cursorinner.style.left = e.clientX + "px";
+      cursorinner.style.top = e.clientY + "px";
     });
 
     document.addEventListener("mousedown", function () {
@@ -361,7 +357,7 @@
   }
 
   if ($(".odometer").length) {
-    $(".odometer").appear(function (e) {
+    $(".odometer").appear(function () {
       var odo = $(".odometer");
       odo.each(function () {
         var countNumber = $(this).attr("data-count");
@@ -499,7 +495,7 @@
       insubaowlCarousel.each(function () {
         let elm = $(this);
         let options = elm.data("owl-options");
-        let thmOwlCarousel = elm.owlCarousel(
+        elm.owlCarousel(
           "object" === typeof options ? options : JSON.parse(options)
         );
         elm.find("button").each(function () {
@@ -551,7 +547,7 @@
     const tinyElm = document.querySelectorAll(".thm-tiny__slider");
     tinyElm.forEach(function (tinyElm) {
       const tinyOptions = JSON.parse(tinyElm.dataset.tinyOptions);
-      let thmTinySlider = tns(tinyOptions);
+      tns(tinyOptions);
     });
   }
 
@@ -662,7 +658,6 @@
       var $this = $(this),
         row = $this.closest(".row"),
         cols = $this.closest('[class^="col-"]'),
-        colsheight = $this.closest('[class^="col-"]').height(),
         rect = this.getBoundingClientRect(),
         l = row[0].getBoundingClientRect(),
         s = cols[0].getBoundingClientRect(),
@@ -710,7 +705,7 @@
         min: 50,
         max: 1000,
         values: [11, 500],
-        slide: function (event, ui) {
+        slide: function (_event, ui) {
           $(".price-ranger .ranger-min-max-block .min").val("$" + ui.values[0]);
           $(".price-ranger .ranger-min-max-block .max").val("$" + ui.values[1]);
         }
@@ -731,7 +726,7 @@
         let options = self.data("chart-options");
 
         var ctx = document.getElementById(self.attr("id")).getContext("2d");
-        var insubaChartElm = new Chart(
+        new Chart(
           ctx,
           "object" === typeof options ? options : JSON.parse(options)
         );

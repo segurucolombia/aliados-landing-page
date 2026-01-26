@@ -1,5 +1,4 @@
 import axios from "axios"
-import type { TCuponAttributes, TFiltrosBuscarCupones } from "../types/cupones"
 const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/nuevo-back/documentos-clientes-polizas'
 
 export class DocumentosClientesPolizasService {
