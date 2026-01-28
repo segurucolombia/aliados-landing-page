@@ -5,6 +5,10 @@ import PlanesView from '../../components/PlanesView.vue';
 import Footer from '../../components/Footer.vue';
 
 const { producto_id } = Astro.params;
+
+if (!producto_id) {
+	return Astro.redirect('/');
+}
 ---
 
 <Layout title='Planes de Seguro - Seguru'>
