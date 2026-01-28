@@ -1,17 +1,39 @@
 /**
  * Tipos de datos para productos de seguros
- * Estos tipos serán actualizados cuando se integren los endpoints
  */
+
+export interface ImagenAws {
+  id: string;
+  nombre: string;
+  ruta: string;
+  url?: string;
+  created_at: Date;
+  created_by: string;
+  updated_at: Date;
+  updated_by: string;
+}
 
 export interface Producto {
   id: string;
   nombre: string;
   descripcion: string;
-  imagen: string;
-  categoria?: string;
-  precio?: number;
-  caracteristicas?: string[];
-  activo: boolean;
+  estado: boolean;
+  imagen_id: string | null;
+  created_at: Date;
+  created_by: string;
+  updated_at: Date;
+  updated_by: string;
+  imagen?: ImagenAws;
+}
+
+export interface PaginatedProductos {
+  data: Producto[];
+  total: number;
+}
+
+export interface FindAllProductosParams {
+  limit: number;
+  offset: number;
 }
 
 export interface ProductoDetalle extends Producto {

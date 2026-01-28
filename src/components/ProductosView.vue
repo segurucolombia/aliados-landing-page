@@ -60,7 +60,7 @@
 
           <!-- Results Count -->
           <div class="text-gray-600">
-            <span class="font-semibold">{{ filteredProducts.length }}</span> productos encontrados
+            <span class="font-semibold">{{ totalProducts }}</span> productos encontrados
           </div>
         </div>
       </div>
@@ -69,24 +69,88 @@
     <!-- Products Grid -->
     <section class="py-16">
       <div class="container mx-auto px-4">
-        <!-- Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          <ProductCard
-            v-for="producto in filteredProducts"
-            :key="producto.id"
-            :producto="producto"
-            @cotizar="handleCotizar"
-            @ver-detalle="handleVerDetalle"
-          />
+        <!-- Loading State -->
+        <div v-if="loading" class="text-center py-16">
+          <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-primary-600"></div>
+          <p class="text-gray-600 mt-4">Cargando productos...</p>
         </div>
 
-        <!-- Empty State -->
-        <div v-if="filteredProducts.length === 0" class="text-center py-16">
-          <svg class="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+        <!-- Error State -->
+        <div v-else-if="error" class="text-center py-16">
+          <svg class="w-24 h-24 mx-auto text-red-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
           </svg>
-          <p class="text-xl text-gray-500">No se encontraron productos en esta categoría</p>
+          <p class="text-xl text-red-500">{{ error }}</p>
         </div>
+
+        <template v-else>
+          <!-- Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <ProductCard
+              v-for="producto in productos"
+              :key="producto.id"
+              :producto="producto"
+              @cotizar="handleCotizar"
+              @ver-detalle="handleVerDetalle"
+            />
+          </div>
+
+          <!-- Empty State -->
+          <div v-if="productos.length === 0" class="text-center py-16">
+            <svg class="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+            </svg>
+            <p class="text-xl text-gray-500">No se encontraron productos</p>
+          </div>
+
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="mt-12 flex justify-center items-center gap-2">
+            <!-- Previous Button -->
+            <button
+              @click="goToPage(currentPage - 1)"
+              :disabled="currentPage === 1"
+              :class="[
+                'px-4 py-2 rounded-lg font-semibold transition-all',
+                currentPage === 1
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-primary-600 hover:bg-primary-50 border border-primary-600'
+              ]"
+            >
+              Anterior
+            </button>
+
+            <!-- Page Numbers -->
+            <div class="flex gap-2">
+              <button
+                v-for="page in visiblePages"
+                :key="page"
+                @click="goToPage(page)"
+                :class="[
+                  'w-10 h-10 rounded-lg font-semibold transition-all',
+                  page === currentPage
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                ]"
+              >
+                {{ page }}
+              </button>
+            </div>
+
+            <!-- Next Button -->
+            <button
+              @click="goToPage(currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              :class="[
+                'px-4 py-2 rounded-lg font-semibold transition-all',
+                currentPage === totalPages
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-primary-600 hover:bg-primary-50 border border-primary-600'
+              ]"
+            >
+              Siguiente
+            </button>
+          </div>
+        </template>
       </div>
     </section>
 
@@ -111,133 +175,109 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import ProductCard from './ProductCard.vue';
+import { ProductosService } from '../services/productos.service';
 import type { Producto } from '../types/productos';
 
-// Datos de ejemplo - Serán reemplazados por consumo de API
-const productos = ref<Producto[]>([
-  {
-    id: '1',
-    nombre: 'Seguro de Vida',
-    descripcion: 'Protege el futuro financiero de tu familia con una cobertura completa que garantiza su bienestar en caso de fallecimiento o invalidez.',
-    imagen: '',
-    categoria: 'Personas',
-    activo: true
-  },
-  {
-    id: '2',
-    nombre: 'Seguro de Auto',
-    descripcion: 'Cobertura integral para tu vehículo con asistencia 24/7, protección contra robo, daños y responsabilidad civil.',
-    imagen: '',
-    categoria: 'Vehículos',
-    activo: true
-  },
-  {
-    id: '3',
-    nombre: 'Seguro de Hogar',
-    descripcion: 'Protege tu patrimonio familiar contra incendios, robos, desastres naturales y daños estructurales.',
-    imagen: '',
-    categoria: 'Propiedad',
-    activo: true
-  },
-  {
-    id: '4',
-    nombre: 'Seguro de Salud',
-    descripcion: 'Acceso a atención médica de calidad con cobertura hospitalaria, medicamentos y consultas especializadas.',
-    imagen: '',
-    categoria: 'Salud',
-    activo: true
-  },
-  {
-    id: '5',
-    nombre: 'Seguro de Viaje',
-    descripcion: 'Viaja tranquilo con cobertura médica internacional, cancelación de viajes y protección de equipaje.',
-    imagen: '',
-    categoria: 'Viajes',
-    activo: true
-  },
-  {
-    id: '6',
-    nombre: 'Seguro Empresarial',
-    descripcion: 'Protección integral para tu negocio incluyendo responsabilidad civil, daños y compensación laboral.',
-    imagen: '',
-    categoria: 'Empresas',
-    activo: true
-  },
-  {
-    id: '7',
-    nombre: 'Seguro de Responsabilidad Civil',
-    descripcion: 'Protección contra reclamaciones por daños a terceros en tu vida personal o profesional.',
-    imagen: '',
-    categoria: 'Personas',
-    activo: true
-  },
-  {
-    id: '8',
-    nombre: 'Seguro de Moto',
-    descripcion: 'Cobertura especializada para motocicletas con asistencia vial y protección contra accidentes.',
-    imagen: '',
-    categoria: 'Vehículos',
-    activo: true
-  },
-  {
-    id: '9',
-    nombre: 'Seguro de Educación',
-    descripcion: 'Asegura el futuro educativo de tus hijos con un plan que garantiza su formación académica.',
-    imagen: '',
-    categoria: 'Personas',
-    activo: true
-  },
-  {
-    id: '10',
-    nombre: 'Seguro de Mascotas',
-    descripcion: 'Cuida la salud de tus mascotas con cobertura veterinaria y gastos médicos.',
-    imagen: '',
-    categoria: 'Personas',
-    activo: true
-  },
-  {
-    id: '11',
-    nombre: 'Seguro Dental',
-    descripcion: 'Cobertura completa para tratamientos dentales, ortodoncia y cirugías especializadas.',
-    imagen: '',
-    categoria: 'Salud',
-    activo: true
-  },
-  {
-    id: '12',
-    nombre: 'Seguro de Alquiler',
-    descripcion: 'Protege tu propiedad en alquiler contra daños, impagos y problemas legales.',
-    imagen: '',
-    categoria: 'Propiedad',
-    activo: true
-  }
-]);
-
+const productos = ref<Producto[]>([]);
+const totalProducts = ref<number>(0);
+const loading = ref<boolean>(false);
+const error = ref<string | null>(null);
 const selectedCategory = ref<string | null>(null);
+
+// Paginación
+const currentPage = ref<number>(1);
+const itemsPerPage = 12;
+
+// Calcular total de páginas
+const totalPages = computed(() => {
+  return Math.ceil(totalProducts.value / itemsPerPage);
+});
+
+// Calcular páginas visibles para la paginación
+const visiblePages = computed(() => {
+  const pages: number[] = [];
+  const maxVisible = 5;
+  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
+  let end = Math.min(totalPages.value, start + maxVisible - 1);
+
+  // Ajustar el inicio si estamos cerca del final
+  if (end - start < maxVisible - 1) {
+    start = Math.max(1, end - maxVisible + 1);
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  return pages;
+});
 
 // Obtener categorías únicas
 const categories = computed(() => {
-  const cats = new Set(productos.value.map(p => p.categoria).filter(Boolean));
-  return Array.from(cats);
+  // Por ahora retornamos categorías vacías, se pueden cargar desde la API si es necesario
+  return [];
 });
 
-// Filtrar productos por categoría
-const filteredProducts = computed(() => {
-  if (!selectedCategory.value) {
-    return productos.value;
+/**
+ * Cargar productos desde la API
+ */
+const loadProductos = async () => {
+  loading.value = true;
+  error.value = null;
+
+  try {
+    const offset = (currentPage.value - 1) * itemsPerPage;
+    const response = await ProductosService.findAll({
+      limit: itemsPerPage,
+      offset: offset
+    });
+
+    productos.value = response.data;
+    totalProducts.value = response.total;
+  } catch (err) {
+    console.error('Error al cargar productos:', err);
+    error.value = 'Error al cargar los productos';
+  } finally {
+    loading.value = false;
   }
-  return productos.value.filter(p => p.categoria === selectedCategory.value);
-});
+};
 
+/**
+ * Cambiar de página
+ */
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+    // Scroll hacia arriba al cambiar de página
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
+/**
+ * Manejar evento de cotización
+ */
 const handleCotizar = (producto: Producto) => {
   console.log('Cotizar:', producto);
   // Aquí implementarás la lógica de cotización
 };
 
+/**
+ * Manejar evento de ver detalle
+ */
 const handleVerDetalle = (producto: Producto) => {
   console.log('Ver detalle:', producto);
   // Aquí implementarás la navegación al detalle del producto
 };
+
+// Cargar productos al montar el componente
+onMounted(() => {
+  loadProductos();
+});
+
+// Recargar productos cuando cambia la página
+watch(currentPage, () => {
+  loadProductos();
+});
 </script>

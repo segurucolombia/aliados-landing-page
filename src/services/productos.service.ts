@@ -1,17 +1,26 @@
-import { apiClient } from './api.config';
-import type { Producto, ProductoDetalle, CategoriaProducto } from '../types/productos';
+import axios from "axios";
+import type { FindAllProductosParams, PaginatedProductos, Producto, ProductoDetalle, CategoriaProducto } from '../types/productos';
+
+const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/api-aliados/productos';
 
 /**
  * Servicio para manejar operaciones relacionadas con productos
- * Los endpoints serán configurados cuando estén disponibles
  */
 export class ProductosService {
   /**
-   * Obtiene la lista de todos los productos disponibles
+   * Obtiene la lista paginada de productos
    */
-  static async getProductos(): Promise<Producto[]> {
+  static async findAll(params: FindAllProductosParams): Promise<PaginatedProductos> {
     try {
-      const response = await apiClient.get<Producto[]>('/productos');
+      const response = await axios.get<PaginatedProductos>(`${baseUrl}`, {
+        params: {
+          limit: params.limit,
+          offset: params.offset
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       return response.data;
     } catch (error) {
       console.error('Error al obtener productos:', error);
@@ -24,7 +33,7 @@ export class ProductosService {
    */
   static async getProductoDetalle(id: string): Promise<ProductoDetalle> {
     try {
-      const response = await apiClient.get<ProductoDetalle>(`/productos/${id}`);
+      const response = await axios.get<ProductoDetalle>(`${baseUrl}/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error al obtener detalle del producto:', error);
@@ -37,7 +46,7 @@ export class ProductosService {
    */
   static async getProductosPorCategoria(categoria: string): Promise<Producto[]> {
     try {
-      const response = await apiClient.get<Producto[]>(`/productos/categoria/${categoria}`);
+      const response = await axios.get<Producto[]>(`${baseUrl}/categoria/${categoria}`);
       return response.data;
     } catch (error) {
       console.error('Error al obtener productos por categoría:', error);
@@ -50,7 +59,7 @@ export class ProductosService {
    */
   static async getCategorias(): Promise<CategoriaProducto[]> {
     try {
-      const response = await apiClient.get<CategoriaProducto[]>('/productos/categorias');
+      const response = await axios.get<CategoriaProducto[]>(`${baseUrl}/categorias`);
       return response.data;
     } catch (error) {
       console.error('Error al obtener categorías:', error);

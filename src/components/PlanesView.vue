@@ -85,8 +85,47 @@
           </p>
         </div>
 
+        <!-- Loading State -->
+        <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+          <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mb-4"></div>
+          <p class="text-gray-600 text-lg">Cargando planes...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="max-w-2xl mx-auto">
+          <div class="bg-red-50 border-l-4 border-red-600 p-6 rounded-lg">
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-red-900 mb-2">Error al cargar los planes</h3>
+                <p class="text-red-700">{{ error }}</p>
+                <button
+                  @click="loadPlanes"
+                  class="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Reintentar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else-if="productoPlanes.planes.length === 0" class="text-center py-20">
+          <svg class="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <p class="text-xl text-gray-500 mb-2">No hay planes disponibles</p>
+          <p class="text-gray-400">Este producto aún no tiene planes configurados</p>
+        </div>
+
         <!-- Tabla de Comparación -->
         <PlanesTable
+          v-else
           :planes="productoPlanes.planes"
           :coberturas="productoPlanes.coberturas"
           @seleccionar-plan="handleSeleccionarPlan"
@@ -169,89 +208,143 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import PlanesTable from './PlanesTable.vue';
-import type { ProductoPlanes, Plan } from '../types/planes';
+import { PlanesService } from '../services/planes.service';
+import type { ProductoPlanes, Plan, Cobertura, CoberturaPlan, PlanConCoberturas } from '../types/planes';
 
-// Datos de ejemplo - Serán reemplazados por consumo de API
+// Props
+interface Props {
+  productoId: string;
+}
+
+const props = defineProps<Props>();
+
+// Estados
+const loading = ref(true);
+const error = ref<string | null>(null);
 const productoPlanes = ref<ProductoPlanes>({
-  productoId: '1',
-  productoNombre: 'Seguro de Auto',
-  productoDescripcion: 'Protección completa para tu vehículo con múltiples opciones de cobertura',
-  coberturas: [
-    { id: '1', nombre: 'Responsabilidad Civil', descripcion: 'Cubre daños a terceros', orden: 1 },
-    { id: '2', nombre: 'Daños Materiales', descripcion: 'Cubre daños al vehículo asegurado', orden: 2 },
-    { id: '3', nombre: 'Robo Total', descripcion: 'Cubre el robo total del vehículo', orden: 3 },
-    { id: '4', nombre: 'Asistencia Vial 24/7', descripcion: 'Servicio de grúa y asistencia mecánica', orden: 4 },
-    { id: '5', nombre: 'Conductor Elegido', descripcion: 'Cubre solo conductor designado', orden: 5 },
-    { id: '6', nombre: 'Gastos Médicos', descripcion: 'Cobertura médica para ocupantes', orden: 6 },
-    { id: '7', nombre: 'Auto Sustituto', descripcion: 'Vehículo de reemplazo durante reparación', orden: 7 },
-    { id: '8', nombre: 'Cristales y Lunas', descripcion: 'Reemplazo de vidrios', orden: 8 },
-  ],
-  planes: [
-    {
-      id: '1',
-      nombre: 'Básico',
-      descripcion: 'Protección esencial',
-      precio: 450000,
-      moneda: 'COP',
-      periodicidad: 'anual',
-      destacado: false,
-      coberturas: [
-        { coberturaId: '1', aplica: true, valorCubierto: 50000000, descripcion: 'Hasta $50M' },
-        { coberturaId: '2', aplica: false },
-        { coberturaId: '3', aplica: false },
-        { coberturaId: '4', aplica: true, descripcion: 'Básica', detalles: 'Hasta 100km' },
-        { coberturaId: '5', aplica: true },
-        { coberturaId: '6', aplica: false },
-        { coberturaId: '7', aplica: false },
-        { coberturaId: '8', aplica: false },
-      ]
-    },
-    {
-      id: '2',
-      nombre: 'Completo',
-      descripcion: 'Cobertura amplia',
-      precio: 850000,
-      moneda: 'COP',
-      periodicidad: 'anual',
-      destacado: true,
-      coberturas: [
-        { coberturaId: '1', aplica: true, valorCubierto: 100000000, descripcion: 'Hasta $100M' },
-        { coberturaId: '2', aplica: true, valorCubierto: 80000000, descripcion: 'Hasta $80M' },
-        { coberturaId: '3', aplica: true, valorCubierto: 150000000, descripcion: 'Valor comercial' },
-        { coberturaId: '4', aplica: true, descripcion: 'Completa', detalles: 'Ilimitado' },
-        { coberturaId: '5', aplica: false, descripcion: 'Cualquier conductor' },
-        { coberturaId: '6', aplica: true, valorCubierto: 20000000, descripcion: 'Hasta $20M' },
-        { coberturaId: '7', aplica: true, descripcion: '15 días', detalles: 'Vehículo categoría similar' },
-        { coberturaId: '8', aplica: true, descripcion: 'Sin deducible' },
-      ]
-    },
-    {
-      id: '3',
-      nombre: 'Premium',
-      descripcion: 'Máxima protección',
-      precio: 1200000,
-      moneda: 'COP',
-      periodicidad: 'anual',
-      destacado: false,
-      coberturas: [
-        { coberturaId: '1', aplica: true, valorCubierto: 200000000, descripcion: 'Hasta $200M' },
-        { coberturaId: '2', aplica: true, valorCubierto: 150000000, descripcion: 'Valor total' },
-        { coberturaId: '3', aplica: true, valorCubierto: 200000000, descripcion: 'Valor total + 10%' },
-        { coberturaId: '4', aplica: true, descripcion: 'Premium', detalles: 'Ilimitado + taxi' },
-        { coberturaId: '5', aplica: false, descripcion: 'Cualquier conductor' },
-        { coberturaId: '6', aplica: true, valorCubierto: 50000000, descripcion: 'Hasta $50M' },
-        { coberturaId: '7', aplica: true, descripcion: '30 días', detalles: 'Vehículo gama alta' },
-        { coberturaId: '8', aplica: true, descripcion: 'Sin deducible + tintado' },
-      ]
-    }
-  ]
+  productoId: '',
+  productoNombre: 'Cargando...',
+  productoDescripcion: '',
+  coberturas: [],
+  planes: []
 });
+
+/**
+ * Transforma los datos del API al formato esperado por PlanesTable
+ */
+const transformarDatos = (data: PlanConCoberturas[]): void => {
+  if (!data || data.length === 0) {
+    return;
+  }
+
+  // Obtener producto info del primer plan
+  const primerPlan = data[0];
+  productoPlanes.value.productoId = primerPlan.producto.id;
+  productoPlanes.value.productoNombre = primerPlan.producto.nombre;
+  productoPlanes.value.productoDescripcion = primerPlan.producto.descripcion;
+
+  // Recolectar todas las coberturas únicas
+  const coberturasMap = new Map<string, Cobertura>();
+
+  data.forEach(planData => {
+    if (planData.version?.coberturas) {
+      planData.version.coberturas.forEach(coberturaVersion => {
+        if (!coberturasMap.has(coberturaVersion.cobertura.id)) {
+          coberturasMap.set(coberturaVersion.cobertura.id, {
+            id: coberturaVersion.cobertura.id,
+            nombre: coberturaVersion.cobertura.nombre,
+            descripcion: coberturaVersion.cobertura.descripcion || undefined,
+            categoria: undefined,
+            orden: undefined
+          });
+        }
+      });
+    }
+  });
+
+  productoPlanes.value.coberturas = Array.from(coberturasMap.values());
+
+  // Transformar planes
+  productoPlanes.value.planes = data
+    .filter(planData => planData.version) // Solo planes con versión
+    .map(planData => {
+      const version = planData.version!;
+
+      // Construir coberturas del plan
+      const coberturas: CoberturaPlan[] = productoPlanes.value.coberturas.map(cobertura => {
+        const coberturaVersion = version.coberturas.find(
+          cv => cv.cobertura_id === cobertura.id
+        );
+
+        if (coberturaVersion) {
+          return {
+            coberturaId: cobertura.id,
+            aplica: true,
+            valorCubierto: parseFloat(coberturaVersion.valor) || undefined,
+            descripcion: coberturaVersion.descripcion || undefined,
+            detalles: undefined,
+            limitaciones: undefined
+          };
+        }
+
+        return {
+          coberturaId: cobertura.id,
+          aplica: false
+        };
+      });
+
+      return {
+        id: planData.id,
+        nombre: version.nombre,
+        descripcion: version.descripcion || '',
+        precio: version.precio,
+        moneda: 'COP',
+        periodicidad: 'anual' as const,
+        destacado: planData.mostrar_publico,
+        coberturas,
+        caracteristicas: [],
+        color: undefined
+      };
+    });
+};
+
+/**
+ * Cargar planes desde el API
+ */
+const loadPlanes = async () => {
+  loading.value = true;
+  error.value = null;
+
+  try {
+    if (!props.productoId) {
+      throw new Error('No se proporcionó un ID de producto');
+    }
+
+    const response = await PlanesService.obtenerPlanesPorProducto({
+      producto_id: props.productoId,
+      limit: 50,
+      offset: 0,
+      estado: true
+    });
+
+    transformarDatos(response.data);
+  } catch (err) {
+    console.error('Error al cargar planes:', err);
+    error.value = err instanceof Error ? err.message : 'Error al cargar los planes';
+  } finally {
+    loading.value = false;
+  }
+};
 
 const handleSeleccionarPlan = (plan: Plan) => {
   console.log('Plan seleccionado:', plan);
   // Aquí implementarás la lógica para cotizar o contratar el plan
   alert(`Has seleccionado el plan: ${plan.nombre}`);
 };
+
+onMounted(() => {
+  loadPlanes();
+});
 </script>

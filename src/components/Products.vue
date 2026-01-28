@@ -50,76 +50,41 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import ProductCard from './ProductCard.vue';
+import { ProductosService } from '../services/productos.service';
 import type { Producto } from '../types/productos';
 
-// Datos de ejemplo - serán reemplazados por consumo de API
-const productos = ref<Producto[]>([
-  {
-    id: '1',
-    nombre: 'Seguro de Vida',
-    descripcion: 'Protege el futuro financiero de tu familia con una cobertura completa que garantiza su bienestar en caso de fallecimiento o invalidez.',
-    imagen: '',
-    categoria: 'Personas',
-    activo: true
-  },
-  {
-    id: '2',
-    nombre: 'Seguro de Auto',
-    descripcion: 'Cobertura integral para tu vehículo con asistencia 24/7, protección contra robo, daños y responsabilidad civil.',
-    imagen: '',
-    categoria: 'Vehículos',
-    activo: true
-  },
-  {
-    id: '3',
-    nombre: 'Seguro de Hogar',
-    descripcion: 'Protege tu patrimonio familiar contra incendios, robos, desastres naturales y daños estructurales.',
-    imagen: '',
-    categoria: 'Propiedad',
-    activo: true
-  },
-  {
-    id: '4',
-    nombre: 'Seguro de Salud',
-    descripcion: 'Acceso a atención médica de calidad con cobertura hospitalaria, medicamentos y consultas especializadas.',
-    imagen: '',
-    categoria: 'Salud',
-    activo: true
-  },
-  {
-    id: '5',
-    nombre: 'Seguro de Viaje',
-    descripcion: 'Viaja tranquilo con cobertura médica internacional, cancelación de viajes y protección de equipaje.',
-    imagen: '',
-    categoria: 'Viajes',
-    activo: true
-  },
-  {
-    id: '6',
-    nombre: 'Seguro Empresarial',
-    descripcion: 'Protección integral para tu negocio incluyendo responsabilidad civil, daños y compensación laboral.',
-    imagen: '',
-    categoria: 'Empresas',
-    activo: true
-  }
-]);
+const productos = ref<Producto[]>([]);
+const totalProducts = ref<number>(0);
+const loading = ref<boolean>(false);
+const error = ref<string | null>(null);
 
 // Mostrar solo los primeros 6 productos en la página principal
-const displayedProducts = computed(() => productos.value.slice(0, 6));
-const totalProducts = computed(() => 12); // Total de productos disponibles
+const displayedProducts = computed(() => productos.value);
+
+/**
+ * Cargar productos desde la API
+ */
+const loadProductos = async () => {
+  loading.value = true;
+  error.value = null;
+
+  try {
+    const response = await ProductosService.findAll({
+      limit: 6,
+      offset: 0
+    });
+
+    productos.value = response.data;
+    totalProducts.value = response.total;
+  } catch (err) {
+    console.error('Error al cargar productos:', err);
+    error.value = 'Error al cargar los productos';
+  } finally {
+    loading.value = false;
+  }
+};
 
 onMounted(() => {
-  // Aquí se consumirá la API cuando esté disponible
-  // loadProductos();
+  loadProductos();
 });
-
-// Función para cargar productos desde la API (preparada para futura implementación)
-// const loadProductos = async () => {
-//   try {
-//     const data = await ProductosService.getProductos();
-//     productos.value = data.slice(0, 6); // Solo primeros 6
-//   } catch (error) {
-//     console.error('Error al cargar productos:', error);
-//   }
-// };
 </script>

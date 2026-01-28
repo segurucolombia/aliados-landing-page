@@ -72,3 +72,99 @@ export interface ProductoPlanes {
   coberturas: Cobertura[];
   planes: Plan[];
 }
+
+/**
+ * Tipos para el endpoint de planes por producto
+ */
+
+export interface GetPlanesByProductoInput {
+  producto_id: string;
+  limit: number;
+  offset: number;
+  estado?: boolean;
+}
+
+export interface Producto {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  estado: boolean;
+  imagen_id: string | null;
+  created_at: Date;
+  created_by: string;
+  updated_at: Date;
+  updated_by: string;
+}
+
+export interface DocumentoAws {
+  id: string;
+  nombre: string;
+  ruta: string;
+  created_at: Date;
+  created_by: string;
+  updated_at: Date;
+  updated_by: string;
+}
+
+export interface CoberturaDetalle {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  estado: boolean;
+  created_at: Date;
+  created_by: string;
+  updated_at: Date;
+  updated_by: string;
+}
+
+export interface CoberturaVersion {
+  cobertura_id: string;
+  version_id: string;
+  valor: string;
+  descripcion: string | null;
+  created_at: Date;
+  created_by: string;
+  cobertura: CoberturaDetalle;
+}
+
+export interface Version {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  plan_id: string;
+  documento_id: string | null;
+  valor_asegurado: number;
+  vigencia_inicio: string;
+  precio: number;
+  created_at: Date;
+  created_by: string;
+  updated_at: Date;
+  updated_by: string;
+}
+
+export interface VersionWithDetails extends Version {
+  documento: DocumentoAws | null;
+  coberturas: CoberturaVersion[];
+}
+
+export interface PlanBase {
+  id: string;
+  producto_id: string;
+  version_id: string | null;
+  estado: boolean;
+  mostrar_publico: boolean;
+  created_at: Date;
+  created_by: string;
+  updated_at: Date;
+  updated_by: string;
+}
+
+export interface PlanConCoberturas extends PlanBase {
+  producto: Producto;
+  version: VersionWithDetails | null;
+}
+
+export interface PaginatedPlanes {
+  data: PlanConCoberturas[];
+  total: number;
+}
