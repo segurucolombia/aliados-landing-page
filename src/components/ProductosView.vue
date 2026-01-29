@@ -60,7 +60,7 @@
 
           <!-- Results Count -->
           <div class="text-gray-600">
-            <span class="font-semibold">{{ totalProducts }}</span> productos encontrados
+            <span class="font-semibold">{{ totalProducts }}</span> Productos encontrados
           </div>
         </div>
       </div>
@@ -233,9 +233,9 @@ const loadProductos = async () => {
       limit: itemsPerPage,
       offset: offset
     });
-
+    console.log('Productos cargados:', response);
     productos.value = response.data;
-    totalProducts.value = response.total;
+    totalProducts.value = Number(response.total);
   } catch (err) {
     console.error('Error al cargar productos:', err);
     error.value = 'Error al cargar los productos';

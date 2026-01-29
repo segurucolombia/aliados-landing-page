@@ -11,21 +11,50 @@
 
         <!-- Desktop Menu -->
         <div class="hidden md:flex items-center space-x-8">
-          <a href="#inicio" class="text-gray-700 hover:text-primary-600 transition-colors font-medium">
+          <a
+            href="#inicio"
+            :class="[
+              'font-medium transition-all duration-200',
+              activeSection === 'inicio'
+                ? 'text-primary-600 border-b-2 border-primary-600 pb-1'
+                : 'text-gray-700 hover:text-primary-600'
+            ]"
+          >
             Inicio
           </a>
-          <a href="#productos" class="text-gray-700 hover:text-primary-600 transition-colors font-medium">
+          <a
+            href="#productos"
+            :class="[
+              'font-medium transition-all duration-200',
+              activeSection === 'productos'
+                ? 'text-primary-600 border-b-2 border-primary-600 pb-1'
+                : 'text-gray-700 hover:text-primary-600'
+            ]"
+          >
             Productos
           </a>
-          <a href="#nosotros" class="text-gray-700 hover:text-primary-600 transition-colors font-medium">
+          <a
+            href="#nosotros"
+            :class="[
+              'font-medium transition-all duration-200',
+              activeSection === 'nosotros'
+                ? 'text-primary-600 border-b-2 border-primary-600 pb-1'
+                : 'text-gray-700 hover:text-primary-600'
+            ]"
+          >
             Nosotros
           </a>
-          <a href="#contacto" class="text-gray-700 hover:text-primary-600 transition-colors font-medium">
+          <a
+            href="#contacto"
+            :class="[
+              'font-medium transition-all duration-200',
+              activeSection === 'contacto'
+                ? 'text-primary-600 border-b-2 border-primary-600 pb-1'
+                : 'text-gray-700 hover:text-primary-600'
+            ]"
+          >
             Contacto
           </a>
-          <button class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors font-semibold">
-            Cotizar
-          </button>
         </div>
 
         <!-- Mobile Menu Button -->
@@ -39,32 +68,89 @@
 
       <!-- Mobile Menu -->
       <div v-if="isMenuOpen" class="md:hidden py-4 border-t">
-        <a href="#inicio" class="block py-2 text-gray-700 hover:text-primary-600 transition-colors">
+        <a
+          href="#inicio"
+          :class="[
+            'block py-2 transition-colors',
+            activeSection === 'inicio'
+              ? 'text-primary-600 font-semibold bg-primary-50 px-4 rounded'
+              : 'text-gray-700 hover:text-primary-600'
+          ]"
+        >
           Inicio
         </a>
-        <a href="#productos" class="block py-2 text-gray-700 hover:text-primary-600 transition-colors">
+        <a
+          href="#productos"
+          :class="[
+            'block py-2 transition-colors',
+            activeSection === 'productos'
+              ? 'text-primary-600 font-semibold bg-primary-50 px-4 rounded'
+              : 'text-gray-700 hover:text-primary-600'
+          ]"
+        >
           Productos
         </a>
-        <a href="#nosotros" class="block py-2 text-gray-700 hover:text-primary-600 transition-colors">
+        <a
+          href="#nosotros"
+          :class="[
+            'block py-2 transition-colors',
+            activeSection === 'nosotros'
+              ? 'text-primary-600 font-semibold bg-primary-50 px-4 rounded'
+              : 'text-gray-700 hover:text-primary-600'
+          ]"
+        >
           Nosotros
         </a>
-        <a href="#contacto" class="block py-2 text-gray-700 hover:text-primary-600 transition-colors">
+        <a
+          href="#contacto"
+          :class="[
+            'block py-2 transition-colors',
+            activeSection === 'contacto'
+              ? 'text-primary-600 font-semibold bg-primary-50 px-4 rounded'
+              : 'text-gray-700 hover:text-primary-600'
+          ]"
+        >
           Contacto
         </a>
-        <button class="mt-4 w-full bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors font-semibold">
-          Cotizar
-        </button>
       </div>
     </div>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 const isMenuOpen = ref(false);
+const activeSection = ref('inicio');
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
 };
+
+const updateActiveSection = () => {
+  const sections = ['inicio', 'productos', 'nosotros', 'contacto'];
+  const scrollPosition = window.scrollY + 100;
+
+  for (const section of sections) {
+    const element = document.getElementById(section);
+    if (element) {
+      const offsetTop = element.offsetTop;
+      const offsetBottom = offsetTop + element.offsetHeight;
+
+      if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
+        activeSection.value = section;
+        break;
+      }
+    }
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('scroll', updateActiveSection);
+  updateActiveSection();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', updateActiveSection);
+});
 </script>
