@@ -1,5 +1,5 @@
 import axios from "axios"
-import type { TFiltersCotizarPlan, TPlanCotizar, GetPlanesByProductoInput, PaginatedPlanes } from "../types/planes"
+import type { TFiltersCotizarPlan, TPlanCotizar, GetPlanesByProductoInput, PaginatedPlanes, PlanWithDetails } from "../types/planes"
 const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/api-aliados/planes'
 
 export class PlanesService {
@@ -35,6 +35,47 @@ export class PlanesService {
             return response.data;
         } catch (error) {
             console.error('Error al obtener planes por producto:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtiene el detalle de un plan por su ID
+     * @param planId ID del plan a buscar
+     * @returns Plan con todos sus detalles (producto, versión, coberturas, documento)
+     */
+    static async findById(planId: string): Promise<{data:PlanWithDetails}> {
+        try {
+            const response = await axios.get<PlanWithDetails>(`${baseUrl}/${planId}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response;
+        } catch (error) {
+            console.error('Error al obtener detalle del plan:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtiene la URL firmada de un documento de AWS S3
+     * @param documentoId ID del documento
+     * @returns URL firmada para acceder al documento
+     */
+    static async getDocumentoUrl(documentoId: string): Promise<string> {
+        try {
+            const documentosBaseUrl = import.meta.env.PUBLIC_BASE_URL + '/api-aliados/documentos';
+            const response = await axios.get<{ url: string }>(`${documentosBaseUrl}/${documentoId}/url`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response.data.url;
+        } catch (error) {
+            console.error('Error al obtener URL del documento:', error);
             throw error;
         }
     }

@@ -168,3 +168,59 @@ export interface PaginatedPlanes {
   data: PlanConCoberturas[];
   total: number;
 }
+
+export interface PlanWithDetails extends PlanBase {
+  producto: Producto;
+  version: VersionWithDetails | null;
+}
+
+/**
+ * Tipos para creación de versiones y planes
+ */
+
+export interface CoberturaInput {
+  id: string;
+  valor?: string;
+  descripcion?: string;
+}
+
+export interface CreateVersionDto {
+  nombre: string;
+  descripcion?: string;
+  valor_asegurado: number;
+  vigencia_inicio: string;
+  precio: number;
+  coberturas: CoberturaInput[];
+  documento?: any; // Express.Multer.File en backend
+  documento_id?: string;
+  created_by: string;
+  mostrar_publico?: boolean;
+}
+
+// DTO para el frontend (sin el tipo File de Express)
+export interface CreateVersionFrontendDto {
+  nombre: string;
+  descripcion?: string;
+  valor_asegurado: number;
+  vigencia_inicio: 'Inmediatamente' | 'Dia siguiente' | 'Primer dia del mes siguiente';
+  precio: number;
+  coberturas: CoberturaInput[];
+  documento?: File; // File del navegador (cuando se sube un archivo nuevo)
+  documento_id?: string; // UUID de documento existente
+  created_by: string;
+}
+
+export interface CreatePlanDto {
+  producto_id: string;
+  estado?: boolean;
+  mostrar_publico?: boolean;
+  created_by: string;
+  version: CreateVersionDto;
+}
+
+export interface FindPlanesByProductoParams {
+  producto_id: string;
+  limit: number;
+  offset: number;
+  estado?: boolean;
+}

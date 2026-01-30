@@ -1,5 +1,13 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <!-- Wizard de Compra -->
+  <PlanPurchaseWizard
+    v-if="showPurchaseWizard && selectedPlanId"
+    :plan-id="selectedPlanId"
+    @purchase="handleCompra"
+    @cancel="closePurchaseWizard"
+  />
+
+  <div v-else class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
     <section class="relative bg-gradient-to-br from-primary-700 to-primary-900 text-white pb-32 pt-12">
       <div class="container mx-auto px-4">
@@ -210,8 +218,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import PlanesTable from './PlanesTable.vue';
+import PlanPurchaseWizard from './PlanPurchaseWizard.vue';
 import { PlanesService } from '../services/planes.service';
+import { VentasService } from '../services/ventas.service';
 import type { ProductoPlanes, Plan, Cobertura, CoberturaPlan, PlanConCoberturas } from '../types/planes';
+import type { PurchaseFormData } from './PlanPurchaseFormStep.vue';
 
 // Props
 interface Props {
@@ -223,6 +234,8 @@ const props = defineProps<Props>();
 // Estados
 const loading = ref(true);
 const error = ref<string | null>(null);
+const showPurchaseWizard = ref(false);
+const selectedPlanId = ref<string | null>(null);
 const productoPlanes = ref<ProductoPlanes>({
   productoId: '',
   productoNombre: 'Cargando...',
@@ -340,8 +353,121 @@ const loadPlanes = async () => {
 
 const handleSeleccionarPlan = (plan: Plan) => {
   console.log('Plan seleccionado:', plan);
-  // Aquí implementarás la lógica para cotizar o contratar el plan
-  alert(`Has seleccionado el plan: ${plan.nombre}`);
+  selectedPlanId.value = plan.id;
+  showPurchaseWizard.value = true;
+};
+
+const closePurchaseWizard = () => {
+  showPurchaseWizard.value = false;
+  selectedPlanId.value = null;
+};
+
+const handleCompra = async (data: { planId: string; formData: PurchaseFormData }) => {
+  console.log('Datos de compra:', data);
+
+  try {
+    // Buscar el plan seleccionado para obtener producto_id y version_id
+    const planSeleccionado = productoPlanes.value.planes.find(p => p.id === data.planId);
+    if (!planSeleccionado) {
+      throw new Error('Plan no encontrado');
+    }
+
+    // Obtener detalles completos del plan
+    const planDetalles = await PlanesService.findById(data.planId);
+    const versionId = planDetalles.data.version?.id;
+
+    if (!versionId) {
+      throw new Error('No se pudo obtener la versión del plan');
+    }
+
+    // Determinar tipo de persona y preparar datos para crear venta
+    const tipoPersona = data.formData.documentType === 'NIT' ? 'Juridica' : 'Natural';
+    const tipoDocumento = data.formData.documentType === 'NIT'
+      ? data.formData.legalRepDocumentType || ''
+      : data.formData.documentType;
+
+    // Crear la venta
+    const ventaData = {
+      producto_id: productoPlanes.value.productoId,
+      version_id: versionId,
+      email: data.formData.email,
+      clave: data.formData.password,
+      tipo_documento: tipoDocumento,
+      numero_documento: data.formData.documentNumber,
+      nombres: data.formData.fullName,
+      apellidos: data.formData.lastName,
+      telefono: data.formData.phone,
+      ...(data.formData.nit && { nit: data.formData.nit }),
+      ...(data.formData.companyName && { empresa_nombre: data.formData.companyName }),
+      tipo_persona: tipoPersona,
+      ...(data.formData.discountCode && { codigo_descuento: data.formData.discountCode }),
+    };
+
+    const response = await VentasService.crear_venta(ventaData);
+
+    // Redirigir a Wompi con el transaccion_id
+    sendWompi(response.transaccion_id, planSeleccionado.precio, data.formData);
+
+    closePurchaseWizard();
+  } catch (error) {
+    console.error('Error al procesar la compra:', error);
+    alert('Ocurrió un error al procesar la compra. Por favor intenta de nuevo.');
+  }
+};
+
+/**
+ * Envía el formulario a Wompi para procesar el pago
+ */
+const sendWompi = (
+  transaccionId: string,
+  precio: number,
+  formData: PurchaseFormData
+) => {
+  if (precio === 0) return;
+
+  const createHiddenInput = (name: string, value: string | number) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = String(value);
+    return input;
+  };
+
+  const form = document.createElement('form');
+  form.action = import.meta.env.PUBLIC_CHECKOUT_URL_WOMPI;
+  form.method = 'GET';
+  form.target = '_blank';
+
+  // Campos obligatorios
+  form.appendChild(createHiddenInput('public-key', import.meta.env.PUBLIC_KEY_WOMPI));
+  form.appendChild(createHiddenInput('currency', 'COP'));
+  form.appendChild(createHiddenInput('amount-in-cents', precio * 100));
+  form.appendChild(createHiddenInput('reference', transaccionId));
+
+  // URL de redirección
+  const redirectUrl = import.meta.env.PUBLIC_WOMPI_REDIRECT_PAYMENT_COMPLETE || window.location.origin + '/gracias';
+  form.appendChild(createHiddenInput('redirect-url', redirectUrl));
+
+  // Datos del cliente
+  const fullName = `${formData.fullName} ${formData.lastName}`;
+  form.appendChild(createHiddenInput('customer-data:email', formData.email));
+  form.appendChild(createHiddenInput('customer-data:full-name', fullName));
+  form.appendChild(createHiddenInput('customer-data:phone-number', formData.phone));
+
+  // Tipo de documento y número
+  const tipoDocumento = formData.documentType === 'NIT'
+    ? formData.legalRepDocumentType || 'CC'
+    : formData.documentType;
+  form.appendChild(createHiddenInput('customer-data:legal-id-type', tipoDocumento));
+  form.appendChild(createHiddenInput('customer-data:legal-id', formData.documentNumber));
+
+  document.body.appendChild(form);
+  form.submit();
+
+  // Limpiar el formulario después de enviarlo
+  setTimeout(() => {
+    document.body.removeChild(form);
+  }, 1000);
 };
 
 onMounted(() => {
