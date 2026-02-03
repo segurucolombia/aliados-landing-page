@@ -200,7 +200,15 @@
             </div>
             <div class="discount-content">
               <label for="discountCode">¿Tienes un código de descuento?</label>
-              <div class="discount-input-wrapper">
+
+              <!-- Mensaje de felicitación si hay cupón -->
+              <div v-if="cuponValor > 0" class="cupon-mensaje">
+                <p class="text-green-700 font-semibold">
+                  ¡Felicidades! Tienes un cupón de descuento por {{ formatCurrency(cuponValor) }}
+                </p>
+              </div>
+
+              <div v-else class="discount-input-wrapper">
                 <InputText
                   id="discountCode"
                   v-model="formData.discountCode"
@@ -216,6 +224,22 @@
                   type="button"
                 />
               </div>
+            </div>
+          </div>
+
+          <!-- Resumen de precios -->
+          <div v-if="cuponValor > 0" class="price-summary">
+            <div class="price-row">
+              <span>Precio del plan:</span>
+              <span>{{ formatCurrency(planPrecio) }}</span>
+            </div>
+            <div class="price-row discount-row">
+              <span>Descuento:</span>
+              <span>- {{ formatCurrency(cuponValor) }}</span>
+            </div>
+            <div class="price-row total-row">
+              <span class="total-label">Total a pagar:</span>
+              <span class="total-value">{{ formatCurrency(totalAPagar) }}</span>
             </div>
           </div>
         </div>
@@ -250,7 +274,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue';
+import { ref, computed, reactive, onMounted } from 'vue';
 import { DOCUMENT_TYPES } from '../utils/documentTypes';
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
@@ -275,11 +299,18 @@ export interface PurchaseFormData {
   discountCode?: string;
 }
 
+const props = defineProps<{
+  planPrecio: number;
+}>();
+
 const emit = defineEmits<{
   (e: 'submit', data: PurchaseFormData): void;
   (e: 'back'): void;
   (e: 'cancel'): void;
 }>();
+
+// Estado del cupón
+const cuponValor = ref(0);
 
 const formData = reactive<PurchaseFormData>({
   documentType: '',
@@ -461,6 +492,29 @@ const applyDiscount = () => {
   console.log('Aplicando código de descuento:', formData.discountCode);
 };
 
+// Calcular total a pagar
+const totalAPagar = computed(() => {
+  return Math.max(0, props.planPrecio - cuponValor.value);
+});
+
+// Formatear moneda
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
+// Cargar cupón del localStorage al montar
+onMounted(() => {
+  const cuponValorStr = localStorage.getItem('cupon_valor');
+  if (cuponValorStr) {
+    cuponValor.value = parseFloat(cuponValorStr) || 0;
+  }
+});
+
 const handleSubmit = () => {
   if (validateAllFields()) {
     emit('submit', { ...formData });
@@ -617,6 +671,54 @@ const handleCancel = () => {
 
 .discount-input {
   flex: 1;
+}
+
+.cupon-mensaje {
+  margin-top: 0.5rem;
+}
+
+/* Resumen de precios */
+.price-summary {
+  margin-top: 1.5rem;
+  background: white;
+  border: 2px solid #86efac;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  color: #374151;
+}
+
+.price-row:not(:last-child) {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.discount-row {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.total-row {
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  border-top: 2px solid #22c55e !important;
+}
+
+.total-label {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #166534;
+}
+
+.total-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #166534;
 }
 
 /* Botones de acción */

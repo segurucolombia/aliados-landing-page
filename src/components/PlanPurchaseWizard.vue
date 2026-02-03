@@ -37,6 +37,7 @@
       <!-- Paso 2: Formulario de Compra -->
       <div v-show="currentStep === 2" class="step-content">
         <PlanPurchaseFormStep
+          :plan-precio="planPrecio"
           @submit="handlePurchase"
           @back="goToStep(1)"
           @cancel="handleCancel"
@@ -54,6 +55,7 @@ import type { PurchaseFormData } from './PlanPurchaseFormStep.vue';
 
 const props = defineProps<{
   planId: string;
+  planPrecio: number;
 }>();
 
 const emit = defineEmits<{

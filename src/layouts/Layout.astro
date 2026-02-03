@@ -19,6 +19,167 @@ const { title } = Astro.props;
 	</head>
 	<body>
 		<slot />
+		<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+		<script>
+			import { AliadosService } from '../services/aliados.service';
+			import { CuponesService } from '../services/cupones.service';
+
+			// Función para mostrar toast
+			function showToast(severity: 'success' | 'error' | 'warn' | 'info', summary: string, detail: string) {
+				const container = document.getElementById('toast-container');
+				if (!container) return;
+
+				const toast = document.createElement('div');
+				toast.className = `toast toast-${severity}`;
+				toast.style.cssText = `
+					background: white;
+					border-radius: 8px;
+					box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+					padding: 16px;
+					margin-bottom: 12px;
+					min-width: 300px;
+					max-width: 400px;
+					display: flex;
+					align-items: flex-start;
+					gap: 12px;
+					animation: slideIn 0.3s ease-out;
+				`;
+
+				const iconColor = {
+					success: '#22c55e',
+					error: '#ef4444',
+					warn: '#f59e0b',
+					info: '#3b82f6'
+				}[severity];
+
+				const icon = {
+					success: '✓',
+					error: '✕',
+					warn: '⚠',
+					info: 'ℹ'
+				}[severity];
+
+				toast.innerHTML = `
+					<div style="width: 24px; height: 24px; border-radius: 50%; background: ${iconColor}; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">
+						${icon}
+					</div>
+					<div style="flex: 1;">
+						<div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${summary}</div>
+						<div style="font-size: 14px; color: #6b7280;">${detail}</div>
+					</div>
+				`;
+
+				container.appendChild(toast);
+
+				// Auto-remover después de 5 segundos
+				setTimeout(() => {
+					toast.style.animation = 'slideOut 0.3s ease-in';
+					setTimeout(() => toast.remove(), 300);
+				}, 5000);
+			}
+
+			// Agregar estilos de animación
+			const style = document.createElement('style');
+			style.textContent = `
+				@keyframes slideIn {
+					from {
+						transform: translateX(100%);
+						opacity: 0;
+					}
+					to {
+						transform: translateX(0);
+						opacity: 1;
+					}
+				}
+				@keyframes slideOut {
+					from {
+						transform: translateX(0);
+						opacity: 1;
+					}
+					to {
+						transform: translateX(100%);
+						opacity: 0;
+					}
+				}
+			`;
+			document.head.appendChild(style);
+
+			// Capturar y almacenar aliado_id y cupon desde query params
+			const urlParams = new URLSearchParams(window.location.search);
+			const aliadoId = urlParams.get('aliado_id');
+			const codigoCupon = urlParams.get('cupon_descuento');
+
+			// Procesar aliado_id
+			if (aliadoId) {
+				// Consultar el aliado
+				AliadosService.find(aliadoId).then((aliado) => {
+					if (!aliado) {
+						// No se encontró el aliado
+						showToast('error', 'Error al enlazar asesor', 'No se pudo enlazar un asesor con el ID proporcionado');
+					} else {
+						// Guardar en localStorage
+						localStorage.setItem('aliado_id', aliadoId);
+
+						// Obtener el nombre del asesor
+						const nombreAsesor = aliado.usuario?.persona?.nombre
+							|| aliado.usuario?.usuario
+							|| 'tu asesor';
+
+						showToast('success', `Asesor asignado: ${nombreAsesor}`, `Has sido enlazado correctamente con tu asesor`);
+					}
+				}).catch((error) => {
+					console.error('Error al consultar aliado:', error);
+					showToast('error', 'Error al enlazar asesor', 'Ocurrió un error al consultar el asesor');
+				});
+
+				// Eliminar el parámetro de la URL
+				urlParams.delete('aliado_id');
+			}
+
+			// Procesar cupón
+			if (codigoCupon) {
+				// Consultar el cupón
+				CuponesService.find(codigoCupon).then((cupon) => {
+					if (!cupon) {
+						// No se encontró el cupón
+						showToast('error', 'Cupón inválido', 'No se encontró un cupón con el código proporcionado');
+					} else {
+						// Guardar en localStorage
+						localStorage.setItem('cupon', cupon.codigo);
+						localStorage.setItem('cupon_valor', cupon.valor.toString());
+
+						// Si el cupón tiene un aliado asociado, también guardarlo
+						if (cupon.aliado_id) {
+							localStorage.setItem('aliado_id', cupon.aliado_id);
+						}
+
+						// Construir el mensaje
+						const mensajeDescuento = `Felicidades, tienes un cupón de descuento por $${cupon.valor.toLocaleString()}`;
+						const mensajeAsesor = cupon.aliado_nombre
+							? ` y tu asesor asignado es ${cupon.aliado_nombre}`
+							: '';
+
+						showToast('success', 'Cupón aplicado', mensajeDescuento + mensajeAsesor);
+					}
+				}).catch((error) => {
+					console.error('Error al consultar cupón:', error);
+					showToast('error', 'Error al aplicar cupón', 'Ocurrió un error al consultar el cupón');
+				});
+
+				// Eliminar el parámetro de la URL
+				urlParams.delete('cupon_descuento');
+			}
+
+			// Actualizar la URL si se eliminaron parámetros
+			if (aliadoId || codigoCupon) {
+				const newUrl = window.location.pathname +
+					(urlParams.toString() ? '?' + urlParams.toString() : '') +
+					window.location.hash;
+
+				// Actualizar la URL sin recargar la página
+				window.history.replaceState({}, '', newUrl);
+			}
+		</script>
 	</body>
 </html>
 <style is:global>

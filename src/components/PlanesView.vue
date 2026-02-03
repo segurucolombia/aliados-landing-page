@@ -1,8 +1,12 @@
 <template>
+  <!-- Loading Spinner -->
+  <LoadingSpinner :visible="isProcessingPurchase" />
+
   <!-- Wizard de Compra -->
   <PlanPurchaseWizard
-    v-if="showPurchaseWizard && selectedPlanId"
+    v-if="showPurchaseWizard && selectedPlanId && selectedPlan"
     :plan-id="selectedPlanId"
+    :plan-precio="selectedPlan.precio"
     @purchase="handleCompra"
     @cancel="closePurchaseWizard"
   />
@@ -219,6 +223,7 @@
 import { ref, onMounted, computed } from 'vue';
 import PlanesTable from './PlanesTable.vue';
 import PlanPurchaseWizard from './PlanPurchaseWizard.vue';
+import LoadingSpinner from '../utils/LoadingSpinner.vue';
 import { PlanesService } from '../services/planes.service';
 import { VentasService } from '../services/ventas.service';
 import type { ProductoPlanes, Plan, Cobertura, CoberturaPlan, PlanConCoberturas } from '../types/planes';
@@ -236,6 +241,7 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 const showPurchaseWizard = ref(false);
 const selectedPlanId = ref<string | null>(null);
+const isProcessingPurchase = ref(false);
 const productoPlanes = ref<ProductoPlanes>({
   productoId: '',
   productoNombre: 'Cargando...',
@@ -362,8 +368,15 @@ const closePurchaseWizard = () => {
   selectedPlanId.value = null;
 };
 
+const selectedPlan = computed(() => {
+  if (!selectedPlanId.value) return null;
+  return productoPlanes.value.planes.find(p => p.id === selectedPlanId.value);
+});
+
 const handleCompra = async (data: { planId: string; formData: PurchaseFormData }) => {
   console.log('Datos de compra:', data);
+
+  isProcessingPurchase.value = true;
 
   try {
     // Buscar el plan seleccionado para obtener producto_id y version_id
@@ -386,6 +399,10 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData }
       ? data.formData.legalRepDocumentType || ''
       : data.formData.documentType;
 
+    // Obtener datos del localStorage
+    const cuponLocalStorage = localStorage.getItem('cupon');
+    const aliadoIdLocalStorage = localStorage.getItem('aliado_id');
+
     // Crear la venta
     const ventaData = {
       producto_id: productoPlanes.value.productoId,
@@ -400,7 +417,8 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData }
       ...(data.formData.nit && { nit: data.formData.nit }),
       ...(data.formData.companyName && { empresa_nombre: data.formData.companyName }),
       tipo_persona: tipoPersona,
-      ...(data.formData.discountCode && { codigo_descuento: data.formData.discountCode }),
+      ...(cuponLocalStorage && { codigo_descuento: cuponLocalStorage }),
+      ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
     };
 
     const response = await VentasService.crear_venta(ventaData);
@@ -412,6 +430,13 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData }
   } catch (error) {
     console.error('Error al procesar la compra:', error);
     alert('Ocurrió un error al procesar la compra. Por favor intenta de nuevo.');
+    isProcessingPurchase.value = false;
+  } finally {
+    // El loading se desactivará después de que Wompi redirija
+    // Si no hay precio (plan gratuito), desactivar aquí
+    if (!selectedPlan.value || selectedPlan.value.precio === 0) {
+      isProcessingPurchase.value = false;
+    }
   }
 };
 
