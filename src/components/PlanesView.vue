@@ -427,10 +427,19 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData }
     sendWompi(response.transaccion_id, planSeleccionado.precio, data.formData);
 
     closePurchaseWizard();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al procesar la compra:', error);
-    alert('Ocurrió un error al procesar la compra. Por favor intenta de nuevo.');
     isProcessingPurchase.value = false;
+
+    const errorMessage = error?.response?.data?.message || error?.message || 'Ocurrió un error al procesar la compra. Por favor intenta de nuevo.';
+
+    const Swal = (await import('sweetalert2')).default;
+    Swal.fire({
+      title: 'Error',
+      text: errorMessage,
+      icon: 'error',
+      confirmButtonColor: '#1e40af'
+    });
   } finally {
     // El loading se desactivará después de que Wompi redirija
     // Si no hay precio (plan gratuito), desactivar aquí

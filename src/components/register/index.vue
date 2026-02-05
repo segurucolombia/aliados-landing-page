@@ -735,9 +735,12 @@ const crearPreventa = async () => {
     }
   } catch (error: any) {
     isLoading.value = false
+    procesandoPago.value = false
+    console.error('Error al procesar la venta:', error)
+    const errorMessage = error?.response?.data?.message || error?.message || "Ocurrio un error, por favor intenta mas tarde"
     Swal.fire({
-      title: "Oopss",
-      text: error?.response?.data?.message || "Ocurrio un error, por favor intenta mas tarde",
+      title: "Error",
+      text: errorMessage,
       icon: "error"
     });
   }
