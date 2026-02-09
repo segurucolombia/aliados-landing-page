@@ -24,7 +24,7 @@ export const spanish = {
     'login.password': 'Contraseña',
     'affiliates.title': 'Afiliados',
     'affiliates.sub-title': 'Envianos tu hoja de vida',
-    'affiliates.text': 'Únete a nuestro equipo como Asesor Comercial y transforma tu talento en ingresos extraordinarios. Vende seguros de viaje y disfruta de comisiones competitivas mientras ayudas a las personas a proteger sus aventuras.',
+    'affiliates.text': 'Únete a nuestro equipo como Aliado Comercial y transforma tu talento en ingresos extraordinarios. Vende seguros de viaje y disfruta de comisiones competitivas mientras ayudas a las personas a proteger sus aventuras.',
     'affiliates.label-name': 'Nombre completo',
     'affiliates.label-phone': 'Télefono',
     'affiliates.label-email': 'Email',

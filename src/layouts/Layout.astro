@@ -115,21 +115,21 @@ const { title } = Astro.props;
 				AliadosService.find(aliadoId).then((aliado) => {
 					if (!aliado) {
 						// No se encontró el aliado
-						showToast('error', 'Error al enlazar asesor', 'No se pudo enlazar un asesor con el ID proporcionado');
+						showToast('error', 'Error al enlazar aliado', 'No se pudo enlazar un aliado con el ID proporcionado');
 					} else {
 						// Guardar en localStorage
 						localStorage.setItem('aliado_id', aliadoId);
 
-						// Obtener el nombre del asesor
+						// Obtener el nombre del aliado
 						const nombreAsesor = aliado.usuario?.persona?.nombre
 							|| aliado.usuario?.usuario
-							|| 'tu asesor';
+							|| 'tu aliado';
 
-						showToast('success', `Asesor asignado: ${nombreAsesor}`, `Has sido enlazado correctamente con tu asesor`);
+						showToast('success', `Aliado: ${nombreAsesor}`, `Has sido enlazado correctamente con tu aliado`);
 					}
 				}).catch((error) => {
 					console.error('Error al consultar aliado:', error);
-					showToast('error', 'Error al enlazar asesor', 'Ocurrió un error al consultar el asesor');
+					showToast('error', 'Error al enlazar aliado', 'Ocurrió un error al consultar el aliado');
 				});
 
 				// Eliminar el parámetro de la URL
@@ -156,7 +156,7 @@ const { title } = Astro.props;
 						// Construir el mensaje
 						const mensajeDescuento = `Felicidades, tienes un cupón de descuento por $${cupon.valor.toLocaleString()}`;
 						const mensajeAsesor = cupon.aliado_nombre
-							? ` y tu asesor asignado es ${cupon.aliado_nombre}`
+							? ` y tu aliado es ${cupon.aliado_nombre}`
 							: '';
 
 						showToast('success', 'Cupón aplicado', mensajeDescuento + mensajeAsesor);

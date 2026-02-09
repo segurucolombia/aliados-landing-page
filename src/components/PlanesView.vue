@@ -198,7 +198,7 @@
           ¿Necesitas ayuda para elegir?
         </h2>
         <p class="text-xl mb-8 text-blue-100 max-w-2xl mx-auto">
-          Nuestros asesores están listos para ayudarte a encontrar el plan perfecto
+          Nuestros aliados están listos para ayudarte a encontrar el plan perfecto
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
           <button class="bg-white text-primary-700 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors text-lg inline-flex items-center justify-center gap-2">
