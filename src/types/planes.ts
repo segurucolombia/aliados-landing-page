@@ -224,3 +224,82 @@ export interface FindPlanesByProductoParams {
   offset: number;
   estado?: boolean;
 }
+
+/**
+ * Tipos para campos adicionales dinámicos
+ */
+
+export type TipoInput = 'text' | 'number' | 'email' | 'date' | 'tel' | 'precio' | 'plano';
+
+export interface CampoInput {
+  tipo: 'input';
+  nombre: string;
+  tipoInput: TipoInput;
+  requerido?: boolean;
+}
+
+export interface CampoDropdown {
+  tipo: 'dropdown';
+  nombre: string;
+  opciones: string[];
+  requerido?: boolean;
+}
+
+export interface CampoMultiselect {
+  tipo: 'multiselect';
+  nombre: string;
+  opciones: string[];
+  requerido?: boolean;
+}
+
+export interface CampoGrupoInputs {
+  tipo: 'grupo_inputs';
+  nombre: string;
+  campos: (CampoInput | CampoDropdown)[];
+  requerido?: boolean;
+}
+
+export interface CampoAutocomplete {
+  tipo: 'autocomplete';
+  nombre: string;
+  fuente: 'ciudades';
+  requerido?: boolean;
+}
+
+export type CampoAdicional = CampoInput | CampoDropdown | CampoMultiselect | CampoGrupoInputs | CampoAutocomplete;
+
+export interface SeccionCamposAdicionales {
+  titulo: string;
+  descripcion?: string;
+  campos: CampoAdicional[];
+}
+
+export interface CamposAdicionalesConfig {
+  secciones: SeccionCamposAdicionales[];
+}
+
+export interface VersionWithCamposAdicionales extends Version {
+  campos_adicionales?: CamposAdicionalesConfig;
+}
+
+export interface VersionWithDetailsAndCamposAdicionales extends VersionWithDetails {
+  campos_adicionales?: CamposAdicionalesConfig;
+}
+
+export interface PlanConCoberturasYCampos extends PlanBase {
+  producto: Producto;
+  version: VersionWithDetailsAndCamposAdicionales | null;
+}
+
+/**
+ * Tipos para datos capturados de campos adicionales
+ */
+
+export interface DatosSeccionCapturados {
+  titulo: string;
+  datos: Record<string, any>;
+}
+
+export interface CamposAdicionalesCapturados {
+  secciones: DatosSeccionCapturados[];
+}

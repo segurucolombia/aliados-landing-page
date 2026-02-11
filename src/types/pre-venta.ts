@@ -20,6 +20,7 @@ export type TCrearPreventaAtt = {
     numero_documento_representante?:string;
     id_preventa?:string;
     prueba_gratuita:boolean;
+    datos_adicionales?: import('./planes').CamposAdicionalesCapturados; // Objeto JSON
   }
 
   export interface TPreVentaPlanesDetalleAlojamientos {

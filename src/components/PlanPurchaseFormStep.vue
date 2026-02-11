@@ -261,8 +261,8 @@
             type="button"
           />
           <Button
-            label="Comprar"
-            icon="pi pi-shopping-cart"
+            :label="hasNextStep ? 'Continuar' : 'Comprar'"
+            :icon="hasNextStep ? 'pi pi-arrow-right' : 'pi pi-shopping-cart'"
             class="p-button-primary"
             type="submit"
             :disabled="!isFormValid"
@@ -299,9 +299,12 @@ export interface PurchaseFormData {
   discountCode?: string;
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   planPrecio: number;
-}>();
+  hasNextStep?: boolean;
+}>(), {
+  hasNextStep: false
+});
 
 const emit = defineEmits<{
   (e: 'submit', data: PurchaseFormData): void;

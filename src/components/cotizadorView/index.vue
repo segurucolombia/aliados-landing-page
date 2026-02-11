@@ -97,7 +97,8 @@ export type TPlanesCotizados = {
         capacidad_maxima:number;
         nombre:string;
         numero_habitaciones:number
-    }[]
+    }[];
+    campos_adicionales?: import('../../types/planes').CamposAdicionalesConfig;
 }
 
 const _PlanesService = new PlanesService();
@@ -180,7 +181,8 @@ const transformarPlanesCotizados = (
                             capacidad_maxima: capacidad.capacidad_maxima,
                             nombre: hotel.nombre,
                             numero_habitaciones: hotel.numero_habitaciones
-                        }]
+                        }],
+                        campos_adicionales: (plan as any).campos_adicionales
                     });
                 }
             }

@@ -30,16 +30,30 @@
         <PlanDetailStep
           :plan-id="planId"
           @next="goToStep(2)"
+          @plan-loaded="handlePlanLoaded"
           @cancel="handleCancel"
         />
       </div>
 
-      <!-- Paso 2: Formulario de Compra -->
+      <!-- Paso 2: Formulario de Compra (Información del Titular) -->
       <div v-show="currentStep === 2" class="step-content">
         <PlanPurchaseFormStep
           :plan-precio="planPrecio"
-          @submit="handlePurchase"
+          :has-next-step="hasCamposAdicionales"
+          @submit="handlePurchaseFormSubmit"
           @back="goToStep(1)"
+          @cancel="handleCancel"
+        />
+      </div>
+
+      <!-- Paso 3: Campos Adicionales (Condicional) -->
+      <div v-if="hasCamposAdicionales" v-show="currentStep === 3" class="step-content">
+        <PlanCamposAdicionalesStep
+          v-if="planData?.version?.campos_adicionales"
+          :campos-adicionales="planData.version.campos_adicionales"
+          :plan-nombre="planData.producto.nombre"
+          @next="handleCamposAdicionalesNext"
+          @back="goToStep(2)"
           @cancel="handleCancel"
         />
       </div>
@@ -48,10 +62,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import PlanDetailStep from './PlanDetailStep.vue';
 import PlanPurchaseFormStep from './PlanPurchaseFormStep.vue';
+import PlanCamposAdicionalesStep from './PlanCamposAdicionalesStep.vue';
 import type { PurchaseFormData } from './PlanPurchaseFormStep.vue';
+import type { PlanWithDetails, CamposAdicionalesCapturados } from '../types/planes';
 
 const props = defineProps<{
   planId: string;
@@ -59,11 +75,25 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'purchase', data: { planId: string; formData: PurchaseFormData }): void;
+  (e: 'purchase', data: { planId: string; formData: PurchaseFormData; camposAdicionales?: CamposAdicionalesCapturados }): void;
   (e: 'cancel'): void;
 }>();
 
 const currentStep = ref(1);
+const planData = ref<PlanWithDetails | null>(null);
+const purchaseFormData = ref<PurchaseFormData | null>(null);
+const camposAdicionalesDatos = ref<CamposAdicionalesCapturados | null>(null);
+
+// Computed property to check if plan has campos_adicionales
+const hasCamposAdicionales = computed(() => {
+  return !!(planData.value?.version?.campos_adicionales?.secciones?.length);
+});
+
+const handlePlanLoaded = (plan: PlanWithDetails) => {
+  planData.value = plan;
+  console.log('Plan loaded in wizard:', plan);
+  console.log('Has campos adicionales?', hasCamposAdicionales.value);
+};
 
 const goToStep = (step: number) => {
   currentStep.value = step;
@@ -71,10 +101,44 @@ const goToStep = (step: number) => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-const handlePurchase = (formData: PurchaseFormData) => {
+const handlePurchaseFormSubmit = (formData: PurchaseFormData) => {
+  purchaseFormData.value = formData;
+  console.log('Purchase form data captured:', formData);
+
+  // Si hay campos adicionales, ir a step 3
+  // Si no hay campos adicionales, finalizar compra
+  if (hasCamposAdicionales.value) {
+    goToStep(3);
+  } else {
+    finalizarCompra();
+  }
+};
+
+const handleCamposAdicionalesNext = (datos: CamposAdicionalesCapturados) => {
+  camposAdicionalesDatos.value = datos;
+  console.log('Campos adicionales captured:', datos);
+  finalizarCompra();
+};
+
+const finalizarCompra = () => {
+  if (!purchaseFormData.value) {
+    console.error('No purchase form data available');
+    return;
+  }
+
+  // Send campos_adicionales as object (not string)
+  const camposAdicionalesData = camposAdicionalesDatos.value && hasCamposAdicionales.value
+    ? camposAdicionalesDatos.value
+    : undefined;
+
+  if (camposAdicionalesData) {
+    console.log('Sending campos adicionales:', camposAdicionalesData);
+  }
+
   emit('purchase', {
     planId: props.planId,
-    formData,
+    formData: purchaseFormData.value,
+    camposAdicionales: camposAdicionalesData,
   });
 };
 

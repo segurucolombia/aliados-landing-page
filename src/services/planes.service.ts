@@ -1,14 +1,35 @@
 import axios from "axios"
 import type { TFiltersCotizarPlan, TPlanCotizar, GetPlanesByProductoInput, PaginatedPlanes, PlanWithDetails } from "../types/planes"
+import { transformarCamposAdicionalesBackend } from "../utils/transformCamposAdicionales"
 const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/api-aliados/planes'
 
 export class PlanesService {
-    cotizar(body:{filters: TFiltersCotizarPlan[]}):Promise<{data:TPlanCotizar[]}> {
-        return axios.post(`${baseUrl}/cotizar-planes`, body, {
+    async cotizar(body:{filters: TFiltersCotizarPlan[]}):Promise<{data:TPlanCotizar[]}> {
+        const response = await axios.post(`${baseUrl}/cotizar-planes`, body, {
             headers: {
                 'Content-Type': 'application/json',
             },
-        })
+        });
+
+        // Transformar campos adicionales en cada capacidad/plan
+        const planesTransformados = response.data.map((capacidad: any) => {
+            if (!capacidad.planes) return capacidad;
+
+            return {
+                ...capacidad,
+                planes: capacidad.planes.map((plan: any) => {
+                    if (plan.campos_adicionales) {
+                        return {
+                            ...plan,
+                            campos_adicionales: transformarCamposAdicionalesBackend(plan.campos_adicionales)
+                        };
+                    }
+                    return plan;
+                })
+            };
+        });
+
+        return { data: planesTransformados };
     }
 
     /**
@@ -32,7 +53,24 @@ export class PlanesService {
                 },
             });
 
-            return response.data;
+            // Transformar campos adicionales en cada plan
+            const planesTransformados = response.data.data.map(plan => {
+                if (plan.version && (plan.version as any).campos_adicionales) {
+                    return {
+                        ...plan,
+                        version: {
+                            ...plan.version,
+                            campos_adicionales: transformarCamposAdicionalesBackend((plan.version as any).campos_adicionales)
+                        }
+                    };
+                }
+                return plan;
+            });
+
+            return {
+                ...response.data,
+                data: planesTransformados as any
+            };
         } catch (error) {
             console.error('Error al obtener planes por producto:', error);
             throw error;
@@ -51,6 +89,18 @@ export class PlanesService {
                     'Content-Type': 'application/json',
                 },
             });
+
+            // Transformar campos adicionales si existen
+            if (response.data.version && (response.data.version as any).campos_adicionales) {
+                const planTransformado = {
+                    ...response.data,
+                    version: {
+                        ...response.data.version,
+                        campos_adicionales: transformarCamposAdicionalesBackend((response.data.version as any).campos_adicionales)
+                    }
+                };
+                return { data: planTransformado as any };
+            }
 
             return response;
         } catch (error) {

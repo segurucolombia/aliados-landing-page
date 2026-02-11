@@ -17,6 +17,7 @@ export interface CreateVentaDto {
   tipo_persona?: string;
   aliado_id?: string;
   codigo_descuento?: string;
+  datos_adicionales?: import('../types/planes').CamposAdicionalesCapturados; // Objeto JSON
 }
 
 export interface CreateVentaResponse {

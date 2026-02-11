@@ -200,6 +200,7 @@ const emit = defineEmits<{
   (e: 'next'): void;
   (e: 'cancel'): void;
   (e: 'update:acceptedPrivacy', value: boolean): void;
+  (e: 'plan-loaded', plan: PlanWithDetails): void;
 }>();
 
 const plan = ref<PlanWithDetails | null>(null);
@@ -216,6 +217,8 @@ const loadPlanDetail = async () => {
     const {data} = await PlanesService.findById(props.planId);
     console.log('Plan detail data:', data);
     plan.value = data;
+    // Emit plan data to parent so it can access campos_adicionales
+    emit('plan-loaded', data);
   } catch (err) {
     error.value = 'Error al cargar el detalle del plan. Por favor intenta de nuevo.';
     console.error('Error loading plan:', err);

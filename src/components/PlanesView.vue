@@ -373,8 +373,11 @@ const selectedPlan = computed(() => {
   return productoPlanes.value.planes.find(p => p.id === selectedPlanId.value);
 });
 
-const handleCompra = async (data: { planId: string; formData: PurchaseFormData }) => {
+const handleCompra = async (data: { planId: string; formData: PurchaseFormData; camposAdicionales?: import('../types/planes').CamposAdicionalesCapturados }) => {
   console.log('Datos de compra:', data);
+  if (data.camposAdicionales) {
+    console.log('Campos adicionales recibidos:', data.camposAdicionales);
+  }
 
   isProcessingPurchase.value = true;
 
@@ -419,6 +422,7 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData }
       tipo_persona: tipoPersona,
       ...(cuponLocalStorage && { codigo_descuento: cuponLocalStorage }),
       ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
+      ...(data.camposAdicionales && { datos_adicionales: data.camposAdicionales }),
     };
 
     const response = await VentasService.crear_venta(ventaData);

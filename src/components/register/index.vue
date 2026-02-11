@@ -350,6 +350,25 @@
                       </template>
                     </Column>
                 </DataTable>
+
+                <!-- Campos Adicionales Dinámicos -->
+                <div v-if="plan?.campos_adicionales?.secciones?.length" class="mt-6">
+                  <div class="mb-4">
+                    <h3 class="text-xl font-bold text-blue-800 flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
+                      </svg>
+                      Información Adicional del Plan
+                    </h3>
+                    <p class="text-sm text-gray-600 mt-1">Complete la siguiente información requerida para este plan</p>
+                  </div>
+                  <CamposAdicionales
+                    :campos-adicionales="plan.campos_adicionales"
+                    @update:datos="handleCamposAdicionalesDatos"
+                    @update:valid="handleCamposAdicionalesValid"
+                  />
+                </div>
+
                 <div class="mt-4 flex justify-between">
                   <button @click="activateCallback('0'), pasoActivo= 0" class="px-6 py-3 min-h-[44px] bg-gray-700 text-white font-bold rounded-md hover:bg-gray-800 transition-colors" aria-label="Regresar a información del cliente">Regresar</button>
                   <button @click="activateCallback('2'), pasoActivo= 2" :disabled="!validateCompleteTable()" :class="validateCompleteTable() ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-300 cursor-not-allowed'" class="px-6 py-3 min-h-[44px] text-white font-bold rounded-md transition-colors" aria-label="Continuar al paso de pago">Continuar</button>
@@ -542,6 +561,7 @@ const ProcesandoPago = defineAsyncComponent(() => import('./components/pago-proc
 const LoadingSpinner = defineAsyncComponent(() => import('../../utils/LoadingSpinner.vue'));
 const PreviewModalPdf = defineAsyncComponent(() => import('../previewModalPdf.vue'));
 const CouponIcon = defineAsyncComponent(() => import('../icons/CouponIcon.vue'));
+const CamposAdicionales = defineAsyncComponent(() => import('./components/CamposAdicionales.vue'));
 
 // Servicios
 const _PreVentaService = new PreVentaService()
@@ -642,6 +662,8 @@ const hotelesDetalle = ref<THotelesDetalle[]>([])
 const aceptaPoliticas = ref(false)
 const aceptaUsoDatos = ref(false)
 const showDataUsageModal = ref(false)
+const camposAdicionalesDatos = ref<import('../../types/planes').CamposAdicionalesCapturados | null>(null)
+const camposAdicionalesValidos = ref(true)
 
 const validateCompleteData = () => {
   let validarByTipoPersona = false
@@ -675,13 +697,30 @@ const validateCompleteData = () => {
 }
 
 const validateCompleteTable = () => {
-  const isValid = hotelesDetalle.value.every(a => 
-    a.amenidades.length > 0 && 
-    a.tipo_alojamiento && 
-    typeof a.ciudad !== 'string' && 
+  const hotelesValidos = hotelesDetalle.value.every(a =>
+    a.amenidades.length > 0 &&
+    a.tipo_alojamiento &&
+    typeof a.ciudad !== 'string' &&
     a.direccion
   )
-  return isValid
+
+  // Si el plan tiene campos adicionales, también validarlos
+  const tieneCamposAdicionales = plan.value?.campos_adicionales?.secciones &&
+                                  plan.value.campos_adicionales.secciones.length > 0
+
+  if (tieneCamposAdicionales) {
+    return hotelesValidos && camposAdicionalesValidos.value
+  }
+
+  return hotelesValidos
+}
+
+const handleCamposAdicionalesDatos = (datos: import('../../types/planes').CamposAdicionalesCapturados) => {
+  camposAdicionalesDatos.value = datos
+}
+
+const handleCamposAdicionalesValid = (valid: boolean) => {
+  camposAdicionalesValidos.value = valid
 }
 
 // Resto de métodos (sin cambios)
@@ -693,6 +732,7 @@ const crearPreventa = async () => {
   console.log('plan.value?.alojamientos', plan.value?.alojamientos)
   try {
     isLoading.value = true
+
     const {data: {hash, id_transaction}} = await _PreVentaService.crearPreVenta({
       contrasena: dataCrearCliente.value.contrasena,
       numero_documento_representante: dataCrearCliente.value.numero_doc_representante || dataCrearCliente.value.nit,
@@ -712,6 +752,7 @@ const crearPreventa = async () => {
       advisor_id: cuponDescuento.value.validado ? cuponDescuento.value.asesor_id : undefined,
       version_plan_id: plan.value.version_id,
       prueba_gratuita: prueba_gratuita.value,
+      datos_adicionales: camposAdicionalesDatos.value && plan.value?.campos_adicionales?.secciones?.length ? camposAdicionalesDatos.value : undefined,
       detalle_alojamientos: hotelesDetalle.value.map(hotel => {
         return {
           ciudad: typeof hotel.ciudad === 'object' && hotel.ciudad !== null ? hotel.ciudad.name : hotel.ciudad,
@@ -928,7 +969,8 @@ onMounted(async () => {
       precio: parsedPlan.precio || 0,
       coberturas: parsedPlan.coberturas || [],
       documento_id: parsedPlan.documento_id || '',
-      alojamientos: parsedPlan.alojamientos
+      alojamientos: parsedPlan.alojamientos,
+      campos_adicionales: parsedPlan.campos_adicionales
     };
   } else {
     plan.value = { id: '', nombre: '', precio: 0, coberturas: [], version_id: '', alojamientos: [] };
