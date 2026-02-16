@@ -229,7 +229,7 @@ export interface FindPlanesByProductoParams {
  * Tipos para campos adicionales dinámicos
  */
 
-export type TipoInput = 'text' | 'number' | 'email' | 'date' | 'tel' | 'precio' | 'plano';
+export type TipoInput = 'text' | 'number' | 'email' | 'date' | 'fecha' | 'tel' | 'precio' | 'plano' | 'ciudad' | 'textarea';
 
 export interface CampoInput {
   tipo: 'input';
@@ -257,6 +257,7 @@ export interface CampoGrupoInputs {
   nombre: string;
   campos: (CampoInput | CampoDropdown)[];
   requerido?: boolean;
+  cantidad_maxima_registros?: number | null;
 }
 
 export interface CampoAutocomplete {

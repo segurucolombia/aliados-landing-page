@@ -21,14 +21,28 @@ export function transformarCamposAdicionalesBackend(camposBackend: any): CamposA
   };
 }
 
+function resolverRequerido(campo: any): boolean {
+  // Prioridad a "obligatorio" (backend actual)
+  if (campo?.obligatorio === true) return true;
+  if (campo?.obligatorio === false) return false;
+
+  // Fallback a "requerido" (compatibilidad)
+  if (campo?.requerido === true) return true;
+  if (campo?.requerido === false) return false;
+
+  // Mantener compatibilidad con comportamiento previo
+  return true;
+}
+
 function transformarCampo(campo: any): CampoAdicional {
   // Si es grupo_inputs, transformar recursivamente sus campos
   if (campo.tipo === 'grupo_inputs') {
     return {
       tipo: 'grupo_inputs',
       nombre: campo.nombre,
-      requerido: campo.requerido !== false,
-      campos: campo.campos.map((subcampo: any) => transformarCampo(subcampo))
+      requerido: resolverRequerido(campo),
+      cantidad_maxima_registros: campo.cantidad_maxima_registros ?? null,
+      campos: (campo.campos || []).map((subcampo: any) => transformarCampo(subcampo))
     } as any;
   }
 
@@ -38,7 +52,7 @@ function transformarCampo(campo: any): CampoAdicional {
       tipo: 'dropdown',
       nombre: campo.nombre,
       opciones: campo.opciones || [],
-      requerido: campo.requerido !== false
+      requerido: resolverRequerido(campo)
     };
   }
 
@@ -48,7 +62,7 @@ function transformarCampo(campo: any): CampoAdicional {
       tipo: 'multiselect',
       nombre: campo.nombre,
       opciones: campo.opciones || [],
-      requerido: campo.requerido !== false
+      requerido: resolverRequerido(campo)
     };
   }
 
@@ -58,20 +72,20 @@ function transformarCampo(campo: any): CampoAdicional {
       tipo: 'autocomplete',
       nombre: campo.nombre,
       fuente: campo.fuente || 'ciudades',
-      requerido: campo.requerido !== false
+      requerido: resolverRequerido(campo)
     };
   }
 
   // Para otros tipos (text, number, email, date, tel, precio, plano)
   // El backend envía estos como tipo directo, pero nosotros necesitamos tipo: "input"
-  const tiposInput = ['text', 'number', 'email', 'date', 'tel', 'precio', 'plano'];
+  const tiposInput = ['text', 'number', 'email', 'date', 'fecha', 'tel', 'precio', 'plano', 'ciudad', 'textarea'];
 
   if (tiposInput.includes(campo.tipo)) {
     return {
       tipo: 'input',
       nombre: campo.nombre,
       tipoInput: campo.tipo,
-      requerido: campo.requerido !== false
+      requerido: resolverRequerido(campo)
     };
   }
 
@@ -81,7 +95,7 @@ function transformarCampo(campo: any): CampoAdicional {
       tipo: 'input',
       nombre: campo.nombre,
       tipoInput: campo.tipoInput || 'text',
-      requerido: campo.requerido !== false
+      requerido: resolverRequerido(campo)
     };
   }
 
@@ -91,6 +105,6 @@ function transformarCampo(campo: any): CampoAdicional {
     tipo: 'input',
     nombre: campo.nombre,
     tipoInput: 'text',
-    requerido: campo.requerido !== false
+    requerido: resolverRequerido(campo)
   };
 }

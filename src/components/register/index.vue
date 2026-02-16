@@ -555,6 +555,8 @@ import { nextTick } from 'vue'
 import {Password} from 'primevue';
 import { TransactionService } from '../../services/transactions';
 import { defineAsyncComponent } from 'vue';
+import { transformarCamposAdicionalesBackend } from '../../utils/transformCamposAdicionales';
+import { PlanesService } from '../../services/planes.service';
 
 // Lazy loading de componentes pesados
 const ProcesandoPago = defineAsyncComponent(() => import('./components/pago-proceso.vue'));
@@ -948,6 +950,20 @@ const consultarTransaccion = async (transaccionIdProceso:string) => {
   }
 }
 
+const refrescarPlanSeleccionado = async () => {
+  if (!plan.value?.id) return;
+
+  try {
+    const { data } = await PlanesService.findById(plan.value.id);
+    const camposApi = data?.version?.campos_adicionales;
+    if (camposApi) {
+      plan.value.campos_adicionales = camposApi as any;
+    }
+  } catch (error) {
+    console.warn('No se pudo refrescar el plan seleccionado. Se usa el cache local.', error);
+  }
+}
+
 
 onMounted(async () => {
   prueba_gratuita.value = localStorage.getItem('prueba_gratuita') === 'true'
@@ -962,6 +978,7 @@ onMounted(async () => {
   setDataHoteles()
   if (planSeleccionado) {
     const parsedPlan = JSON.parse(planSeleccionado);
+    const camposAdicionalesNormalizados = transformarCamposAdicionalesBackend(parsedPlan.campos_adicionales);
     plan.value = {
       id: parsedPlan.id || '',
       version_id: parsedPlan.version_id || '',
@@ -970,8 +987,9 @@ onMounted(async () => {
       coberturas: parsedPlan.coberturas || [],
       documento_id: parsedPlan.documento_id || '',
       alojamientos: parsedPlan.alojamientos,
-      campos_adicionales: parsedPlan.campos_adicionales
+      campos_adicionales: camposAdicionalesNormalizados
     };
+    await refrescarPlanSeleccionado();
   } else {
     plan.value = { id: '', nombre: '', precio: 0, coberturas: [], version_id: '', alojamientos: [] };
   }
