@@ -65,6 +65,7 @@
               :maxlength="20"
               :class="{ 'p-invalid': errors.documentNumber }"
               @blur="validateField('documentNumber')"
+              @input="sanitizeDocumentNumber"
             />
             <small v-if="errors.documentNumber" class="p-error">{{ errors.documentNumber }}</small>
           </div>
@@ -79,6 +80,7 @@
               :maxlength="15"
               :class="{ 'p-invalid': errors.nit }"
               @blur="validateField('nit')"
+              @input="sanitizeNit"
             />
             <small v-if="errors.nit" class="p-error">{{ errors.nit }}</small>
           </div>
@@ -346,6 +348,18 @@ const errors = reactive<Record<string, string>>({
 
 const isNIT = computed(() => formData.documentType === 'NIT');
 
+const sanitizeDocumentNumber = () => {
+  // Remover espacios y caracteres especiales, permitir solo letras y números
+  formData.documentNumber = formData.documentNumber.replace(/[^a-zA-Z0-9]/g, '');
+};
+
+const sanitizeNit = () => {
+  // Remover espacios, permitir solo números y guión
+  if (formData.nit) {
+    formData.nit = formData.nit.replace(/[^0-9-]/g, '');
+  }
+};
+
 const validateField = (field: string) => {
   errors[field] = '';
 
@@ -361,6 +375,8 @@ const validateField = (field: string) => {
         errors.documentNumber = 'El número de documento es requerido';
       } else if (formData.documentNumber.length < 5) {
         errors.documentNumber = 'El número de documento debe tener al menos 5 caracteres';
+      } else if (!/^[a-zA-Z0-9]+$/.test(formData.documentNumber)) {
+        errors.documentNumber = 'El número de documento solo puede contener letras y números';
       }
       break;
 
@@ -386,6 +402,8 @@ const validateField = (field: string) => {
           errors.nit = 'El NIT es requerido';
         } else if (formData.nit.length < 9) {
           errors.nit = 'El NIT debe tener al menos 9 caracteres';
+        } else if (!/^[0-9-]+$/.test(formData.nit)) {
+          errors.nit = 'El NIT solo puede contener números y guión';
         }
       }
       break;

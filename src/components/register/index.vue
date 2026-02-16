@@ -260,7 +260,7 @@
                   <div v-if="tipo_persona" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div v-if="tipo_persona === 'Juridica'">
                       <label for="nit" class="text-sm italic text-gray-600">Nit *</label>
-                      <input v-model="dataCrearCliente.nit" id="nit" type="text" class="p-2 border rounded-md w-full">
+                      <input v-model="dataCrearCliente.nit" @input="sanitizeNit" id="nit" type="text" class="p-2 border rounded-md w-full">
                     </div>
                     <div v-if="tipo_persona === 'Juridica'">
                       <label for="nombre_empresa" class="text-sm italic text-gray-600">Nombre de la empresa *</label>
@@ -274,7 +274,7 @@
                     </div>
                     <div v-if="tipo_persona === 'Natural'">
                       <label for="numero_doc_representante" class="text-sm italic text-gray-600">Número de documento *</label>
-                      <input v-model="dataCrearCliente.numero_doc_representante" id="numero_doc_representante" type="text" class="p-2 border rounded-md w-full">
+                      <input v-model="dataCrearCliente.numero_doc_representante" @input="sanitizeDocumentNumber" id="numero_doc_representante" type="text" class="p-2 border rounded-md w-full">
                     </div> 
                     <div>
                       <label for="nombre_representante" class="text-sm italic text-gray-600" v-if="tipo_persona === 'Natural'">Nombres y apellidos *</label>
@@ -666,6 +666,16 @@ const aceptaUsoDatos = ref(false)
 const showDataUsageModal = ref(false)
 const camposAdicionalesDatos = ref<import('../../types/planes').CamposAdicionalesCapturados | null>(null)
 const camposAdicionalesValidos = ref(true)
+
+const sanitizeDocumentNumber = () => {
+  // Remover espacios y caracteres especiales, permitir solo letras y números
+  dataCrearCliente.value.numero_doc_representante = dataCrearCliente.value.numero_doc_representante.replace(/[^a-zA-Z0-9]/g, '');
+};
+
+const sanitizeNit = () => {
+  // Remover espacios, permitir solo números y guión
+  dataCrearCliente.value.nit = dataCrearCliente.value.nit.replace(/[^0-9-]/g, '');
+};
 
 const validateCompleteData = () => {
   let validarByTipoPersona = false
