@@ -586,6 +586,40 @@ const emitirDatos = () => {
   emit('update:datos', datosCapturados);
 };
 
+// Calcula si el formulario es válido sin modificar el estado de errores visible
+const calcularEsValido = (): boolean => {
+  if (!camposAdicionalesNormalizados.value?.secciones) return true;
+
+  for (const seccion of camposAdicionalesNormalizados.value.secciones) {
+    for (const campo of seccion.campos) {
+      if (!esRequerido(campo)) continue;
+
+      const valor = datosFormulario.value[seccion.titulo]?.[campo.nombre];
+
+      if (campo.tipo === 'grupo_inputs') {
+        if (!Array.isArray(valor) || valor.length === 0) return false;
+
+        const todasEntradasCompletas = valor.every(entrada =>
+          campo.campos.every(subcampo => {
+            const valorSubcampo = entrada[subcampo.nombre];
+            return !esRequerido(subcampo) || (valorSubcampo !== '' && valorSubcampo !== null && valorSubcampo !== undefined);
+          })
+        );
+
+        if (!todasEntradasCompletas) return false;
+      } else if (Array.isArray(valor)) {
+        if (valor.length === 0) return false;
+      } else if (typeof valor === 'object' && valor !== null) {
+        if (!valor.name) return false;
+      } else {
+        if (!valor || valor === '') return false;
+      }
+    }
+  }
+
+  return true;
+};
+
 // Watchers
 watch(() => camposAdicionalesNormalizados.value, () => {
   inicializarDatosFormulario();
@@ -593,6 +627,7 @@ watch(() => camposAdicionalesNormalizados.value, () => {
 
 watch(datosFormulario, () => {
   emitirDatos();
+  emit('update:valid', calcularEsValido());
 }, { deep: true });
 
 // Exponer método de validación para uso externo
