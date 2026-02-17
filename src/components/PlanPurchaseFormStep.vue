@@ -1,5 +1,6 @@
 <template>
   <div class="purchase-form-wrapper">
+    <Toast />
     <!-- Hero Header -->
     <section class="form-hero">
       <div class="hero-content">
@@ -224,6 +225,8 @@
                   class="p-button-success"
                   @click="applyDiscount"
                   type="button"
+                  :loading="isLoadingCupon"
+                  :disabled="isLoadingCupon"
                 />
               </div>
             </div>
@@ -282,6 +285,9 @@ import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import Button from 'primevue/button';
+import { CuponesService } from '../services/cupones.service';
+import { useToast } from 'primevue/usetoast';
+import Toast from 'primevue/toast';
 
 // Tipos de documento para representante legal (sin NIT)
 const LEGAL_REP_DOCUMENT_TYPES = DOCUMENT_TYPES.filter(doc => doc.tipo !== 'NIT');
@@ -316,6 +322,8 @@ const emit = defineEmits<{
 
 // Estado del cupón
 const cuponValor = ref(0);
+const toast = useToast();
+const isLoadingCupon = ref(false);
 
 const formData = reactive<PurchaseFormData>({
   documentType: '',
@@ -508,9 +516,72 @@ const isFormValid = computed(() => {
   return basicFieldsValid && nitFieldsValid && noErrors;
 });
 
-const applyDiscount = () => {
-  // Lógica para aplicar código de descuento
-  console.log('Aplicando código de descuento:', formData.discountCode);
+const applyDiscount = async () => {
+  // Validar que haya un código ingresado
+  if (!formData.discountCode || formData.discountCode.trim() === '') {
+    toast.add({
+      severity: 'warn',
+      summary: 'Código requerido',
+      detail: 'Por favor ingrese un código de descuento',
+      life: 3000
+    });
+    return;
+  }
+
+  try {
+    isLoadingCupon.value = true;
+
+    // Buscar el cupón usando el servicio
+    const cupon = await CuponesService.find(formData.discountCode.trim());
+
+    if (!cupon) {
+      toast.add({
+        severity: 'error',
+        summary: 'Cupón no válido',
+        detail: 'El código de descuento ingresado no existe',
+        life: 3000
+      });
+      cuponValor.value = 0;
+      return;
+    }
+
+    // Validar que el cupón esté activo
+    if (!cupon.estado) {
+      toast.add({
+        severity: 'error',
+        summary: 'Cupón inactivo',
+        detail: 'El código de descuento no está activo',
+        life: 3000
+      });
+      cuponValor.value = 0;
+      return;
+    }
+
+    // Aplicar el descuento
+    cuponValor.value = cupon.valor;
+
+    toast.add({
+      severity: 'success',
+      summary: '¡Descuento aplicado!',
+      detail: `Se ha aplicado un descuento de ${formatCurrency(cupon.valor)}`,
+      life: 4000
+    });
+
+    // Guardar el código del cupón en localStorage para uso posterior
+    localStorage.setItem('cupon_valor', cupon.valor.toString());
+
+  } catch (error) {
+    console.error('Error al aplicar el descuento:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Ocurrió un error al validar el cupón. Intente nuevamente.',
+      life: 3000
+    });
+    cuponValor.value = 0;
+  } finally {
+    isLoadingCupon.value = false;
+  }
 };
 
 // Calcular total a pagar
