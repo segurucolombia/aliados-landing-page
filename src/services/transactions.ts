@@ -1,17 +1,36 @@
 import axios from "axios"
-import type {  TGetTransactionAtt } from "../types/pre-venta"
-const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/nuevo-back/transacciones'
+const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/api-aliados/transacciones-wompi'
+
+export type EstadoTransaccion = 'APPROVED' | 'DECLINED' | 'ERROR' | 'PENDING';
+
+export interface ObtenerEstadoTransaccionResponse {
+  transaccion: {
+    id: string;
+    estado: EstadoTransaccion;
+    valor: number;
+    tabla_nombre: string;
+    tabla_id: string;
+    error_interno: string | null;
+    created_at: string;
+  };
+  venta: {
+    id: string;
+    estado: string;
+    email: string;
+    usuario: string;
+    nombres: string;
+    apellidos: string;
+    created_at: string;
+    updated_at: string;
+    version_plan: { id: string; nombre: string; precio: number };
+    producto: { id: string; nombre: string };
+  };
+}
+
 export class TransactionService {
-    consultarTransaccion(params:{id:string}):Promise<{data:TGetTransactionAtt | null}> {
-        return axios.get(`${baseUrl}/consultar-transaccion`, {
+    obtenerEstadoTransaccion(params: { transaccion_id: string }): Promise<{ data: ObtenerEstadoTransaccionResponse }> {
+        return axios.get(`${baseUrl}/${params.transaccion_id}/estado`, {
             params,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
-    }
-    crear(body:{ table_name:string; table_id:string; amount:number; }):Promise<{data:{ transaccion_id: string; hash: string; }}> {
-        return axios.post(`${baseUrl}/crear-transaccion`, body, {
             headers: {
                 'Content-Type': 'application/json',
             },

@@ -427,8 +427,32 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
 
     const response = await VentasService.crear_venta(ventaData);
 
-    // Redirigir a Wompi con el transaccion_id
-    sendWompi(response.transaccion_id, planSeleccionado.precio, data.formData);
+    // Guardar transaccion_id en localStorage
+    localStorage.setItem('transaccion_id', response.transaccion_id);
+
+    // Calcular precio final aplicando el descuento del cupón
+    const cuponValorStr = localStorage.getItem('cupon_valor');
+    const cuponValor = cuponValorStr ? parseFloat(cuponValorStr) || 0 : 0;
+    const precioFinal = Math.max(0, planSeleccionado.precio - cuponValor);
+
+    // Guardar resumen de compra para mostrar en la pantalla de procesando pago
+    const compraResumen = {
+      transaccion_id: response.transaccion_id,
+      plan_nombre: planSeleccionado.nombre,
+      precio: precioFinal,
+      comprador_nombre: data.formData.fullName,
+      comprador_apellido: data.formData.lastName,
+      comprador_email: data.formData.email,
+      comprador_documento_tipo: data.formData.documentType,
+      comprador_documento: data.formData.documentNumber,
+      comprador_telefono: data.formData.phone,
+      fecha_compra: new Date().toISOString(),
+    };
+    localStorage.setItem('compra_resumen', JSON.stringify(compraResumen));
+
+    // Abrir Wompi en pestaña nueva y redirigir al usuario a la pantalla de procesando pago
+    await sendWompi(response.transaccion_id, precioFinal, data.formData);
+    window.location.href = '/procesando-pago';
 
     closePurchaseWizard();
   } catch (error: any) {
@@ -454,9 +478,20 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
 };
 
 /**
+ * Calcula el SHA256 de un string (usado para la firma de integridad de Wompi)
+ */
+const sha256 = async (text: string): Promise<string> => {
+  const buffer = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+};
+
+/**
  * Envía el formulario a Wompi para procesar el pago
  */
-const sendWompi = (
+const sendWompi = async (
   transaccionId: string,
   precio: number,
   formData: PurchaseFormData
@@ -471,6 +506,9 @@ const sendWompi = (
     return input;
   };
 
+  const amountInCents = precio * 100;
+  const currency = 'COP';
+
   const form = document.createElement('form');
   form.action = import.meta.env.PUBLIC_CHECKOUT_URL_WOMPI;
   form.method = 'GET';
@@ -478,9 +516,19 @@ const sendWompi = (
 
   // Campos obligatorios
   form.appendChild(createHiddenInput('public-key', import.meta.env.PUBLIC_KEY_WOMPI));
-  form.appendChild(createHiddenInput('currency', 'COP'));
-  form.appendChild(createHiddenInput('amount-in-cents', precio * 100));
+  form.appendChild(createHiddenInput('currency', currency));
+  form.appendChild(createHiddenInput('amount-in-cents', amountInCents));
   form.appendChild(createHiddenInput('reference', transaccionId));
+
+  // Firma de integridad requerida por Wompi
+  const integrityKey = import.meta.env.PUBLIC_INTEGRITY_KEY_WOMPI;
+  console.log('[Wompi] integrityKey presente:', !!integrityKey);
+  console.log('[Wompi] cadena a hashear:', `${transaccionId}${amountInCents}${currency}${integrityKey}`);
+  if (integrityKey) {
+    const integrityHash = await sha256(`${transaccionId}${amountInCents}${currency}${integrityKey}`);
+    console.log('[Wompi] integrity hash:', integrityHash);
+    form.appendChild(createHiddenInput('signature:integrity', integrityHash));
+  }
 
   // URL de redirección
   const redirectUrl = import.meta.env.PUBLIC_WOMPI_REDIRECT_PAYMENT_COMPLETE || window.location.origin + '/gracias';

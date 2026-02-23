@@ -236,7 +236,7 @@ const sendWompi = (reference: string, signature: string, transaccionProcesoId: s
   form.appendChild(createHiddenInput('amount-in-cents', (valorPagar * 100)));
   form.appendChild(createHiddenInput('reference', reference));
   form.appendChild(createHiddenInput('signature:integrity', signature));
-  form.appendChild(createHiddenInput('redirect-url', import.meta.env.PUBLIC_WOMPI_REDIRECT_PAYMENT_COMPLETE || 'https://compras.segurucolombia.com/registro'));
+  form.appendChild(createHiddenInput('redirect-url', import.meta.env.PUBLIC_WOMPI_REDIRECT_PAYMENT_COMPLETE || 'https://seguros.segurucolombia.com/procesando-pago'));
   form.appendChild(createHiddenInput('customer-data:email', detalleCompra.value?.email || 'cliente@email.com'));
   form.appendChild(createHiddenInput('customer-data:full-name', detalleCompra.value?.nombre_representante));
   form.appendChild(createHiddenInput('customer-data:phone-number', detalleCompra.value?.telefono));
