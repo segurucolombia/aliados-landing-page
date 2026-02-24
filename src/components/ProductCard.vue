@@ -29,18 +29,14 @@
 
       <!-- Action Buttons -->
       <div class="flex gap-3">
-        <a
-          :href="`/planes/${producto.id}`"
-          class="flex-1 bg-primary-600 text-white px-4 py-3 rounded-lg hover:bg-primary-700 transition-colors font-semibold text-center"
-        >
-          Ver Planes
-        </a>
-        <button
-          @click="$emit('ver-detalle', producto)"
-          class="flex-1 border-2 border-primary-600 text-primary-600 px-4 py-3 rounded-lg hover:bg-primary-50 transition-colors font-semibold"
-        >
-          Más Info
-        </button>
+        <div class="flex justify-center items-center w-full ">
+          <a
+            :href="`/planes/${producto.id}`"
+            class="bg-primary-600 text-white px-4 py-3 rounded-lg hover:bg-primary-700 transition-colors font-semibold text-center px-10"
+          >
+            Ver Planes
+          </a>
+        </div>
       </div>
     </div>
   </div>

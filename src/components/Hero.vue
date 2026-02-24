@@ -13,19 +13,19 @@
     <!-- Content -->
     <div class="relative container mx-auto px-4 py-24 md:py-32">
       <div class="max-w-4xl mx-auto text-center">
-        <h1 class="text-4xl md:text-6xl font-bold mb-6 drop-shadow-lg">
-          Seguru, tus seguros de confianza
+        <h1 class="text-4xl md:text-6xl font-semibold mb-6 drop-shadow-lg">
+          Seguros <span class="uppercase font-bold">sin enredos</span> Protección con sentido.
         </h1>
         <p class="text-xl md:text-2xl mb-8 text-blue-50 drop-shadow">
-          Protección a tu medida para cada momento de tu vida
+          Seguros claros para personas reales
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/productos" class="bg-white text-primary-700 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-all transform hover:scale-105 shadow-lg text-center">
-            Cotizar Ahora
+          <a href="/productos" class="bg-white text-primary-700 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-all transform hover:scale-105 shadow-lg border border-blue-800 text-center">
+            Quiero protegerme
           </a>
-          <button class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-primary-700 transition-all transform hover:scale-105">
-            Conocer Más
-          </button>
+          <!-- <button class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-primary-700 transition-all transform hover:scale-105">
+            Quiero protegerme
+          </button> -->
         </div>
       </div>
     </div>
