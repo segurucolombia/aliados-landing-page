@@ -158,38 +158,6 @@
             <small v-if="errors.phone" class="p-error">{{ errors.phone }}</small>
           </div>
 
-          <!-- Clave/Contraseña -->
-          <div class="field">
-            <label for="password">Contraseña <span class="required">*</span></label>
-            <Password
-              id="password"
-              v-model="formData.password"
-              placeholder="Ingrese su contraseña"
-              :toggleMask="true"
-              :class="{ 'p-invalid': errors.password }"
-              @blur="validateField('password')"
-              :feedback="false"
-              input-class="w-full"
-            />
-            <small v-if="errors.password" class="p-error">{{ errors.password }}</small>
-          </div>
-
-          <!-- Confirmar Contraseña -->
-          <div class="field">
-            <label for="confirmPassword">Confirmar Contraseña <span class="required">*</span></label>
-            <Password
-              id="confirmPassword"
-              input-class="w-full"
-              v-model="formData.confirmPassword"
-              placeholder="Confirme su contraseña"
-              :toggleMask="true"
-              :class="{ 'p-invalid': errors.confirmPassword }"
-              @blur="validateField('confirmPassword')"
-              :feedback="false"
-              class="w-full"
-            />
-            <small v-if="errors.confirmPassword" class="p-error">{{ errors.confirmPassword }}</small>
-          </div>
         </div>
 
         <!-- Código de Descuento -->
@@ -283,7 +251,6 @@ import { ref, computed, reactive, onMounted } from 'vue';
 import { DOCUMENT_TYPES } from '../utils/documentTypes';
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
-import Password from 'primevue/password';
 import Button from 'primevue/button';
 import { CuponesService } from '../services/cupones.service';
 import { useToast } from 'primevue/usetoast';
@@ -300,7 +267,6 @@ export interface PurchaseFormData {
   email: string;
   phone: string;
   password: string;
-  confirmPassword: string;
   nit?: string;
   companyName?: string;
   legalRepDocumentType?: string;
@@ -333,7 +299,6 @@ const formData = reactive<PurchaseFormData>({
   email: '',
   phone: '',
   password: '',
-  confirmPassword: '',
   nit: '',
   companyName: '',
   legalRepDocumentType: '',
@@ -347,8 +312,6 @@ const errors = reactive<Record<string, string>>({
   lastName: '',
   email: '',
   phone: '',
-  password: '',
-  confirmPassword: '',
   nit: '',
   companyName: '',
   legalRepDocumentType: '',
@@ -455,21 +418,6 @@ const validateField = (field: string) => {
       }
       break;
 
-    case 'password':
-      if (!formData.password) {
-        errors.password = 'La contraseña es requerida';
-      } else if (formData.password.length < 6) {
-        errors.password = 'La contraseña debe tener al menos 6 caracteres';
-      }
-      break;
-
-    case 'confirmPassword':
-      if (!formData.confirmPassword) {
-        errors.confirmPassword = 'Debe confirmar la contraseña';
-      } else if (formData.password !== formData.confirmPassword) {
-        errors.confirmPassword = 'Las contraseñas no coinciden';
-      }
-      break;
   }
 };
 
@@ -477,7 +425,7 @@ const validateAllFields = (): boolean => {
   let isValid = true;
 
   // Validar campos básicos siempre
-  const fieldsToValidate = ['documentType', 'documentNumber', 'fullName', 'lastName', 'email', 'phone', 'password', 'confirmPassword'];
+  const fieldsToValidate = ['documentType', 'documentNumber', 'fullName', 'lastName', 'email', 'phone'];
 
   // Agregar validación de NIT y empresa si el tipo de documento es NIT
   if (isNIT.value) {
@@ -501,9 +449,7 @@ const isFormValid = computed(() => {
     formData.fullName !== '' &&
     formData.lastName !== '' &&
     formData.email !== '' &&
-    formData.phone !== '' &&
-    formData.password !== '' &&
-    formData.confirmPassword !== '';
+    formData.phone !== '';
 
   const nitFieldsValid = !isNIT.value || (
     formData.nit !== '' &&
@@ -609,6 +555,7 @@ onMounted(() => {
 
 const handleSubmit = () => {
   if (validateAllFields()) {
+    formData.password = formData.documentNumber;
     emit('submit', { ...formData });
   }
 };
