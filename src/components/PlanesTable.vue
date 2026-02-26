@@ -62,7 +62,7 @@
               >
                 <div v-if="getCoberturaInfo(plan, cobertura.id)">
                   <!-- Cobertura Aplica -->
-                  <div v-if="getCoberturaInfo(plan, cobertura.id).aplica" class="flex flex-col items-center gap-2">
+                  <div v-if="getCoberturaInfo(plan, cobertura.id)?.aplica" class="flex flex-col items-center gap-2">
                     <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
                       <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
@@ -70,23 +70,23 @@
                     </div>
 
                     <!-- Valor Cubierto -->
-                    <div v-if="getCoberturaInfo(plan, cobertura.id).valorCubierto" class="mt-2">
+                    <div v-if="getCoberturaInfo(plan, cobertura.id)?.valorCubierto" class="mt-2">
                       <p class="text-lg font-bold text-primary-700">
-                        {{ formatCurrency(getCoberturaInfo(plan, cobertura.id).valorCubierto!) }}
+                        {{ formatCurrency(getCoberturaInfo(plan, cobertura.id)?.valorCubierto!) }}
                       </p>
                     </div>
 
                     <!-- Descripción/Detalles -->
-                    <div v-if="getCoberturaInfo(plan, cobertura.id).descripcion" class="mt-1">
+                    <div v-if="getCoberturaInfo(plan, cobertura.id)?.descripcion" class="mt-1">
                       <p class="text-sm text-gray-700">
-                        {{ getCoberturaInfo(plan, cobertura.id).descripcion }}
+                        {{ getCoberturaInfo(plan, cobertura.id)?.descripcion }}
                       </p>
                     </div>
 
                     <!-- Detalles adicionales -->
-                    <div v-if="getCoberturaInfo(plan, cobertura.id).detalles" class="mt-1">
+                    <div v-if="getCoberturaInfo(plan, cobertura.id)?.detalles" class="mt-1">
                       <p class="text-xs text-gray-600 italic">
-                        {{ getCoberturaInfo(plan, cobertura.id).detalles }}
+                        {{ getCoberturaInfo(plan, cobertura.id)?.detalles }}
                       </p>
                     </div>
                   </div>
@@ -123,7 +123,7 @@
                       : 'bg-primary-600 text-white hover:bg-primary-700'
                   ]"
                 >
-                  Seleccionar Plan
+                  Comprar
                 </button>
               </td>
             </tr>
