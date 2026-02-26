@@ -287,7 +287,7 @@ const transformarDatos = (data: PlanConCoberturas[]): void => {
 
   // Transformar planes
   productoPlanes.value.planes = data
-    .filter(planData => planData.version) // Solo planes con versión
+    .filter(planData => planData.version && planData.mostrar_publico !== false) // Solo planes con versión y visibles al público
     .map(planData => {
       const version = planData.version!;
 

@@ -15,7 +15,8 @@ export class ProductosService {
       const response = await axios.get<PaginatedProductos>(`${baseUrl}`, {
         params: {
           limit: params.limit,
-          offset: params.offset
+          offset: params.offset,
+          ...(params.estado !== undefined && { estado: params.estado })
         },
         headers: {
           'Content-Type': 'application/json',

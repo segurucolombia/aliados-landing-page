@@ -231,10 +231,11 @@ const loadProductos = async () => {
     const offset = (currentPage.value - 1) * itemsPerPage;
     const response = await ProductosService.findAll({
       limit: itemsPerPage,
-      offset: offset
+      offset: offset,
+      estado: true
     });
     console.log('Productos cargados:', response);
-    productos.value = response.data;
+    productos.value = response.data.filter(p => p.estado !== false);
     totalProducts.value = Number(response.total);
   } catch (err) {
     console.error('Error al cargar productos:', err);

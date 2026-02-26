@@ -34,6 +34,7 @@ export interface PaginatedProductos {
 export interface FindAllProductosParams {
   limit: number;
   offset: number;
+  estado?: boolean;
 }
 
 export interface ProductoDetalle extends Producto {

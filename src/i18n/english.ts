@@ -2,6 +2,7 @@ export const english = {
     'nav.about': 'About us',
     'nav.pqr': 'PQR',
     'nav.work_with_us': 'Work with us',
+    'nav.affiliate': 'Affiliate Program',
     'nav.services': 'Services',
     'nav.frequently_asked_questions': 'Frequently asked questions',
     'nav.contact': 'Contact us',

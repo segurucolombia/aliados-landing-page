@@ -71,10 +71,11 @@ const loadProductos = async () => {
   try {
     const response = await ProductosService.findAll({
       limit: 6,
-      offset: 0
+      offset: 0,
+      estado: true
     });
 
-    productos.value = response.data;
+    productos.value = response.data.filter(p => p.estado !== false);
     totalProducts.value = response.total;
   } catch (err) {
     console.error('Error al cargar productos:', err);

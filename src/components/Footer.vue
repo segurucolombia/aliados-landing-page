@@ -61,6 +61,9 @@
                             <button class="w-full lg:text-start" >
                                 <p class="text-white">{{ t('nav.pqr') }}</p>
                             </button>
+                            <a href="/programa-afiliados" class="w-full lg:text-start">
+                                <p class="text-white">{{ t('nav.affiliate') }}</p>
+                            </a>
                         </div>
                     </div>
                 </div>

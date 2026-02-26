@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.vue';
+import ProgramaAfiliadosView from '../components/ProgramaAfiliados.vue';
+import Footer from '../components/Footer.vue';
+---
+
+<Layout title="Programa de Afiliados - Seguru">
+  <Navbar client:load/>
+  <ProgramaAfiliadosView client:only="vue"/>
+  <Footer client:only="vue"/>
+</Layout>
