@@ -2,6 +2,12 @@ import axios from "axios";
 
 const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/api-aliados/ventas';
 
+export interface CondicionVentaInput {
+  ip: string;
+  condicion: string;
+  created_at: string;
+}
+
 export interface CreateVentaDto {
   producto_id: string;
   version_id: string;
@@ -17,7 +23,8 @@ export interface CreateVentaDto {
   tipo_persona?: string;
   aliado_id?: string;
   codigo_descuento?: string;
-  datos_adicionales?: import('../types/planes').CamposAdicionalesCapturados; // Objeto JSON
+  datos_adicionales?: import('../types/planes').CamposAdicionalesCapturados;
+  condiciones: CondicionVentaInput[];
 }
 
 export interface CreateVentaResponse {

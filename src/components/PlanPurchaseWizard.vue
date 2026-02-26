@@ -31,6 +31,7 @@
           :plan-id="planId"
           @next="goToStep(2)"
           @plan-loaded="handlePlanLoaded"
+          @condiciones-aceptadas="handleCondicionesAceptadas"
           @cancel="handleCancel"
         />
       </div>
@@ -68,6 +69,7 @@ import PlanPurchaseFormStep from './PlanPurchaseFormStep.vue';
 import PlanCamposAdicionalesStep from './PlanCamposAdicionalesStep.vue';
 import type { PurchaseFormData } from './PlanPurchaseFormStep.vue';
 import type { PlanWithDetails, CamposAdicionalesCapturados } from '../types/planes';
+import type { CondicionVentaInput } from '../services/ventas.service';
 
 const props = defineProps<{
   planId: string;
@@ -75,7 +77,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'purchase', data: { planId: string; formData: PurchaseFormData; camposAdicionales?: CamposAdicionalesCapturados }): void;
+  (e: 'purchase', data: { planId: string; formData: PurchaseFormData; camposAdicionales?: CamposAdicionalesCapturados; condiciones: CondicionVentaInput[] }): void;
   (e: 'cancel'): void;
 }>();
 
@@ -83,11 +85,16 @@ const currentStep = ref(1);
 const planData = ref<PlanWithDetails | null>(null);
 const purchaseFormData = ref<PurchaseFormData | null>(null);
 const camposAdicionalesDatos = ref<CamposAdicionalesCapturados | null>(null);
+const condicionesDatos = ref<CondicionVentaInput[]>([]);
 
 // Computed property to check if plan has campos_adicionales
 const hasCamposAdicionales = computed(() => {
   return !!(planData.value?.version?.campos_adicionales?.secciones?.length);
 });
+
+const handleCondicionesAceptadas = (condiciones: CondicionVentaInput[]) => {
+  condicionesDatos.value = condiciones;
+};
 
 const handlePlanLoaded = (plan: PlanWithDetails) => {
   planData.value = plan;
@@ -139,6 +146,7 @@ const finalizarCompra = () => {
     planId: props.planId,
     formData: purchaseFormData.value,
     camposAdicionales: camposAdicionalesData,
+    condiciones: condicionesDatos.value,
   });
 };
 

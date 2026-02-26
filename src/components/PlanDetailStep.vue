@@ -68,23 +68,6 @@
           <p>{{ plan.version.descripcion }}</p>
         </div>
 
-        <!-- Documento adjunto -->
-        <div v-if="plan.version.documento" class="document-section">
-          <svg class="document-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-          </svg>
-          <div class="document-info">
-            <span class="document-name">{{ plan.version.documento.nombre }}</span>
-            <button
-              @click="verDocumento"
-              :disabled="loadingDocument"
-              class="document-link"
-            >
-              {{ loadingDocument ? 'Cargando...' : 'Ver condiciones del plan' }}
-            </button>
-          </div>
-        </div>
-
         <!-- Coberturas -->
         <div v-if="plan.version.coberturas && plan.version.coberturas.length > 0" class="coberturas-section">
           <h3 class="subsection-title">Coberturas Incluidas</h3>
@@ -102,13 +85,26 @@
         </div>
       </div>
 
-      <!-- Políticas de privacidad -->
+      <!-- Políticas de privacidad y condiciones -->
       <div class="privacy-section">
+        <label v-if="plan.version?.documento" class="privacy-checkbox">
+          <input
+            type="checkbox"
+            v-model="acceptedConditions"
+            @change="handleCondicionChange(($event.target as HTMLInputElement).checked, 'El usuario acepta las condiciones de la versión del plan')"
+          />
+          <span class="checkbox-text conditions-text">
+            He leído y acepto las
+            <button type="button" @click.prevent="verDocumento" :disabled="loadingDocument" class="privacy-link-btn">
+              {{ loadingDocument ? 'Cargando...' : 'condiciones del plan' }}
+            </button>
+          </span>
+        </label>
         <label class="privacy-checkbox">
           <input
             type="checkbox"
             v-model="acceptedPrivacy"
-            @change="$emit('update:acceptedPrivacy', acceptedPrivacy)"
+            @change="$emit('update:acceptedPrivacy', acceptedPrivacy); handleCondicionChange(($event.target as HTMLInputElement).checked, 'El usuario acepta las políticas de privacidad y autoriza el uso de sus datos personales')"
           />
           <span class="checkbox-text">
             He leído y acepto las
@@ -175,9 +171,9 @@
         </button>
         <button
           @click="handleContinue"
-          :disabled="!acceptedPrivacy"
+          :disabled="!acceptedPrivacy || (!!plan?.version?.documento && !acceptedConditions)"
           class="btn btn-primary"
-          :class="{ 'disabled': !acceptedPrivacy }"
+          :class="{ 'disabled': !acceptedPrivacy || (!!plan?.version?.documento && !acceptedConditions) }"
         >
           Continuar
         </button>
@@ -191,6 +187,7 @@
 import { ref, onMounted } from 'vue';
 import { PlanesService } from '../services/planes.service';
 import type { PlanWithDetails } from '../types/planes';
+import type { CondicionVentaInput } from '../services/ventas.service';
 
 const props = defineProps<{
   planId: string;
@@ -201,14 +198,40 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
   (e: 'update:acceptedPrivacy', value: boolean): void;
   (e: 'plan-loaded', plan: PlanWithDetails): void;
+  (e: 'condiciones-aceptadas', condiciones: CondicionVentaInput[]): void;
 }>();
 
 const plan = ref<PlanWithDetails | null>(null);
 const loading = ref(true);
 const error = ref('');
 const acceptedPrivacy = ref(false);
+const acceptedConditions = ref(false);
 const loadingDocument = ref(false);
 const showDataUsageModal = ref(false);
+const clientIp = ref('');
+const condicionesAceptadas = ref<CondicionVentaInput[]>([]);
+
+const fetchClientIp = async () => {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    clientIp.value = data.ip;
+  } catch {
+    clientIp.value = 'unknown';
+  }
+};
+
+const handleCondicionChange = (checked: boolean, condicion: string) => {
+  if (checked) {
+    condicionesAceptadas.value.push({
+      ip: clientIp.value || 'unknown',
+      condicion,
+      created_at: new Date().toISOString(),
+    });
+  } else {
+    condicionesAceptadas.value = condicionesAceptadas.value.filter(c => c.condicion !== condicion);
+  }
+};
 
 const loadPlanDetail = async () => {
   try {
@@ -229,6 +252,7 @@ const loadPlanDetail = async () => {
 
 const handleContinue = () => {
   if (acceptedPrivacy.value) {
+    emit('condiciones-aceptadas', condicionesAceptadas.value);
     emit('next');
   }
 };
@@ -265,29 +289,36 @@ const formatPrice = (price: number): string => {
   }).format(price);
 };
 
-const formatDate = (dateString: string): string => {
-  // Si es un texto descriptivo (Inmediatamente, Dia siguiente, etc.), retornar tal cual
-  if (dateString && (dateString.includes('Inmediatamente') || dateString.includes('siguiente') || dateString.includes('mes'))) {
-    return dateString;
-  }
-
-  // Intentar parsear como fecha
-  const date = new Date(dateString);
-
-  // Verificar si es una fecha válida
-  if (isNaN(date.getTime())) {
-    return dateString; // Retornar el string original si no es válido
-  }
-
-  return new Intl.DateTimeFormat('es-CO', {
+const formatDate = (vigencia: string): string => {
+  const formatter = new Intl.DateTimeFormat('es-CO', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  }).format(date);
+  });
+
+  const today = new Date();
+
+  if (vigencia === 'Inmediatamente') {
+    return formatter.format(today);
+  }
+
+  if (vigencia === 'Dia siguiente') {
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    return formatter.format(tomorrow);
+  }
+
+  if (vigencia === 'Primer dia del mes siguiente') {
+    const firstOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    return formatter.format(firstOfNextMonth);
+  }
+
+  return vigencia;
 };
 
 onMounted(() => {
   loadPlanDetail();
+  fetchClientIp();
 });
 </script>
 
@@ -612,9 +643,12 @@ onMounted(() => {
 }
 
 .privacy-section {
-  background: #fef3c7;
-  border-top: 1px solid #fcd34d;
+  background: #f1f5f9;
+  border-top: 1px solid #e2e8f0;
   padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .privacy-checkbox {
@@ -622,6 +656,33 @@ onMounted(() => {
   align-items: flex-start;
   gap: 0.75rem;
   cursor: pointer;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.privacy-checkbox:hover {
+  background: #e8edf5;
+}
+
+.privacy-checkbox + .privacy-checkbox {
+  margin-top: 0.25rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.85rem;
+}
+
+.conditions-text {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.conditions-icon {
+  width: 16px;
+  height: 16px;
+  color: #3b82f6;
+  flex-shrink: 0;
 }
 
 .privacy-checkbox input[type="checkbox"] {
@@ -630,12 +691,13 @@ onMounted(() => {
   cursor: pointer;
   flex-shrink: 0;
   margin-top: 2px;
+  accent-color: #3b82f6;
 }
 
 .checkbox-text {
   flex: 1;
   line-height: 1.5;
-  color: #78350f;
+  color: #475569;
   font-size: 0.9rem;
 }
 
