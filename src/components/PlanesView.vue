@@ -11,9 +11,9 @@
     @cancel="closePurchaseWizard"
   />
 
-  <div v-else class="min-h-screen bg-gray-50">
+  <div v-else class="min-h-screen bg-gray-50 border-0">
     <!-- Hero Section -->
-    <section class="relative bg-gradient-to-br from-primary-700 to-primary-900 text-white pb-32 pt-12">
+    <section class="relative bg-gradient-to-br from-primary-700 to-primary-900 text-white pb-12 lg:pb-40 pt-12">
       <div class="container mx-auto px-4">
         <div class="max-w-4xl mx-auto">
           <!-- Breadcrumb -->
@@ -38,12 +38,12 @@
               {{ productoPlanes.productoNombre }}
             </h1>
 
-            <p v-if="productoPlanes.productoDescripcion" class="text-xl text-blue-100 max-w-3xl mx-auto">
+            <p v-if="productoPlanes.productoDescripcion" class="text-xl text-blue-100 max-w-3xl mx-auto hidden md:block">
               {{ productoPlanes.productoDescripcion }}
             </p>
 
             <!-- Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10 max-w-3xl mx-auto">
+            <div class="grid-cols-1 md:grid-cols-3 gap-4 mt-10 max-w-3xl mx-auto hidden lg:grid">
               <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition-all">
                 <div class="flex items-center justify-center gap-3 mb-2">
                   <svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,63 +85,68 @@
     </section>
 
     <!-- Planes Comparison Section -->
-    <section class="py-16">
-      <div class="container mx-auto px-4">
-        <!-- Titulo de la sección -->
-        <div class="text-center mb-12">
-          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Compara nuestros planes
-          </h2>
-          <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-            Elige el plan que mejor se adapte a tus necesidades
-          </p>
+    <section class="py-4 lg:py-16">
+      <div class="flex px-4 mx-auto container">
+        <div class="self-end flex-shrink-0">
+          <img src="/img/vigilado-superintendencia.jpg" class="w-6 lg:w-8" alt="Logo superintendencia">
         </div>
-
-        <!-- Loading State -->
-        <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-          <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mb-4"></div>
-          <p class="text-gray-600 text-lg">Cargando planes...</p>
-        </div>
-
-        <!-- Error State -->
-        <div v-else-if="error" class="max-w-2xl mx-auto">
-          <div class="bg-red-50 border-l-4 border-red-600 p-6 rounded-lg">
-            <div class="flex items-start gap-4">
-              <div class="flex-shrink-0">
-                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-              </div>
-              <div>
-                <h3 class="text-lg font-semibold text-red-900 mb-2">Error al cargar los planes</h3>
-                <p class="text-red-700">{{ error }}</p>
-                <button
-                  @click="loadPlanes"
-                  class="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Reintentar
-                </button>
+        <div class="container pl-4">
+          <!-- Titulo de la sección -->
+          <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2 lg:mb-4">
+              Compara nuestros planes
+            </h2>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+              Elige el plan que mejor se adapte a tus necesidades
+            </p>
+          </div>
+  
+          <!-- Loading State -->
+          <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mb-4"></div>
+            <p class="text-gray-600 text-lg">Cargando planes...</p>
+          </div>
+  
+          <!-- Error State -->
+          <div v-else-if="error" class="max-w-2xl mx-auto">
+            <div class="bg-red-50 border-l-4 border-red-600 p-6 rounded-lg">
+              <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                  <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-lg font-semibold text-red-900 mb-2">Error al cargar los planes</h3>
+                  <p class="text-red-700">{{ error }}</p>
+                  <button
+                    @click="loadPlanes"
+                    class="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Reintentar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+  
+          <!-- Empty State -->
+          <div v-else-if="productoPlanes.planes.length === 0" class="text-center py-20">
+            <svg class="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <p class="text-xl text-gray-500 mb-2">No hay planes disponibles</p>
+            <p class="text-gray-400">Este producto aún no tiene planes configurados</p>
+          </div>
+  
+          <!-- Tabla de Comparación -->
+          <PlanesTable
+            v-else
+            :planes="productoPlanes.planes"
+            :coberturas="productoPlanes.coberturas"
+            @seleccionar-plan="handleSeleccionarPlan"
+          />
         </div>
-
-        <!-- Empty State -->
-        <div v-else-if="productoPlanes.planes.length === 0" class="text-center py-20">
-          <svg class="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-          <p class="text-xl text-gray-500 mb-2">No hay planes disponibles</p>
-          <p class="text-gray-400">Este producto aún no tiene planes configurados</p>
-        </div>
-
-        <!-- Tabla de Comparación -->
-        <PlanesTable
-          v-else
-          :planes="productoPlanes.planes"
-          :coberturas="productoPlanes.coberturas"
-          @seleccionar-plan="handleSeleccionarPlan"
-        />
       </div>
     </section>
 
