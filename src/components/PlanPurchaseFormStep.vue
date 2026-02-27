@@ -158,6 +158,20 @@
             <small v-if="errors.phone" class="p-error">{{ errors.phone }}</small>
           </div>
 
+          <!-- Fecha de Nacimiento -->
+          <div class="field">
+            <label for="dob">Fecha de Nacimiento</label>
+            <input
+              id="dob"
+              v-model="formData.dob"
+              type="date"
+              class="p-inputtext p-component"
+              :class="{ 'p-invalid': errors.dob }"
+              @blur="validateField('dob')"
+            />
+            <small v-if="errors.dob" class="p-error">{{ errors.dob }}</small>
+          </div>
+
         </div>
 
         <!-- Código de Descuento -->
@@ -266,6 +280,7 @@ export interface PurchaseFormData {
   lastName: string;
   email: string;
   phone: string;
+  dob: string;
   password: string;
   nit?: string;
   companyName?: string;
@@ -298,6 +313,7 @@ const formData = reactive<PurchaseFormData>({
   lastName: '',
   email: '',
   phone: '',
+  dob: '',
   password: '',
   nit: '',
   companyName: '',
@@ -312,6 +328,7 @@ const errors = reactive<Record<string, string>>({
   lastName: '',
   email: '',
   phone: '',
+  dob: '',
   nit: '',
   companyName: '',
   legalRepDocumentType: '',
@@ -415,6 +432,12 @@ const validateField = (field: string) => {
         errors.phone = 'El teléfono debe tener al menos 7 dígitos';
       } else if (formData.phone.length > 10) {
         errors.phone = 'El teléfono no debe exceder 10 dígitos';
+      }
+      break;
+
+    case 'dob':
+      if (formData.dob && formData.dob.length > 20) {
+        errors.dob = 'La fecha de nacimiento no debe exceder 20 caracteres';
       }
       break;
 

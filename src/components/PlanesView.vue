@@ -417,6 +417,7 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
       nombres: data.formData.fullName,
       apellidos: data.formData.lastName,
       telefono: data.formData.phone,
+      ...(data.formData.dob && { dob: data.formData.dob }),
       ...(data.formData.nit && { nit: data.formData.nit }),
       ...(data.formData.companyName && { empresa_nombre: data.formData.companyName }),
       tipo_persona: tipoPersona,

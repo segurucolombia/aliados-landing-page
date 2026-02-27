@@ -18,6 +18,7 @@ export interface CreateVentaDto {
   nombres: string;
   apellidos: string;
   telefono: string;
+  dob?: string;
   nit?: string;
   empresa_nombre?: string;
   tipo_persona?: string;
@@ -38,6 +39,8 @@ export class VentasService {
    * @returns ID de transacción generado
    */
   static async crear_venta(data: CreateVentaDto): Promise<CreateVentaResponse> {
+    if (!data.dob) throw new Error('La fecha de nacimiento (dob) es requerida para personas naturales.');
+    console.log('data creando venta', data)
     try {
       const response = await axios.post<CreateVentaResponse>(
         `${baseUrl}`,
