@@ -5,9 +5,9 @@
                 <div class="w-full lg:flex justify-center">
                     <div>
                         <div class="flex justify-center">
-                            <img class="w-32" src="/img/logo-seguru.png" alt="">
+                            <img class="w-48" src="/img/logo-aib.png" alt="">
                         </div>
-                        <div class="mt-4 text-center px-12">
+                        <div class="mt-4 text-center px-14">
                             <p class="text-lg text-white">{{ t('footer.text') }}</p>
                         </div>
                     </div>
