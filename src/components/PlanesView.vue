@@ -13,7 +13,7 @@
 
   <div v-else class="min-h-screen bg-gray-50 border-0">
     <!-- Hero Section -->
-    <section class="relative bg-gradient-to-br from-primary-700 to-primary-900 text-white pb-12 lg:pb-40 pt-12">
+    <section class="relative bg-gradient-to-br from-primary-700 to-primary-900 text-white pb-12 lg:pb-40 pt-12" :style="heroBgStyle">
       <div class="container mx-auto px-4">
         <div class="max-w-4xl mx-auto">
           <!-- Breadcrumb -->
@@ -92,18 +92,28 @@
         </div>
         <div class="container pl-4">
           <!-- Titulo de la sección -->
-          <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2 lg:mb-4">
-              Compara nuestros planes
-            </h2>
-            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-              Elige el plan que mejor se adapte a tus necesidades
-            </p>
+          <div class="mb-12" :class="logoAseguradoraUrl ? 'flex items-center justify-around gap-6' : 'text-center'">
+            <div>
+              <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2 lg:mb-4"
+                  :class="logoAseguradoraUrl ? '' : 'text-center'">
+                Compara nuestros planes
+              </h2>
+              <p class="text-xl text-gray-600"
+                 :class="logoAseguradoraUrl ? '' : 'max-w-2xl mx-auto text-center'">
+                Elige el plan que mejor se adapte a tus necesidades
+              </p>
+            </div>
+            <img
+              v-if="logoAseguradoraUrl"
+              :src="logoAseguradoraUrl"
+              alt="Logo aseguradora"
+              class="h-16 lg:h-20 object-contain flex-shrink-0"
+            />
           </div>
   
           <!-- Loading State -->
           <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-            <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mb-4"></div>
+            <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mb-4" :style="accentBorderStyle"></div>
             <p class="text-gray-600 text-lg">Cargando planes...</p>
           </div>
   
@@ -144,6 +154,7 @@
             v-else
             :planes="productoPlanes.planes"
             :coberturas="productoPlanes.coberturas"
+            :estilos="aseguradoraEstilos"
             @seleccionar-plan="handleSeleccionarPlan"
           />
         </div>
@@ -154,10 +165,10 @@
     <section class="py-16 bg-white">
       <div class="container mx-auto px-4">
         <div class="max-w-4xl mx-auto">
-          <div class="bg-blue-50 border-l-4 border-primary-600 p-6 rounded-lg">
+          <div class="bg-blue-50 border-l-4 border-primary-600 p-6 rounded-lg" :style="accentBorderStyle">
             <div class="flex items-start gap-4">
               <div class="flex-shrink-0">
-                <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 text-primary-600" :style="accentTextStyle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
               </div>
@@ -197,7 +208,7 @@
     </section>
 
     <!-- CTA Section -->
-    <section class="bg-primary-700 text-white py-16">
+    <section class="bg-primary-700 text-white py-16" :style="ctaBgStyle">
       <div class="container mx-auto px-4 text-center">
         <h2 class="text-3xl md:text-4xl font-bold mb-4">
           ¿Necesitas ayuda para elegir?
@@ -231,7 +242,8 @@ import PlanPurchaseWizard from './PlanPurchaseWizard.vue';
 import LoadingSpinner from '../utils/LoadingSpinner.vue';
 import { PlanesService } from '../services/planes.service';
 import { VentasService } from '../services/ventas.service';
-import type { ProductoPlanes, Plan, Cobertura, CoberturaPlan, PlanConCoberturas } from '../types/planes';
+import { ProductosService } from '../services/productos.service';
+import type { ProductoPlanes, Plan, Cobertura, CoberturaPlan, PlanConCoberturas, EstilosAseguradora } from '../types/planes';
 import type { PurchaseFormData } from './PlanPurchaseFormStep.vue';
 
 // Props
@@ -247,6 +259,31 @@ const error = ref<string | null>(null);
 const showPurchaseWizard = ref(false);
 const selectedPlanId = ref<string | null>(null);
 const isProcessingPurchase = ref(false);
+const aseguradoraEstilos = ref<EstilosAseguradora | null>(null);
+const logoAseguradoraUrl = ref<string | null>(null);
+
+const heroBgStyle = computed(() => {
+  if (!aseguradoraEstilos.value) return {};
+  return {
+    background: `linear-gradient(to bottom right, ${aseguradoraEstilos.value.color_primario}, ${aseguradoraEstilos.value.color_secundario})`
+  };
+});
+
+const ctaBgStyle = computed(() => {
+  if (!aseguradoraEstilos.value) return {};
+  return { backgroundColor: aseguradoraEstilos.value.color_primario };
+});
+
+const accentBorderStyle = computed(() => {
+  if (!aseguradoraEstilos.value) return {};
+  return { borderColor: aseguradoraEstilos.value.color_primario };
+});
+
+const accentTextStyle = computed(() => {
+  if (!aseguradoraEstilos.value) return {};
+  return { color: aseguradoraEstilos.value.color_primario };
+});
+
 const productoPlanes = ref<ProductoPlanes>({
   productoId: '',
   productoNombre: 'Cargando...',
@@ -346,12 +383,18 @@ const loadPlanes = async () => {
       throw new Error('No se proporcionó un ID de producto');
     }
 
-    const response = await PlanesService.obtenerPlanesPorProducto({
-      producto_id: props.productoId,
-      limit: 50,
-      offset: 0,
-      estado: true
-    });
+    const [response, producto] = await Promise.all([
+      PlanesService.obtenerPlanesPorProducto({
+        producto_id: props.productoId,
+        limit: 50,
+        offset: 0,
+        estado: true
+      }),
+      ProductosService.find(props.productoId)
+    ]);
+
+    aseguradoraEstilos.value = producto.aseguradora?.estilos ?? null;
+    logoAseguradoraUrl.value = producto.aseguradora?.estilos?.logo_imagen?.url ?? null;
 
     transformarDatos(response.data);
   } catch (err) {

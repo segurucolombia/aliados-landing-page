@@ -4,10 +4,10 @@
       <div class="overflow-hidden border border-gray-200 rounded-2xl shadow-lg">
         <table class="min-w-full divide-y divide-gray-200">
           <!-- Table Header -->
-          <thead class="bg-gradient-to-b from-gray-50 to-white border-b-2 border-primary-600 shadow-sm">
+          <thead class="bg-gradient-to-b from-gray-50 to-white border-b-2 border-primary-600 shadow-sm" :style="headerBorderStyle">
             <tr>
               <!-- Primera columna - Coberturas -->
-              <th class="sticky left-0 z-20 px-6 py-6 text-left bg-primary-100 to-white">
+              <th class="sticky left-0 z-20 px-6 py-6 text-left bg-primary-100 to-white" :style="headerBgStyle">
                 <span class="text-lg font-bold text-gray-900">Coberturas</span>
               </th>
 
@@ -16,13 +16,14 @@
                 v-for="plan in planes"
                 :key="plan.id"
                 class="px-6 py-6 text-center relative bg-primary-100 to-white"
+                :style="headerBgStyle"
               >
                 <div class="flex flex-col items-center">
 
                   <span class="text-xl font-bold text-gray-900 mb-2">{{ plan.nombre }}</span>
                   <span class="text-sm text-gray-600 mb-3">{{ plan.descripcion }}</span>
                   <div class="flex items-baseline gap-1">
-                    <span class="text-3xl font-bold text-primary-700">{{ formatPrice(plan.precio) }}</span>
+                    <span class="text-3xl font-bold text-primary-700" :style="primaryTextStyle">{{ formatPrice(plan.precio) }}</span>
                     <span class="text-sm text-gray-600">{{ plan.moneda }}</span>
                   </div>
                   <span class="text-xs text-gray-500 mt-1">{{ formatPeriodicidad(plan.periodicidad) }}</span>
@@ -43,7 +44,7 @@
               <td class="sticky left-0 z-10 px-6 py-5 font-semibold text-gray-900"
                   :class="index % 2 === 0 ? 'bg-gray-50' : 'bg-white'">
                 <div class="flex items-start gap-3">
-                  <svg class="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0" :style="primaryTextStyle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                   </svg>
                   <div>
@@ -63,15 +64,15 @@
                 <div v-if="getCoberturaInfo(plan, cobertura.id)">
                   <!-- Cobertura Aplica -->
                   <div v-if="getCoberturaInfo(plan, cobertura.id)?.aplica" class="flex flex-col items-center gap-2">
-                    <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                      <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center" :style="checkCircleBgStyle">
+                      <svg class="w-6 h-6 text-primary-600" :style="primaryTextStyle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                       </svg>
                     </div>
 
                     <!-- Valor Cubierto -->
                     <div v-if="getCoberturaInfo(plan, cobertura.id)?.valorCubierto" class="mt-2">
-                      <p class="text-lg font-bold text-primary-700">
+                      <p class="text-lg font-bold text-primary-700" :style="primaryTextStyle">
                         {{ formatCurrency(getCoberturaInfo(plan, cobertura.id)?.valorCubierto!) }}
                       </p>
                     </div>
@@ -116,11 +117,12 @@
               >
                 <button
                   @click="$emit('seleccionar-plan', plan)"
+                  :style="getButtonStyle(plan)"
                   :class="[
-                    'w-full px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-md',
-                    plan.destacado
-                      ? 'bg-primary-700 text-white hover:bg-primary-800 ring-2 ring-primary-600 ring-offset-2'
-                      : 'bg-primary-600 text-white hover:bg-primary-700'
+                    'w-full px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-md text-white',
+                    !estilos && (plan.destacado
+                      ? 'bg-primary-700 hover:bg-primary-800 ring-2 ring-primary-600 ring-offset-2'
+                      : 'bg-primary-600 hover:bg-primary-700')
                   ]"
                 >
                   Comprar
@@ -135,15 +137,51 @@
 </template>
 
 <script setup lang="ts">
-import type { Plan, Cobertura, CoberturaPlan } from '../types/planes';
+import { computed } from 'vue';
+import type { Plan, Cobertura, CoberturaPlan, EstilosAseguradora } from '../types/planes';
 
 interface Props {
   planes: Plan[];
   coberturas: Cobertura[];
+  estilos?: EstilosAseguradora | null;
 }
 
 const props = defineProps<Props>();
 defineEmits(['seleccionar-plan']);
+
+const primaryColor = computed(() => props.estilos?.color_primario || null);
+
+const hexToRgba = (hex: string, alpha: number): string => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const headerBorderStyle = computed(() =>
+  primaryColor.value ? { borderBottomColor: primaryColor.value } : {}
+);
+
+const headerBgStyle = computed(() =>
+  primaryColor.value ? { backgroundColor: hexToRgba(primaryColor.value, 0.1) } : {}
+);
+
+const primaryTextStyle = computed(() =>
+  primaryColor.value ? { color: primaryColor.value } : {}
+);
+
+const checkCircleBgStyle = computed(() =>
+  primaryColor.value ? { backgroundColor: hexToRgba(primaryColor.value, 0.1) } : {}
+);
+
+const getButtonStyle = (plan: Plan) => {
+  if (!primaryColor.value) return {};
+  const style: Record<string, string> = { backgroundColor: primaryColor.value };
+  if (plan.destacado) {
+    style.boxShadow = `0 0 0 2px white, 0 0 0 4px ${primaryColor.value}`;
+  }
+  return style;
+};
 
 const getCoberturaInfo = (plan: Plan, coberturaId: string): CoberturaPlan | undefined => {
   return plan.coberturas.find(c => c.coberturaId === coberturaId);

@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { FindAllProductosParams, PaginatedProductos, Producto, ProductoDetalle, CategoriaProducto } from '../types/productos';
+import type { FindAllProductosParams, PaginatedProductos, Producto, ProductoDetalle, CategoriaProducto, ProductoFindResponse } from '../types/productos';
 
 const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/api-aliados/productos';
 
@@ -64,6 +64,20 @@ export class ProductosService {
       return response.data;
     } catch (error) {
       console.error('Error al obtener categorías:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene el detalle completo de un producto por su ID,
+   * incluyendo aseguradora con estilos (colores y logo)
+   */
+  static async find(id: string): Promise<Producto> {
+    try {
+      const response = await axios.get<ProductoFindResponse>(`${baseUrl}/${id}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error al obtener producto:', error);
       throw error;
     }
   }
