@@ -92,7 +92,13 @@
         </div>
         <div class="container pl-4">
           <!-- Titulo de la sección -->
-          <div class="mb-12" :class="logoAseguradoraUrl ? 'flex items-center justify-around gap-6' : 'text-center'">
+          <div class="mb-12" :class="logoAseguradoraUrl ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4' : 'text-center'">
+            <img
+              v-if="logoAseguradoraUrl"
+              :src="logoAseguradoraUrl"
+              alt="Logo aseguradora"
+              class="h-12 sm:h-16 lg:h-20 object-contain flex-shrink-0 sm:order-last"
+            />
             <div>
               <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2 lg:mb-4"
                   :class="logoAseguradoraUrl ? '' : 'text-center'">
@@ -103,12 +109,6 @@
                 Elige el plan que mejor se adapte a tus necesidades
               </p>
             </div>
-            <img
-              v-if="logoAseguradoraUrl"
-              :src="logoAseguradoraUrl"
-              alt="Logo aseguradora"
-              class="h-16 lg:h-20 object-contain flex-shrink-0"
-            />
           </div>
   
           <!-- Loading State -->
