@@ -88,7 +88,7 @@
     <section class="py-4 lg:py-16">
       <div class="flex px-4 mx-auto container">
         <div class="self-end flex-shrink-0">
-          <img src="/img/vigilado-superintendencia.jpg" class="w-6 lg:w-8" alt="Logo superintendencia">
+          <img src="/img/vigilado-superintendencia.png" class="w-6 lg:w-8" alt="Logo superintendencia">
         </div>
         <div class="container pl-4">
           <!-- Titulo de la sección -->
