@@ -1,9 +1,7 @@
 <template>
-  <div
-    class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
-  >
-    <!-- Product Image -->
-    <div class="relative h-56 overflow-hidden bg-gradient-to-br from-primary-100 to-primary-200">
+  <div class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-gray-100 flex flex-col">
+    <!-- Imagen -->
+    <div class="relative h-48 bg-gradient-to-br from-primary-50 to-primary-100 overflow-hidden">
       <img
         v-if="producto.imagen?.url"
         :src="getImagenUrl(producto.imagen)"
@@ -11,32 +9,46 @@
         class="w-full h-full object-cover"
         @error="errorImagen"
       />
-      <div v-else class="flex items-center justify-center h-full">
-        <svg class="w-20 h-20 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+      <div v-else class="w-full h-full flex items-center justify-center">
+        <svg class="w-16 h-16 text-primary-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
         </svg>
+      </div>
+
+      <!-- Badge categoría -->
+      <div v-if="producto.categoria" class="absolute top-3 left-3">
+        <span class="bg-white/90 backdrop-blur-sm text-primary-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+          {{ producto.categoria.nombre }}
+        </span>
       </div>
     </div>
 
-    <!-- Product Content -->
-    <div class="p-6">
-      <h3 class="text-2xl font-bold text-gray-900 mb-3">
+    <!-- Contenido -->
+    <div class="p-5 flex flex-col flex-1">
+      <h3 class="text-lg font-bold text-gray-900 mb-2 leading-snug">
         {{ producto.nombre }}
       </h3>
-      <p class="text-gray-600 mb-6 leading-relaxed line-clamp-3">
+      <p class="text-gray-500 text-sm leading-relaxed line-clamp-3 flex-1">
         {{ producto.descripcion }}
       </p>
 
-      <!-- Action Buttons -->
-      <div class="flex gap-3">
-        <div class="flex justify-center items-center w-full ">
-          <a
-            :href="`/planes/${producto.id}`"
-            class="bg-primary-600 text-white px-4 py-3 rounded-lg hover:bg-primary-700 transition-colors font-semibold text-center px-10"
-          >
-            Ver Planes
-          </a>
-        </div>
+      <!-- Footer -->
+      <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+        <!-- Aseguradora -->
+        <span v-if="producto.aseguradora" class="text-xs text-gray-400 truncate max-w-[120px]">
+          {{ producto.aseguradora.nombre }}
+        </span>
+        <span v-else class="text-xs text-gray-400">Seguru</span>
+
+        <a
+          :href="`/planes/${producto.id}`"
+          class="inline-flex items-center gap-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-4 py-2 rounded-full transition-all duration-200 shadow-sm hover:shadow-md"
+        >
+          Ver Planes
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+          </svg>
+        </a>
       </div>
     </div>
   </div>
@@ -52,31 +64,19 @@ interface Props {
 defineProps<Props>();
 defineEmits(['cotizar', 'ver-detalle']);
 
-const getImagenUrl = (imagen: ImagenAws) => {
-  if (!imagen?.url) return '';
-
-  // Por ahora usar solo la URL que viene del backend
-  // El archivo en S3 está guardado con el ID como nombre
-  console.log('Usando URL del backend:', imagen.url);
-  return imagen.url;
-};
+const getImagenUrl = (imagen: ImagenAws) => imagen?.url ?? '';
 
 const errorImagen = (event: Event) => {
   const target = event.target as HTMLImageElement;
-  console.error('Error cargando imagen:', target.src);
-
-  // Ocultar la imagen y mostrar el placeholder
   target.style.display = 'none';
   const parent = target.parentElement;
-
   if (parent) {
     parent.innerHTML = `
-      <div class="w-full h-full bg-gradient-to-br from-red-100 to-red-200 rounded-lg flex items-center justify-center">
-        <svg class="w-20 h-20 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+      <div class="w-full h-full flex items-center justify-center">
+        <svg class="w-16 h-16 text-primary-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
         </svg>
-      </div>
-    `;
+      </div>`;
   }
 };
 </script>

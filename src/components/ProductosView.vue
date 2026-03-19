@@ -1,284 +1,248 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Hero Section -->
-    <section class="relative bg-gradient-to-br from-primary-700 to-primary-900 text-white py-20">
-      <div class="container mx-auto px-4">
-        <div class="max-w-3xl mx-auto text-center">
-          <div class="flex items-center justify-center gap-3 mb-6">
-            <div class="w-12 h-1 bg-blue-300"></div>
-            <span class="text-blue-200 font-semibold">Nuestros Productos</span>
-            <div class="w-12 h-1 bg-blue-300"></div>
-          </div>
-          <h1 class="text-4xl md:text-5xl font-bold mb-6">
+
+    <!-- Hero compacto -->
+    <section class="relative overflow-hidden" style="background-color: #1a3fa8; min-height: 160px;">
+      <div class="absolute inset-0">
+        <img src="/img/imagen-familia.png" alt="" class="absolute inset-0 w-full h-full object-cover object-right opacity-30" aria-hidden="true" />
+        <div class="absolute inset-0" style="background: linear-gradient(to right, #1a3fa8 40%, #1a3fa8bb 70%, transparent 100%);"></div>
+      </div>
+      <div class="relative z-10 container mx-auto px-6 md:px-10 py-10 md:py-12 flex items-center gap-4">
+        <div>
+          <p class="text-blue-300 font-semibold text-xs uppercase tracking-widest mb-1">Nuestros Productos</p>
+          <h1 class="text-2xl md:text-3xl font-bold text-white leading-tight">
             Seguros para cada necesidad
           </h1>
-          <p class="text-xl text-blue-100">
-            Descubre nuestra amplia gama de seguros diseñados para protegerte en cada etapa de tu vida
-          </p>
         </div>
-      </div>
-
-      <!-- Wave decoration -->
-      <div class="absolute bottom-0 left-0 right-0">
-        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full">
-          <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="#F9FAFB"/>
-        </svg>
       </div>
     </section>
 
-    <!-- Filters Section -->
-    <section class="py-8 bg-white border-b sticky top-0 z-40 shadow-sm">
-      <div class="container mx-auto px-4">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <!-- Category Filters -->
+    <!-- Filtros sticky -->
+    <section class="bg-white border-b sticky top-[72px] z-40 shadow-sm">
+      <div class="container mx-auto px-6 md:px-10 py-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+
+          <!-- Botones de categoría -->
           <div class="flex flex-wrap gap-2">
             <button
-              @click="selectedCategory = null"
+              @click="selectCategory(null)"
               :class="[
-                'px-4 py-2 rounded-lg font-semibold transition-all',
-                selectedCategory === null
-                  ? 'bg-primary-600 text-white'
+                'px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200',
+                selectedCategoryId === null
+                  ? 'bg-primary-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               ]"
             >
               Todos
             </button>
+
             <button
-              v-for="category in categories"
-              :key="category"
-              @click="selectedCategory = category"
+              v-for="cat in categorias"
+              :key="cat.id"
+              @click="selectCategory(cat.id)"
               :class="[
-                'px-4 py-2 rounded-lg font-semibold transition-all',
-                selectedCategory === category
-                  ? 'bg-primary-600 text-white'
+                'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200',
+                selectedCategoryId === cat.id
+                  ? 'bg-primary-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               ]"
             >
-              {{ category }}
+              <img v-if="cat.imagen" :src="cat.imagen.url" :alt="cat.nombre" class="w-4 h-4 object-contain" />
+              {{ cat.nombre }}
             </button>
           </div>
 
-          <!-- Results Count -->
-          <div class="text-gray-600">
-            <span class="font-semibold">{{ totalProducts }}</span> Productos encontrados
-          </div>
+          <!-- Contador -->
+          <span class="text-sm text-gray-500">
+            <span class="font-semibold text-gray-800">{{ totalProducts }}</span> productos encontrados
+          </span>
         </div>
       </div>
     </section>
 
-    <!-- Products Grid -->
-    <section class="py-16">
-      <div class="container mx-auto px-4">
-        <!-- Loading State -->
-        <div v-if="loading" class="text-center py-16">
-          <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-primary-600"></div>
-          <p class="text-gray-600 mt-4">Cargando productos...</p>
+    <!-- Grid de productos -->
+    <section class="py-12">
+      <div class="container mx-auto px-6 md:px-10">
+
+        <!-- Loading -->
+        <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div v-for="i in 8" :key="i" class="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse">
+            <div class="h-48 bg-gray-200"></div>
+            <div class="p-5 space-y-3">
+              <div class="h-5 bg-gray-200 rounded w-3/4"></div>
+              <div class="h-4 bg-gray-200 rounded w-full"></div>
+              <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+            </div>
+          </div>
         </div>
 
-        <!-- Error State -->
-        <div v-else-if="error" class="text-center py-16">
-          <svg class="w-24 h-24 mx-auto text-red-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        <!-- Error -->
+        <div v-else-if="error" class="text-center py-20">
+          <svg class="w-16 h-16 mx-auto text-red-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
           </svg>
-          <p class="text-xl text-red-500">{{ error }}</p>
+          <p class="text-gray-500">{{ error }}</p>
         </div>
 
         <template v-else>
           <!-- Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <ProductCard
               v-for="producto in productos"
               :key="producto.id"
               :producto="producto"
-              @cotizar="handleCotizar"
-              @ver-detalle="handleVerDetalle"
             />
           </div>
 
-          <!-- Empty State -->
-          <div v-if="productos.length === 0" class="text-center py-16">
-            <svg class="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+          <!-- Empty -->
+          <div v-if="productos.length === 0" class="text-center py-20">
+            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
             </svg>
-            <p class="text-xl text-gray-500">No se encontraron productos</p>
+            <p class="text-gray-500 text-lg">No se encontraron productos en esta categoría</p>
           </div>
 
-          <!-- Pagination -->
+          <!-- Paginación -->
           <div v-if="totalPages > 1" class="mt-12 flex justify-center items-center gap-2">
-            <!-- Previous Button -->
             <button
               @click="goToPage(currentPage - 1)"
               :disabled="currentPage === 1"
               :class="[
-                'px-4 py-2 rounded-lg font-semibold transition-all',
+                'px-4 py-2 rounded-full text-sm font-semibold transition-all',
                 currentPage === 1
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-primary-600 hover:bg-primary-50 border border-primary-600'
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-primary-600 hover:bg-primary-50 border border-primary-200 shadow-sm'
               ]"
-            >
-              Anterior
-            </button>
+            >← Anterior</button>
 
-            <!-- Page Numbers -->
-            <div class="flex gap-2">
-              <button
-                v-for="page in visiblePages"
-                :key="page"
-                @click="goToPage(page)"
-                :class="[
-                  'w-10 h-10 rounded-lg font-semibold transition-all',
-                  page === currentPage
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                ]"
-              >
-                {{ page }}
-              </button>
-            </div>
+            <button
+              v-for="page in visiblePages"
+              :key="page"
+              @click="goToPage(page)"
+              :class="[
+                'w-10 h-10 rounded-full text-sm font-semibold transition-all',
+                page === currentPage
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+              ]"
+            >{{ page }}</button>
 
-            <!-- Next Button -->
             <button
               @click="goToPage(currentPage + 1)"
               :disabled="currentPage === totalPages"
               :class="[
-                'px-4 py-2 rounded-lg font-semibold transition-all',
+                'px-4 py-2 rounded-full text-sm font-semibold transition-all',
                 currentPage === totalPages
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-primary-600 hover:bg-primary-50 border border-primary-600'
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-primary-600 hover:bg-primary-50 border border-primary-200 shadow-sm'
               ]"
-            >
-              Siguiente
-            </button>
+            >Siguiente →</button>
           </div>
         </template>
       </div>
     </section>
 
-    <!-- CTA Section -->
-    <section class="bg-primary-700 text-white py-16">
-      <div class="container mx-auto px-4 text-center">
-        <h2 class="text-3xl md:text-4xl font-bold mb-4">
-          ¿No encuentras lo que buscas?
-        </h2>
-        <p class="text-xl mb-8 text-blue-100 max-w-2xl mx-auto">
+    <!-- CTA -->
+    <section class="relative overflow-hidden py-16" style="background-color: #1a3fa8;">
+      <div class="relative z-10 container mx-auto px-6 text-center">
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">¿No encuentras lo que buscas?</h2>
+        <p class="text-blue-200 text-lg mb-8 max-w-xl mx-auto">
           Contáctanos y te ayudaremos a encontrar el seguro perfecto para ti
         </p>
-        <button class="bg-white text-primary-700 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors text-lg inline-flex items-center gap-2">
-          Hablar con un Aliado
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+        <a
+          href="https://wa.me/573154603134"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 bg-white text-primary-700 hover:bg-blue-50 px-8 py-3.5 rounded-full font-semibold text-base transition-all duration-200 shadow-lg"
+        >
+          <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
           </svg>
-        </button>
+          Hablar con un asesor
+        </a>
       </div>
     </section>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import ProductCard from './ProductCard.vue';
 import { ProductosService } from '../services/productos.service';
+import { CategoriasProductosService } from '../services/categorias-productos.service';
 import type { Producto } from '../types/productos';
+import type { CategoriaProducto } from '../types/categorias-productos';
 
-const productos = ref<Producto[]>([]);
-const totalProducts = ref<number>(0);
-const loading = ref<boolean>(false);
+const todosLosProductos = ref<Producto[]>([]);
+const categorias = ref<CategoriaProducto[]>([]);
+const loading = ref(false);
 const error = ref<string | null>(null);
-const selectedCategory = ref<string | null>(null);
-
-// Paginación
-const currentPage = ref<number>(1);
+const selectedCategoryId = ref<string | null>(null);
+const currentPage = ref(1);
 const itemsPerPage = 12;
 
-// Calcular total de páginas
-const totalPages = computed(() => {
-  return Math.ceil(totalProducts.value / itemsPerPage);
+// Filtrado en cliente por categoría
+const productosFiltrados = computed(() => {
+  if (!selectedCategoryId.value) return todosLosProductos.value;
+  return todosLosProductos.value.filter(p => p.categoria_id === selectedCategoryId.value);
 });
 
-// Calcular páginas visibles para la paginación
+const totalProducts = computed(() => productosFiltrados.value.length);
+const totalPages = computed(() => Math.ceil(totalProducts.value / itemsPerPage));
+
+// Página actual de productos
+const productos = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return productosFiltrados.value.slice(start, start + itemsPerPage);
+});
+
 const visiblePages = computed(() => {
   const pages: number[] = [];
   const maxVisible = 5;
   let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
   let end = Math.min(totalPages.value, start + maxVisible - 1);
-
-  // Ajustar el inicio si estamos cerca del final
-  if (end - start < maxVisible - 1) {
-    start = Math.max(1, end - maxVisible + 1);
-  }
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-
+  if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
   return pages;
 });
 
-// Obtener categorías únicas
-const categories = computed(() => {
-  // Por ahora retornamos categorías vacías, se pueden cargar desde la API si es necesario
-  return [];
-});
+const loadCategorias = async () => {
+  try {
+    const response = await CategoriasProductosService.findAll({ estado: true, limit: 50, offset: 0 });
+    categorias.value = response.data;
+  } catch {
+    // silencioso
+  }
+};
 
-/**
- * Cargar productos desde la API
- */
 const loadProductos = async () => {
   loading.value = true;
   error.value = null;
-
   try {
-    const offset = (currentPage.value - 1) * itemsPerPage;
-    const response = await ProductosService.findAll({
-      limit: itemsPerPage,
-      offset: offset,
-      estado: true
-    });
-    console.log('Productos cargados:', response);
-    productos.value = response.data.filter(p => p.estado !== false);
-    totalProducts.value = Number(response.total);
-  } catch (err) {
-    console.error('Error al cargar productos:', err);
+    const response = await ProductosService.findAll({ limit: 200, offset: 0, estado: true });
+    todosLosProductos.value = response.data.filter(p => p.estado !== false);
+  } catch {
     error.value = 'Error al cargar los productos';
   } finally {
     loading.value = false;
   }
 };
 
-/**
- * Cambiar de página
- */
+const selectCategory = (id: string | null) => {
+  selectedCategoryId.value = id;
+  currentPage.value = 1;
+};
+
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
-    // Scroll hacia arriba al cambiar de página
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 };
 
-/**
- * Manejar evento de cotización
- */
-const handleCotizar = (producto: Producto) => {
-  console.log('Cotizar:', producto);
-  // Aquí implementarás la lógica de cotización
-};
-
-/**
- * Manejar evento de ver detalle
- */
-const handleVerDetalle = (producto: Producto) => {
-  console.log('Ver detalle:', producto);
-  // Aquí implementarás la navegación al detalle del producto
-};
-
-// Cargar productos al montar el componente
 onMounted(() => {
-  loadProductos();
-});
-
-// Recargar productos cuando cambia la página
-watch(currentPage, () => {
+  loadCategorias();
   loadProductos();
 });
 </script>

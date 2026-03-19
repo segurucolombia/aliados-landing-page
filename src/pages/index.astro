@@ -2,6 +2,8 @@
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.vue';
 import Hero from '../components/Hero.vue';
+import CategoriasProductos from '../components/CategoriasProductos.vue';
+import MovimientoFamilias from '../components/MovimientoFamilias.vue';
 import Features from '../components/Features.vue';
 import Products from '../components/Products.vue';
 import Team from '../components/Team.vue';
@@ -12,6 +14,8 @@ import Footer from '../components/Footer.vue';
 <Layout title='Seguru - Seguros para tu Tranquilidad'>
 	<Navbar client:load/>
 	<Hero client:only="vue"/>
+	<CategoriasProductos client:only="vue"/>
+	<MovimientoFamilias client:only="vue"/>
 	<Features client:only="vue"/>
 	<Products client:only="vue"/>
 	<Team client:only="vue"/>

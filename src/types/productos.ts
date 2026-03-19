@@ -85,6 +85,7 @@ export interface FindAllProductosParams {
   limit: number;
   offset: number;
   estado?: boolean;
+  categoria_id?: string;
 }
 
 export interface ProductoDetalle extends Producto {

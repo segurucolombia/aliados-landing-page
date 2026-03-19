@@ -16,7 +16,8 @@ export class ProductosService {
         params: {
           limit: params.limit,
           offset: params.offset,
-          ...(params.estado !== undefined && { estado: params.estado })
+          ...(params.estado !== undefined && { estado: params.estado }),
+          ...(params.categoria_id !== undefined && { categoria_id: params.categoria_id }),
         },
         headers: {
           'Content-Type': 'application/json',
