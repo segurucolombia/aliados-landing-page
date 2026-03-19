@@ -1,5 +1,102 @@
 <template>
-  <div class="overflow-x-auto">
+  <!-- Vista Mobile: Cards -->
+  <div class="md:hidden space-y-4">
+    <div
+      v-for="plan in planes"
+      :key="plan.id"
+      class="flex items-stretch gap-1"
+    >
+      <!-- Logo Vigilado al lado izquierdo de cada card -->
+      <div class="flex items-center justify-center flex-shrink-0">
+        <img src="/img/vigilado-superintendencia.png" class="w-5" alt="Vigilado Superintendencia Financiera">
+      </div>
+
+      <!-- Card -->
+      <div
+        class="flex-1 rounded-2xl border-2 overflow-hidden shadow-md"
+      >
+      <!-- Card Header -->
+      <div
+        class="px-5 py-4"
+        :style="plan.destacado && primaryColor ? { backgroundColor: hexToRgba(primaryColor, 0.12) } : {}"
+        :class="!primaryColor && plan.destacado ? 'bg-primary-50' : 'bg-gray-50'"
+      >
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-lg font-bold text-gray-900">{{ plan.nombre }}</span>
+          <span
+            v-if="plan.destacado"
+            class="text-xs font-semibold px-2 py-0.5 rounded-full text-white"
+            :style="primaryColor ? { backgroundColor: primaryColor } : {}"
+            :class="!primaryColor ? 'bg-primary-600' : ''"
+          >Recomendado</span>
+        </div>
+        <div class="flex items-baseline gap-1">
+          <span
+            class="text-3xl font-bold"
+            :style="primaryColor ? { color: primaryColor } : {}"
+            :class="!primaryColor ? 'text-primary-700' : ''"
+          >{{ formatPrice(plan.precio) }}</span>
+          <span class="text-sm text-gray-600">{{ plan.moneda }}</span>
+        </div>
+        <span class="text-xs text-gray-500">{{ formatPeriodicidad(plan.periodicidad) }}</span>
+      </div>
+
+      <!-- Coberturas list -->
+      <div class="bg-white divide-y divide-gray-100">
+        <div
+          v-for="cobertura in coberturas"
+          :key="cobertura.id"
+          class="px-5 py-3 flex items-start gap-3"
+        >
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-gray-900">{{ cobertura.nombre }}</p>
+            <p v-if="cobertura.descripcion" class="text-xs text-gray-500 mt-0.5">{{ cobertura.descripcion }}</p>
+            <p
+              v-if="getCoberturaInfo(plan, cobertura.id)?.aplica && getCoberturaInfo(plan, cobertura.id)?.valorCubierto"
+              class="text-sm font-bold mt-1"
+              :style="primaryColor ? { color: primaryColor } : {}"
+              :class="!primaryColor ? 'text-primary-700' : ''"
+            >{{ formatCurrency(getCoberturaInfo(plan, cobertura.id)!.valorCubierto!) }}</p>
+          </div>
+          <div class="flex-shrink-0 mt-0.5">
+            <div
+              v-if="getCoberturaInfo(plan, cobertura.id)?.aplica"
+              class="w-7 h-7 rounded-full flex items-center justify-center"
+              :style="primaryColor ? { backgroundColor: hexToRgba(primaryColor, 0.12) } : {}"
+              :class="!primaryColor ? 'bg-primary-100' : ''"
+            >
+              <svg class="w-4 h-4" :style="primaryColor ? { color: primaryColor } : {}" :class="!primaryColor ? 'text-primary-600' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <div v-else class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Footer -->
+      <div class="px-5 py-4 bg-gray-50">
+        <button
+          @click="$emit('seleccionar-plan', plan)"
+          :style="getButtonStyle(plan)"
+          :class="[
+            'w-full px-6 py-3 rounded-lg font-semibold transition-all shadow-md text-white',
+            !estilos && (plan.destacado
+              ? 'bg-primary-700 hover:bg-primary-800 ring-2 ring-primary-600 ring-offset-2'
+              : 'bg-primary-600 hover:bg-primary-700')
+          ]"
+        >Comprar</button>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista Desktop: Tabla -->
+  <div class="hidden md:block overflow-x-auto">
     <div class="min-w-full inline-block align-middle">
       <div class="overflow-hidden border border-gray-200 rounded-2xl shadow-lg">
         <table class="min-w-full divide-y divide-gray-200">
@@ -156,21 +253,6 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-const headerBorderStyle = computed(() =>
-  primaryColor.value ? { borderBottomColor: primaryColor.value } : {}
-);
-
-const headerBgStyle = computed(() =>
-  primaryColor.value ? { backgroundColor: hexToRgba(primaryColor.value, 0.1) } : {}
-);
-
-const primaryTextStyle = computed(() =>
-  primaryColor.value ? { color: primaryColor.value } : {}
-);
-
-const checkCircleBgStyle = computed(() =>
-  primaryColor.value ? { backgroundColor: hexToRgba(primaryColor.value, 0.1) } : {}
-);
 
 const getButtonStyle = (plan: Plan) => {
   if (!primaryColor.value) return {};

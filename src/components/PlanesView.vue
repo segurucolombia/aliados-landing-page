@@ -87,10 +87,10 @@
     <!-- Planes Comparison Section -->
     <section class="py-4 lg:py-16">
       <div class="flex px-4 mx-auto container">
-        <div class="self-end flex-shrink-0">
+        <div class="self-end flex-shrink-0 hidden lg:block">
           <img src="/img/vigilado-superintendencia.png" class="w-6 lg:w-8" alt="Logo superintendencia">
         </div>
-        <div class="container pl-4">
+        <div class="container lg:pl-4">
           <!-- Titulo de la sección -->
           <div class="mb-12" :class="logoAseguradoraUrl ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4' : 'text-center'">
             <img
