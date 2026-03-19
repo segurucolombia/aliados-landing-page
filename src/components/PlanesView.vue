@@ -438,13 +438,23 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
 
   isProcessingPurchase.value = true;
 
-  try {
-    // Buscar el plan seleccionado para obtener producto_id y version_id
-    const planSeleccionado = productoPlanes.value.planes.find(p => p.id === data.planId);
-    if (!planSeleccionado) {
-      throw new Error('Plan no encontrado');
-    }
+  // Buscar el plan seleccionado para obtener producto_id y version_id
+  const planSeleccionado = productoPlanes.value.planes.find(p => p.id === data.planId);
+  if (!planSeleccionado) {
+    isProcessingPurchase.value = false;
+    return;
+  }
 
+  // Calcular precio estimado con datos síncronos (localStorage) antes de cualquier await
+  // para poder abrir la ventana de pago en el contexto de gesto del usuario (requerido en móvil)
+  const cuponValorStrPrev = localStorage.getItem('cupon_valor');
+  const cuponValorPrev = cuponValorStrPrev ? parseFloat(cuponValorStrPrev) || 0 : 0;
+  const precioEstimado = Math.max(0, planSeleccionado.precio - cuponValorPrev);
+
+  // Abrir ventana ANTES de las operaciones async para que el navegador móvil lo permita
+  const paymentWindow = precioEstimado > 0 ? window.open('', '_blank') : null;
+
+  try {
     // Obtener detalles completos del plan
     const planDetalles = await PlanesService.findById(data.planId);
     const versionId = planDetalles.data.version?.id;
@@ -510,13 +520,15 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
     localStorage.setItem('compra_resumen', JSON.stringify(compraResumen));
 
     // Abrir Wompi en pestaña nueva y redirigir al usuario a la pantalla de procesando pago
-    await sendWompi(response.transaccion_id, precioFinal, data.formData);
+    await sendWompi(response.transaccion_id, precioFinal, data.formData, paymentWindow);
     window.location.href = '/procesando-pago';
 
     closePurchaseWizard();
   } catch (error: any) {
     console.error('Error al procesar la compra:', error);
     isProcessingPurchase.value = false;
+    // Cerrar la ventana de pago si se abrió pero ocurrió un error
+    paymentWindow?.close();
 
     const errorMessage = error?.response?.data?.message || error?.message || 'Ocurrió un error al procesar la compra. Por favor intenta de nuevo.';
 
@@ -548,36 +560,27 @@ const sha256 = async (text: string): Promise<string> => {
 };
 
 /**
- * Envía el formulario a Wompi para procesar el pago
+ * Navega a Wompi para procesar el pago.
+ * Usa la ventana pre-abierta (paymentWindow) cuando existe, lo que permite
+ * que funcione en móviles donde window.open bloqueado si se llama tras un await.
  */
 const sendWompi = async (
   transaccionId: string,
   precio: number,
-  formData: PurchaseFormData
+  formData: PurchaseFormData,
+  paymentWindow: Window | null
 ) => {
   if (precio === 0) return;
-
-  const createHiddenInput = (name: string, value: string | number) => {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = name;
-    input.value = String(value);
-    return input;
-  };
 
   const amountInCents = precio * 100;
   const currency = 'COP';
 
-  const form = document.createElement('form');
-  form.action = import.meta.env.PUBLIC_CHECKOUT_URL_WOMPI;
-  form.method = 'GET';
-  form.target = '_blank';
-
-  // Campos obligatorios
-  form.appendChild(createHiddenInput('public-key', import.meta.env.PUBLIC_KEY_WOMPI));
-  form.appendChild(createHiddenInput('currency', currency));
-  form.appendChild(createHiddenInput('amount-in-cents', amountInCents));
-  form.appendChild(createHiddenInput('reference', transaccionId));
+  // Construir URL con parámetros (Wompi checkout usa GET)
+  const params = new URLSearchParams();
+  params.set('public-key', import.meta.env.PUBLIC_KEY_WOMPI);
+  params.set('currency', currency);
+  params.set('amount-in-cents', String(amountInCents));
+  params.set('reference', transaccionId);
 
   // Firma de integridad requerida por Wompi
   const integrityKey = import.meta.env.PUBLIC_INTEGRITY_KEY_WOMPI;
@@ -586,33 +589,34 @@ const sendWompi = async (
   if (integrityKey) {
     const integrityHash = await sha256(`${transaccionId}${amountInCents}${currency}${integrityKey}`);
     console.log('[Wompi] integrity hash:', integrityHash);
-    form.appendChild(createHiddenInput('signature:integrity', integrityHash));
+    params.set('signature:integrity', integrityHash);
   }
 
   // URL de redirección
   const redirectUrl = import.meta.env.PUBLIC_WOMPI_REDIRECT_PAYMENT_COMPLETE || window.location.origin + '/gracias';
-  form.appendChild(createHiddenInput('redirect-url', redirectUrl));
+  params.set('redirect-url', redirectUrl);
 
   // Datos del cliente
   const fullName = `${formData.fullName} ${formData.lastName}`;
-  form.appendChild(createHiddenInput('customer-data:email', formData.email));
-  form.appendChild(createHiddenInput('customer-data:full-name', fullName));
-  form.appendChild(createHiddenInput('customer-data:phone-number', formData.phone));
+  params.set('customer-data:email', formData.email);
+  params.set('customer-data:full-name', fullName);
+  params.set('customer-data:phone-number', formData.phone);
 
   // Tipo de documento y número
   const tipoDocumento = formData.documentType === 'NIT'
     ? formData.legalRepDocumentType || 'CC'
     : formData.documentType;
-  form.appendChild(createHiddenInput('customer-data:legal-id-type', tipoDocumento));
-  form.appendChild(createHiddenInput('customer-data:legal-id', formData.documentNumber));
+  params.set('customer-data:legal-id-type', tipoDocumento);
+  params.set('customer-data:legal-id', formData.documentNumber);
 
-  document.body.appendChild(form);
-  form.submit();
+  const wompiUrl = `${import.meta.env.PUBLIC_CHECKOUT_URL_WOMPI}?${params.toString()}`;
 
-  // Limpiar el formulario después de enviarlo
-  setTimeout(() => {
-    document.body.removeChild(form);
-  }, 1000);
+  if (paymentWindow) {
+    // Ventana pre-abierta sincrónicamente desde el gesto del usuario (funciona en móvil)
+    paymentWindow.location.href = wompiUrl;
+  } else {
+    window.open(wompiUrl, '_blank', 'noopener,noreferrer');
+  }
 };
 
 onMounted(() => {
