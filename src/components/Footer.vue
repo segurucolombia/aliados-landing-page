@@ -51,17 +51,17 @@
                                 <p class="font-bold text-white">{{ t('footer.about_title') }}</p>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 gap-4 pl-2 mt-4 text-start">
-                            <button class="w-full lg:text-start">
+                        <div class="grid grid-cols-1 gap-4 mt-4 text-center lg:text-start">
+                            <button class="w-full text-center lg:text-start">
                                 <p class="text-white">{{ t('nav.work_with_us') }}</p>
                             </button>
-                            <button class="w-full lg:text-start">
+                            <button class="w-full text-center lg:text-start">
                                 <p class="text-white">{{ t('nav.frequently_asked_questions') }}</p>
                             </button>
-                            <button class="w-full lg:text-start" >
+                            <button class="w-full text-center lg:text-start" >
                                 <p class="text-white">{{ t('nav.pqr') }}</p>
                             </button>
-                            <a href="/programa-afiliados" class="w-full lg:text-start">
+                            <a href="/programa-afiliados" class="w-full text-center lg:text-start">
                                 <p class="text-white">{{ t('nav.affiliate') }}</p>
                             </a>
                         </div>

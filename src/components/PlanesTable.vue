@@ -17,28 +17,36 @@
       >
       <!-- Card Header -->
       <div
-        class="px-5 py-4"
-        :style="plan.destacado && primaryColor ? { backgroundColor: hexToRgba(primaryColor, 0.12) } : {}"
-        :class="!primaryColor && plan.destacado ? 'bg-primary-50' : 'bg-gray-50'"
+        class="px-5 py-4 bg-gray-50"
       >
-        <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center justify-between mb-1 bg-gradient-to-b from-gray-50">
           <span class="text-lg font-bold text-gray-900">{{ plan.nombre }}</span>
-          <span
+          <!-- <span
             v-if="plan.destacado"
             class="text-xs font-semibold px-2 py-0.5 rounded-full text-white"
             :style="primaryColor ? { backgroundColor: primaryColor } : {}"
             :class="!primaryColor ? 'bg-primary-600' : ''"
-          >Recomendado</span>
+          >Recomendado</span> -->
         </div>
-        <div class="flex items-baseline gap-1">
-          <span
-            class="text-3xl font-bold"
-            :style="primaryColor ? { color: primaryColor } : {}"
-            :class="!primaryColor ? 'text-primary-700' : ''"
-          >{{ formatPrice(plan.precio) }}</span>
-          <span class="text-sm text-gray-600">{{ plan.moneda }}</span>
+        <div class="flex justify-between">
+          <div>
+            <div class="flex items-baseline gap-1">
+              <span
+                class="text-3xl font-bold text-primary-700"
+              >{{ formatPrice(plan.precio) }}</span>
+              <span class="text-sm text-gray-600">{{ plan.moneda }}</span>
+            </div>
+            <span class="text-xs text-gray-500">{{ formatPeriodicidad(plan.periodicidad) }}</span>
+          </div>
+          <div>
+            <img
+              v-if="imagen_aseguradora"
+              :src="imagen_aseguradora"
+              alt="Logo aseguradora"
+              class="h-12 sm:h-16 lg:h-20 object-contain flex-shrink-0 sm:order-last"
+            />
+          </div>
         </div>
-        <span class="text-xs text-gray-500">{{ formatPeriodicidad(plan.periodicidad) }}</span>
       </div>
 
       <!-- Coberturas list -->
@@ -53,7 +61,7 @@
             <p v-if="cobertura.descripcion" class="text-xs text-gray-500 mt-0.5">{{ cobertura.descripcion }}</p>
             <p
               v-if="getCoberturaInfo(plan, cobertura.id)?.aplica && getCoberturaInfo(plan, cobertura.id)?.valorCubierto"
-              class="text-sm font-bold mt-1"
+              class="text-sm font-bold mt-1 "
               :style="primaryColor ? { color: primaryColor } : {}"
               :class="!primaryColor ? 'text-primary-700' : ''"
             >{{ formatCurrency(getCoberturaInfo(plan, cobertura.id)!.valorCubierto!) }}</p>
@@ -61,11 +69,9 @@
           <div class="flex-shrink-0 mt-0.5">
             <div
               v-if="getCoberturaInfo(plan, cobertura.id)?.aplica"
-              class="w-7 h-7 rounded-full flex items-center justify-center"
-              :style="primaryColor ? { backgroundColor: hexToRgba(primaryColor, 0.12) } : {}"
-              :class="!primaryColor ? 'bg-primary-100' : ''"
+              class="w-7 h-7 rounded-full flex items-center justify-center bg-primary-100"
             >
-              <svg class="w-4 h-4" :style="primaryColor ? { color: primaryColor } : {}" :class="!primaryColor ? 'text-primary-600' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-4 h-4 text-primary-600"  fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
               </svg>
             </div>
@@ -239,6 +245,7 @@ interface Props {
   planes: Plan[];
   coberturas: Cobertura[];
   estilos?: EstilosAseguradora | null;
+  imagen_aseguradora?: string | null;
 }
 
 const props = defineProps<Props>();

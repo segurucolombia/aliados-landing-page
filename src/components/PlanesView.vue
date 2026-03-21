@@ -92,21 +92,21 @@
         </div>
         <div class="container lg:pl-4">
           <!-- Titulo de la sección -->
-          <div class="mb-12" :class="logoAseguradoraUrl ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4' : 'text-center'">
+          <div class="mb-12 pl-6" :class="logoAseguradoraUrl ? 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4' : 'text-center'">
             <img
               v-if="logoAseguradoraUrl"
               :src="logoAseguradoraUrl"
               alt="Logo aseguradora"
-              class="h-12 sm:h-16 lg:h-20 object-contain flex-shrink-0 sm:order-last"
+              class="h-12 sm:h-16 lg:h-20 object-contain flex-shrink-0 sm:order-last hidden lg:block"
             />
             <div>
-              <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2 lg:mb-4"
+              <h2 class="text-2xl md:text-4xl font-bold text-gray-900 mb-2 lg:mb-4"
                   :class="logoAseguradoraUrl ? '' : 'text-center'">
-                Compara nuestros planes
+                Elige cómo estar protegido
               </h2>
-              <p class="text-xl text-gray-600"
+              <p class="text-lg lg:text-xl text-gray-600"
                 :class="logoAseguradoraUrl ? '' : 'max-w-2xl mx-auto text-center'">
-                Elige el plan que mejor se adapte a tus necesidades
+                Un imprevisto puede ocurrir en cualquier momento. Estar preparado marca la diferencia.
               </p>
             </div>
           </div>
@@ -155,6 +155,7 @@
             :planes="productoPlanes.planes"
             :coberturas="productoPlanes.coberturas"
             :estilos="aseguradoraEstilos"
+            :imagen_aseguradora="logoAseguradoraUrl"
             @seleccionar-plan="handleSeleccionarPlan"
           />
         </div>
