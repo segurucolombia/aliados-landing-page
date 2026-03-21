@@ -21,31 +21,21 @@
       >
         <div class="flex items-center justify-between mb-1 bg-gradient-to-b from-gray-50">
           <span class="text-lg font-bold text-gray-900">{{ plan.nombre }}</span>
-          <!-- <span
-            v-if="plan.destacado"
-            class="text-xs font-semibold px-2 py-0.5 rounded-full text-white"
-            :style="primaryColor ? { backgroundColor: primaryColor } : {}"
-            :class="!primaryColor ? 'bg-primary-600' : ''"
-          >Recomendado</span> -->
+          <img
+            v-if="imagen_aseguradora"
+            :src="imagen_aseguradora"
+            alt="Logo aseguradora"
+            class="h-8 object-contain flex-shrink-0"
+          />
         </div>
-        <div class="flex justify-between">
-          <div>
-            <div class="flex items-baseline gap-1">
-              <span
-                class="text-3xl font-bold text-primary-700"
-              >{{ formatPrice(plan.precio) }}</span>
-              <span class="text-sm text-gray-600">{{ plan.moneda }}</span>
-            </div>
-            <span class="text-xs text-gray-500">{{ formatPeriodicidad(plan.periodicidad) }}</span>
+        <div>
+          <div class="flex items-baseline gap-1">
+            <span
+              class="text-3xl font-bold text-primary-700"
+            >{{ formatPrice(plan.precio) }}</span>
+            <span class="text-sm text-gray-600">{{ plan.moneda }}</span>
           </div>
-          <div>
-            <img
-              v-if="imagen_aseguradora"
-              :src="imagen_aseguradora"
-              alt="Logo aseguradora"
-              class="h-12 sm:h-16 lg:h-20 object-contain flex-shrink-0 sm:order-last"
-            />
-          </div>
+          <span class="text-xs text-gray-500">{{ formatPeriodicidad(plan.periodicidad) }}</span>
         </div>
       </div>
 
