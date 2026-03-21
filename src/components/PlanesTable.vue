@@ -61,9 +61,7 @@
             <p v-if="cobertura.descripcion" class="text-xs text-gray-500 mt-0.5">{{ cobertura.descripcion }}</p>
             <p
               v-if="getCoberturaInfo(plan, cobertura.id)?.aplica && getCoberturaInfo(plan, cobertura.id)?.valorCubierto"
-              class="text-sm font-bold mt-1 "
-              :style="primaryColor ? { color: primaryColor } : {}"
-              :class="!primaryColor ? 'text-primary-700' : ''"
+              class="text-sm font-bold mt-1 text-primary-700"
             >{{ formatCurrency(getCoberturaInfo(plan, cobertura.id)!.valorCubierto!) }}</p>
           </div>
           <div class="flex-shrink-0 mt-0.5">
