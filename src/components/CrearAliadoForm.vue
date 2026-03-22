@@ -208,7 +208,7 @@
             <!-- Aliado Padre (código) -->
             <div>
               <label class="block text-sm text-gray-700 mb-1">
-                Aliado padre
+                Referido por
                 <span class="text-gray-400 font-normal">(Opcional)</span>
                 <span v-if="codigoPadrePrellenado" class="ml-2 inline-flex items-center gap-1 text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full font-medium">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
@@ -223,7 +223,6 @@
                   @input="onCodigoPadreInput"
                   @blur="buscarAliadoPadre"
                   type="text"
-                  placeholder="Ej: MILE09"
                   maxlength="20"
                   autocomplete="off"
                   class="w-full border rounded-lg px-3 py-2.5 text-sm outline-none transition-colors font-mono tracking-wider"
