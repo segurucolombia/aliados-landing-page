@@ -17,9 +17,9 @@
       >
       <!-- Card Header -->
       <div
-        class="px-5 py-4 bg-gray-50"
+        class="px-5 py-2 bg-gray-50"
       >
-        <div class="flex items-center justify-between mb-1 bg-gradient-to-b from-gray-50">
+        <div class="flex items-center justify-between bg-gradient-to-b from-gray-50">
           <span class="text-lg font-bold text-gray-900">{{ plan.nombre }}</span>
           <img
             v-if="imagen_aseguradora"
@@ -29,7 +29,7 @@
           />
         </div>
         <div>
-          <div class="flex items-baseline gap-1">
+          <div class="flex items-baseline gap-1" style="margin-top: -0.5rem; margin-bottom: -0.5rem;">
             <span
               class="text-3xl font-bold text-primary-700"
             >{{ formatPrice(plan.precio) }}</span>
