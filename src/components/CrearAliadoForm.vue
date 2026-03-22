@@ -223,7 +223,7 @@
                   @input="onCodigoPadreInput"
                   @blur="buscarAliadoPadre"
                   type="text"
-                  maxlength="20"
+                    maxlength="20"
                   autocomplete="off"
                   class="w-full border rounded-lg px-3 py-2.5 text-sm outline-none transition-colors font-mono tracking-wider"
                   :class="[
