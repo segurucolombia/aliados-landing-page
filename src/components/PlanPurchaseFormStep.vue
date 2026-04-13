@@ -174,8 +174,8 @@
 
         </div>
 
-        <!-- Código de Descuento -->
-        <div class="discount-section">
+        <!-- Código de Descuento (solo si no hay débito automático disponible) -->
+        <div v-if="valorDebitoAutomatico == null" class="discount-section">
           <div class="discount-card">
             <div class="discount-icon">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
@@ -299,7 +299,7 @@
           </button>
 
           <!-- Pago manual -->
-          <button class="payment-option payment-option-secondary" @click="handleSelectPagoUnico">
+          <div class="payment-option payment-option-secondary payment-option-wompi">
             <div class="payment-option-top">
               <div class="payment-option-icon payment-option-icon-secondary">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="26" height="26">
@@ -308,14 +308,14 @@
               </div>
               <div class="payment-option-info">
                 <span class="payment-option-label">Otros medios de pago</span>
-                <span class="payment-option-price payment-option-price-secondary">{{ formatCurrency(planPrecio) }} <span class="payment-option-period">/ renovación</span></span>
+                <span class="payment-option-price payment-option-price-secondary">
+                  {{ formatCurrency(cuponValor > 0 ? totalAPagar : planPrecio) }}
+                  <span class="payment-option-period">/ renovación</span>
+                  <span v-if="cuponValor > 0" class="cupon-applied-badge">Cupón aplicado</span>
+                </span>
               </div>
             </div>
             <ul class="payment-option-details payment-option-details-secondary">
-              <li>
-                <svg width="14" height="14" fill="#6b7280" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-                Sin descuento — precio regular
-              </li>
               <li>
                 <svg width="14" height="14" fill="#6b7280" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
                 En cada renovación debes ingresar a la plataforma y gestionar el pago manualmente
@@ -325,7 +325,40 @@
                 Procesado por <strong>Wompi</strong>
               </li>
             </ul>
-          </button>
+
+            <!-- Cupón de descuento (solo para pago con Wompi) -->
+            <div class="modal-cupon-section" @click.stop>
+              <div v-if="cuponValor > 0" class="modal-cupon-aplicado">
+                <svg width="16" height="16" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                Cupón aplicado: <strong>-{{ formatCurrency(cuponValor) }}</strong>
+                <button type="button" class="cupon-quitar" @click.stop="clearCupon">Quitar</button>
+              </div>
+              <div v-else class="modal-cupon-input">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m9 14.25 6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0c1.1.128 1.907 1.077 1.907 2.185Z"/></svg>
+                <input
+                  v-model="formData.discountCode"
+                  placeholder="¿Tienes un cupón?"
+                  class="modal-cupon-field"
+                  @keydown.enter.prevent="applyDiscount"
+                />
+                <button
+                  v-if="formData.discountCode"
+                  type="button"
+                  class="modal-cupon-btn"
+                  @click.stop="applyDiscount"
+                  :disabled="isLoadingCupon"
+                >
+                  {{ isLoadingCupon ? '...' : 'Aplicar' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Botón continuar con Wompi -->
+            <button type="button" class="wompi-continue-btn" @click="handleSelectPagoUnico">
+              Pagar con Wompi
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            </button>
+          </div>
         </div>
 
         <button class="payment-modal-close" @click="showPaymentModal = false">Cancelar</button>
@@ -647,11 +680,13 @@ const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
-// Cargar cupón del localStorage al montar
+// Cargar cupón del localStorage al montar (solo si no hay débito automático disponible)
 onMounted(() => {
-  const cuponValorStr = localStorage.getItem('cupon_valor');
-  if (cuponValorStr) {
-    cuponValor.value = parseFloat(cuponValorStr) || 0;
+  if (props.valorDebitoAutomatico == null) {
+    const cuponValorStr = localStorage.getItem('cupon_valor');
+    if (cuponValorStr) {
+      cuponValor.value = parseFloat(cuponValorStr) || 0;
+    }
   }
 });
 
@@ -674,6 +709,12 @@ const handleSelectPagoUnico = () => {
 const handleSelectDebitoAutomatico = () => {
   showPaymentModal.value = false;
   emit('submit-debito', { ...formData });
+};
+
+const clearCupon = () => {
+  cuponValor.value = 0;
+  if (formData.discountCode !== undefined) formData.discountCode = '';
+  localStorage.removeItem('cupon_valor');
 };
 
 const handleCancel = () => {
@@ -1126,5 +1167,122 @@ const handleCancel = () => {
 
 .payment-modal-close:hover {
   color: #6b7280;
+}
+
+/* Tarjeta Wompi como div seleccionable */
+.payment-option-wompi {
+  cursor: default;
+}
+
+/* Cupón dentro del modal */
+.modal-cupon-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.65rem;
+  margin-top: 0.1rem;
+}
+
+.modal-cupon-aplicado {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.cupon-quitar {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.cupon-quitar:hover {
+  color: #6b7280;
+}
+
+.modal-cupon-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #9ca3af;
+}
+
+.modal-cupon-field {
+  flex: 1;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.82rem;
+  color: #374151;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.modal-cupon-field:focus {
+  border-color: #9ca3af;
+}
+
+.modal-cupon-btn {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.modal-cupon-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.modal-cupon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cupon-applied-badge {
+  font-size: 0.68rem;
+  background: #dcfce7;
+  color: #16a34a;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 20px;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+
+/* Botón continuar con Wompi */
+.wompi-continue-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: #374151;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.wompi-continue-btn:hover {
+  background: #1f2937;
 }
 </style>
