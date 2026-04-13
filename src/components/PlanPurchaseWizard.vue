@@ -40,8 +40,10 @@
       <div v-show="currentStep === 2" class="step-content">
         <PlanPurchaseFormStep
           :plan-precio="planPrecio"
+          :valor-debito-automatico="planData?.version?.valor_debito_automatico ?? null"
           :has-next-step="hasCamposAdicionales"
           @submit="handlePurchaseFormSubmit"
+          @submit-debito="handleDebitoAutomaticoSubmit"
           @back="goToStep(1)"
           @cancel="handleCancel"
         />
@@ -58,6 +60,17 @@
           @cancel="handleCancel"
         />
       </div>
+
+      <!-- Paso tarjeta MP (solo si es débito automático) -->
+      <div v-if="isDebitoAutomatico" v-show="currentStep === cardStepNumber" class="step-content">
+        <MercadoPagoCardStep
+          :initial-doc-type="purchaseFormData?.documentType"
+          :initial-doc-number="purchaseFormData?.documentNumber"
+          @card-tokenized="handleCardTokenized"
+          @back="goToStep(hasCamposAdicionales ? 3 : 2)"
+          @cancel="handleCancel"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -67,6 +80,7 @@ import { ref, computed } from 'vue';
 import PlanDetailStep from './PlanDetailStep.vue';
 import PlanPurchaseFormStep from './PlanPurchaseFormStep.vue';
 import PlanCamposAdicionalesStep from './PlanCamposAdicionalesStep.vue';
+import MercadoPagoCardStep from './MercadoPagoCardStep.vue';
 import type { PurchaseFormData } from './PlanPurchaseFormStep.vue';
 import type { PlanWithDetails, CamposAdicionalesCapturados } from '../types/planes';
 import type { CondicionVentaInput } from '../services/ventas.service';
@@ -78,6 +92,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'purchase', data: { planId: string; formData: PurchaseFormData; camposAdicionales?: CamposAdicionalesCapturados; condiciones: CondicionVentaInput[] }): void;
+  (e: 'purchase-debito', data: { planId: string; formData: PurchaseFormData; camposAdicionales?: CamposAdicionalesCapturados; condiciones: CondicionVentaInput[]; cardTokenId: string }): void;
   (e: 'cancel'): void;
 }>();
 
@@ -86,11 +101,16 @@ const planData = ref<PlanWithDetails | null>(null);
 const purchaseFormData = ref<PurchaseFormData | null>(null);
 const camposAdicionalesDatos = ref<CamposAdicionalesCapturados | null>(null);
 const condicionesDatos = ref<CondicionVentaInput[]>([]);
+const isDebitoAutomatico = ref(false);
+const cardTokenId = ref('');
 
 // Computed property to check if plan has campos_adicionales
 const hasCamposAdicionales = computed(() => {
   return !!(planData.value?.version?.campos_adicionales?.secciones?.length);
 });
+
+// Número de paso donde va el formulario de tarjeta MP
+const cardStepNumber = computed(() => hasCamposAdicionales.value ? 4 : 3);
 
 const handleCondicionesAceptadas = (condiciones: CondicionVentaInput[]) => {
   condicionesDatos.value = condiciones;
@@ -124,7 +144,11 @@ const handlePurchaseFormSubmit = (formData: PurchaseFormData) => {
 const handleCamposAdicionalesNext = (datos: CamposAdicionalesCapturados) => {
   camposAdicionalesDatos.value = datos;
   console.log('Campos adicionales captured:', datos);
-  finalizarCompra();
+  if (isDebitoAutomatico.value) {
+    goToStep(cardStepNumber.value);
+  } else {
+    finalizarCompra();
+  }
 };
 
 const finalizarCompra = () => {
@@ -147,6 +171,38 @@ const finalizarCompra = () => {
     formData: purchaseFormData.value,
     camposAdicionales: camposAdicionalesData,
     condiciones: condicionesDatos.value,
+  });
+};
+
+const handleDebitoAutomaticoSubmit = (formData: PurchaseFormData) => {
+  purchaseFormData.value = formData;
+  isDebitoAutomatico.value = true;
+
+  if (hasCamposAdicionales.value) {
+    goToStep(3);
+  } else {
+    goToStep(cardStepNumber.value);
+  }
+};
+
+const handleCardTokenized = (tokenId: string) => {
+  cardTokenId.value = tokenId;
+  finalizarCompraDebito();
+};
+
+const finalizarCompraDebito = () => {
+  if (!purchaseFormData.value) return;
+
+  const camposAdicionalesData = camposAdicionalesDatos.value && hasCamposAdicionales.value
+    ? camposAdicionalesDatos.value
+    : undefined;
+
+  emit('purchase-debito', {
+    planId: props.planId,
+    formData: purchaseFormData.value,
+    camposAdicionales: camposAdicionalesData,
+    condiciones: condicionesDatos.value,
+    cardTokenId: cardTokenId.value,
   });
 };
 

@@ -26,6 +26,8 @@ export interface CreateVentaDto {
   codigo_descuento?: string;
   datos_adicionales?: import('../types/planes').CamposAdicionalesCapturados;
   condiciones: CondicionVentaInput[];
+  debito_automatico?: boolean;
+  card_token_id?: string;
 }
 
 export interface CreateVentaResponse {

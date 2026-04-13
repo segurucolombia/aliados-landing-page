@@ -46,8 +46,29 @@
           <p class="plan-description">{{ plan.producto.descripcion }}</p>
         </div>
         <div v-if="plan.version" class="plan-price">
-          <span class="price-amount">${{ formatPrice(plan.version.precio) }}</span>
-          <span class="price-period">/ {{ plan.version.nombre }}</span>
+          <template v-if="plan.version.valor_debito_automatico != null">
+            <div class="price-badge-saving">
+              <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17C5.06 5.687 5 5.35 5 5zm4 1V5a1 1 0 10-1 1h1zm3 0a1 1 0 10-1-1v1h1z" clip-rule="evenodd"/><path d="M9 11H3v5a2 2 0 002 2h4v-7zM11 18h4a2 2 0 002-2v-5h-6v7z"/></svg>
+              Ahorra ${{ formatPrice(plan.version.precio - plan.version.valor_debito_automatico) }} con débito automático
+            </div>
+            <div class="price-row-debito">
+              <span class="price-label-debito">Con débito automático</span>
+              <div class="price-main">
+                <span class="price-amount">${{ formatPrice(plan.version.valor_debito_automatico) }}</span>
+                <span class="price-period">/ {{ plan.version.nombre }}</span>
+              </div>
+            </div>
+            <div class="price-row-regular">
+              <span class="price-label-regular">Pago manual</span>
+              <span class="price-alt-value">${{ formatPrice(plan.version.precio) }} / {{ plan.version.nombre }}</span>
+            </div>
+          </template>
+          <template v-else>
+            <div class="price-main">
+              <span class="price-amount">${{ formatPrice(plan.version.precio) }}</span>
+              <span class="price-period">/ {{ plan.version.nombre }}</span>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -475,6 +496,12 @@ onMounted(() => {
   border-radius: 8px;
 }
 
+.price-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
 .price-amount {
   font-size: 2rem;
   font-weight: bold;
@@ -483,6 +510,62 @@ onMounted(() => {
 .price-period {
   font-size: 0.85rem;
   opacity: 0.9;
+}
+
+.price-alt {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-top: 0.15rem;
+  text-align: right;
+}
+
+.price-badge-saving {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #fbbf24;
+  color: #78350f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  margin-bottom: 0.6rem;
+  white-space: nowrap;
+}
+
+.price-row-debito {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+.price-label-debito {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.3px;
+}
+
+.price-row-regular {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.price-label-regular {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.6);
+}
+
+.price-alt-value {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.65);
+  text-decoration: line-through;
 }
 
 .version-info {

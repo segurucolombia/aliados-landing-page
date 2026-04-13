@@ -8,6 +8,7 @@
     :plan-id="selectedPlanId"
     :plan-precio="selectedPlan.precio"
     @purchase="handleCompra"
+    @purchase-debito="handleCompraDebito"
     @cancel="closePurchaseWizard"
   />
 
@@ -376,7 +377,8 @@ const transformarDatos = (data: PlanConCoberturas[]): void => {
         destacado: planData.mostrar_publico,
         coberturas,
         caracteristicas: [],
-        color: undefined
+        color: undefined,
+        valor_debito_automatico: version.valor_debito_automatico ?? null
       };
     });
 };
@@ -546,6 +548,97 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
     if (!selectedPlan.value || selectedPlan.value.precio === 0) {
       isProcessingPurchase.value = false;
     }
+  }
+};
+
+const handleCompraDebito = async (data: {
+  planId: string;
+  formData: PurchaseFormData;
+  camposAdicionales?: import('../types/planes').CamposAdicionalesCapturados;
+  condiciones: import('../services/ventas.service').CondicionVentaInput[];
+  cardTokenId: string;
+}) => {
+  console.log('Compra con débito automático:', data);
+  isProcessingPurchase.value = true;
+
+  try {
+    const planDetalles = await PlanesService.findById(data.planId);
+    const versionId = planDetalles.data.version?.id;
+
+    if (!versionId) {
+      throw new Error('No se pudo obtener la versión del plan');
+    }
+
+    const tipoPersona = data.formData.documentType === 'NIT' ? 'Juridica' : 'Natural';
+    const tipoDocumento = data.formData.documentType === 'NIT'
+      ? data.formData.legalRepDocumentType || ''
+      : data.formData.documentType;
+
+    const cuponLocalStorage = localStorage.getItem('cupon');
+    const aliadoIdLocalStorage = localStorage.getItem('aliado_id');
+
+    const ventaData = {
+      producto_id: productoPlanes.value.productoId,
+      version_id: versionId,
+      email: data.formData.email,
+      clave: data.formData.password,
+      tipo_documento: tipoDocumento,
+      numero_documento: data.formData.documentNumber,
+      nombres: data.formData.fullName,
+      apellidos: data.formData.lastName,
+      telefono: data.formData.phone,
+      ...(data.formData.dob && { dob: data.formData.dob }),
+      ...(data.formData.nit && { nit: data.formData.nit }),
+      ...(data.formData.companyName && { empresa_nombre: data.formData.companyName }),
+      tipo_persona: tipoPersona,
+      ...(cuponLocalStorage && { codigo_descuento: cuponLocalStorage }),
+      ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
+      ...(data.camposAdicionales && { datos_adicionales: data.camposAdicionales }),
+      condiciones: data.condiciones,
+      debito_automatico: true,
+      card_token_id: data.cardTokenId,
+    };
+
+    const response = await VentasService.crear_venta(ventaData);
+
+    localStorage.setItem('transaccion_id', response.transaccion_id);
+
+    const planSeleccionado = productoPlanes.value.planes.find(p => p.id === data.planId);
+    const cuponValorStr = localStorage.getItem('cupon_valor');
+    const cuponValor = cuponValorStr ? parseFloat(cuponValorStr) || 0 : 0;
+    const precioDebito = planSeleccionado?.valor_debito_automatico ?? planSeleccionado?.precio ?? 0;
+    const precioFinal = Math.max(0, precioDebito - cuponValor);
+
+    const compraResumen = {
+      transaccion_id: response.transaccion_id,
+      plan_nombre: planSeleccionado?.nombre || '',
+      precio: precioFinal,
+      comprador_nombre: data.formData.fullName,
+      comprador_apellido: data.formData.lastName,
+      comprador_email: data.formData.email,
+      comprador_documento_tipo: data.formData.documentType,
+      comprador_documento: data.formData.documentNumber,
+      comprador_telefono: data.formData.phone,
+      fecha_compra: new Date().toISOString(),
+      debito_automatico: true,
+    };
+    localStorage.setItem('compra_resumen', JSON.stringify(compraResumen));
+
+    closePurchaseWizard();
+    window.location.href = '/procesando-pago';
+  } catch (error: any) {
+    console.error('Error al procesar débito automático:', error);
+    isProcessingPurchase.value = false;
+
+    const errorMessage = error?.response?.data?.message || error?.message || 'Ocurrió un error al procesar el débito automático. Por favor intenta de nuevo.';
+
+    const Swal = (await import('sweetalert2')).default;
+    Swal.fire({
+      title: 'Error',
+      text: errorMessage,
+      icon: 'error',
+      confirmButtonColor: '#1e40af'
+    });
   }
 };
 

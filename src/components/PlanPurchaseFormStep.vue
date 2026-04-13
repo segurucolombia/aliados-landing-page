@@ -257,6 +257,80 @@
         </div>
       </form>
     </div>
+
+    <!-- Modal de selección de método de pago -->
+    <div v-if="showPaymentModal" class="payment-modal-overlay" @click.self="showPaymentModal = false">
+      <div class="payment-modal">
+        <h3 class="payment-modal-title">¿Cómo deseas pagar?</h3>
+        <p class="payment-modal-subtitle">Elige cómo quieres gestionar la renovación de tu seguro</p>
+
+        <div class="payment-options">
+          <!-- Débito automático -->
+          <button class="payment-option payment-option-recommended" @click="handleSelectDebitoAutomatico">
+            <div class="payment-option-badge">Recomendado</div>
+            <div class="payment-option-top">
+              <div class="payment-option-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="26" height="26">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <div class="payment-option-info">
+                <span class="payment-option-label">Débito automático</span>
+                <span class="payment-option-price">{{ formatCurrency(valorDebitoAutomatico!) }} <span class="payment-option-period">/ renovación</span></span>
+              </div>
+              <div class="payment-option-saving">
+                Ahorra {{ formatCurrency(planPrecio - valorDebitoAutomatico!) }}
+              </div>
+            </div>
+            <ul class="payment-option-details">
+              <li>
+                <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                Tu seguro se renueva automáticamente — sin que tengas que hacer nada
+              </li>
+              <li>
+                <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                Vincula tu tarjeta de forma segura con <strong>Mercado Pago</strong>
+              </li>
+              <li>
+                <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                Precio especial por activar la renovación automática
+              </li>
+            </ul>
+          </button>
+
+          <!-- Pago manual -->
+          <button class="payment-option payment-option-secondary" @click="handleSelectPagoUnico">
+            <div class="payment-option-top">
+              <div class="payment-option-icon payment-option-icon-secondary">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="26" height="26">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+              <div class="payment-option-info">
+                <span class="payment-option-label">Otros medios de pago</span>
+                <span class="payment-option-price payment-option-price-secondary">{{ formatCurrency(planPrecio) }} <span class="payment-option-period">/ renovación</span></span>
+              </div>
+            </div>
+            <ul class="payment-option-details payment-option-details-secondary">
+              <li>
+                <svg width="14" height="14" fill="#6b7280" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                Sin descuento — precio regular
+              </li>
+              <li>
+                <svg width="14" height="14" fill="#6b7280" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                En cada renovación debes ingresar a la plataforma y gestionar el pago manualmente
+              </li>
+              <li>
+                <svg width="14" height="14" fill="#6b7280" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+                Procesado por <strong>Wompi</strong>
+              </li>
+            </ul>
+          </button>
+        </div>
+
+        <button class="payment-modal-close" @click="showPaymentModal = false">Cancelar</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -290,16 +364,21 @@ export interface PurchaseFormData {
 
 const props = withDefaults(defineProps<{
   planPrecio: number;
+  valorDebitoAutomatico?: number | null;
   hasNextStep?: boolean;
 }>(), {
-  hasNextStep: false
+  hasNextStep: false,
+  valorDebitoAutomatico: null
 });
 
 const emit = defineEmits<{
   (e: 'submit', data: PurchaseFormData): void;
+  (e: 'submit-debito', data: PurchaseFormData): void;
   (e: 'back'): void;
   (e: 'cancel'): void;
 }>();
+
+const showPaymentModal = ref(false);
 
 // Estado del cupón
 const cuponValor = ref(0);
@@ -579,8 +658,22 @@ onMounted(() => {
 const handleSubmit = () => {
   if (validateAllFields()) {
     formData.password = formData.documentNumber;
-    emit('submit', { ...formData });
+    if (props.valorDebitoAutomatico != null) {
+      showPaymentModal.value = true;
+    } else {
+      emit('submit', { ...formData });
+    }
   }
+};
+
+const handleSelectPagoUnico = () => {
+  showPaymentModal.value = false;
+  emit('submit', { ...formData });
+};
+
+const handleSelectDebitoAutomatico = () => {
+  showPaymentModal.value = false;
+  emit('submit-debito', { ...formData });
 };
 
 const handleCancel = () => {
@@ -831,5 +924,207 @@ const handleCancel = () => {
   .discount-input-wrapper {
     flex-direction: column;
   }
+}
+
+/* Modal de selección de pago */
+.payment-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.payment-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.payment-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.25rem;
+  text-align: center;
+}
+
+.payment-modal-subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 1.25rem;
+  text-align: center;
+}
+
+.payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.payment-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.payment-option-recommended {
+  border-color: #3b82f6;
+  background: #f0f7ff;
+}
+
+.payment-option-recommended:hover {
+  border-color: #2563eb;
+  background: #e0effe;
+}
+
+.payment-option-secondary:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.payment-option-badge {
+  position: absolute;
+  top: -11px;
+  left: 1rem;
+  background: #3b82f6;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.payment-option-top {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.payment-option-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #dbeafe;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.payment-option-icon-secondary {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.payment-option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+}
+
+.payment-option-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.payment-option-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2563eb;
+  line-height: 1.2;
+}
+
+.payment-option-price-secondary {
+  color: #6b7280;
+}
+
+.payment-option-period {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.payment-option-saving {
+  background: #fbbf24;
+  color: #78350f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.payment-option-details {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid #dbeafe;
+  padding-top: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.payment-option-details-secondary {
+  border-top-color: #e5e7eb;
+}
+
+.payment-option-details li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #374151;
+  line-height: 1.4;
+}
+
+.payment-option-details li svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.payment-option-details-secondary li {
+  color: #6b7280;
+}
+
+.payment-modal-close {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.6rem;
+  border: none;
+  background: none;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.payment-modal-close:hover {
+  color: #6b7280;
 }
 </style>

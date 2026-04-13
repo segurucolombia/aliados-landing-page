@@ -63,6 +63,7 @@ export interface Plan {
   coberturas: CoberturaPlan[];
   caracteristicas?: string[];
   color?: string;
+  valor_debito_automatico?: number | null;
 }
 
 export interface ProductoPlanes {
@@ -165,6 +166,7 @@ export interface Version {
   valor_asegurado: number;
   vigencia_inicio: string;
   precio: number;
+  valor_debito_automatico?: number | null;
   created_at: Date;
   created_by: string;
   updated_at: Date;

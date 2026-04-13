@@ -28,14 +28,22 @@
             class="h-8 object-contain flex-shrink-0"
           />
         </div>
-        <div>
-          <div class="flex items-baseline gap-1" style="margin-top: -0.5rem; margin-bottom: -0.5rem;">
-            <span
-              class="text-3xl font-bold text-primary-700"
-            >{{ formatPrice(plan.precio) }}</span>
-            <span class="text-sm text-gray-600">{{ plan.moneda }}</span>
-          </div>
-          <span class="text-xs text-gray-500">{{ formatPeriodicidad(plan.periodicidad) }}</span>
+        <div style="margin-top: -0.25rem;">
+          <template v-if="plan.valor_debito_automatico != null">
+            <div class="flex items-baseline gap-1">
+              <span class="text-2xl font-bold text-green-700">{{ formatPrice(plan.valor_debito_automatico) }}</span>
+              <span class="text-xs text-gray-500">{{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }}</span>
+            </div>
+            <div class="text-xs text-gray-400 leading-tight">
+              {{ formatPrice(plan.precio) }} {{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }} sin pago automático
+            </div>
+          </template>
+          <template v-else>
+            <div class="flex items-baseline gap-1">
+              <span class="text-2xl font-bold text-primary-700">{{ formatPrice(plan.precio) }}</span>
+              <span class="text-xs text-gray-500">{{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }}</span>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -109,13 +117,23 @@
                 class="px-6 py-6 text-center relative bg-primary-100 to-white"
               >
                 <div class="flex flex-col items-center">
-                  <span class="text-xl font-bold text-gray-900 mb-2">{{ plan.nombre }}</span>
-                  <span class="text-sm text-gray-600 mb-3">{{ plan.descripcion }}</span>
-                  <div class="flex items-baseline gap-1">
-                    <span class="text-3xl font-bold text-primary-700" >{{ formatPrice(plan.precio) }}</span>
-                    <span class="text-sm text-gray-600">{{ plan.moneda }}</span>
-                  </div>
-                  <span class="text-xs text-gray-500 mt-1">{{ formatPeriodicidad(plan.periodicidad) }}</span>
+                  <span class="text-xl font-bold text-gray-900 mb-1">{{ plan.nombre }}</span>
+                  <span class="text-sm text-gray-600 mb-2">{{ plan.descripcion }}</span>
+                  <template v-if="plan.valor_debito_automatico != null">
+                    <div class="flex items-baseline gap-1">
+                      <span class="text-2xl font-bold text-green-700">{{ formatPrice(plan.valor_debito_automatico) }}</span>
+                      <span class="text-xs text-gray-500">{{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }}</span>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                      <span class="">{{ formatPrice(plan.precio) }} {{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }}</span> sin pago automático
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="flex items-baseline gap-1">
+                      <span class="text-2xl font-bold text-primary-700">{{ formatPrice(plan.precio) }}</span>
+                      <span class="text-xs text-gray-500">{{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }}</span>
+                    </div>
+                  </template>
                 </div>
               </th>
             </tr>
@@ -290,10 +308,10 @@ const formatCurrency = (value: number): string => {
 
 const formatPeriodicidad = (periodicidad: string): string => {
   const map: Record<string, string> = {
-    mensual: 'por mes',
-    trimestral: 'por trimestre',
-    semestral: 'por semestre',
-    anual: 'por año'
+    mensual: 'mes',
+    trimestral: 'trimestre',
+    semestral: 'semestre',
+    anual: 'año'
   };
   return map[periodicidad] || periodicidad;
 };
