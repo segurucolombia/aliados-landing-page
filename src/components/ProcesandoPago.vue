@@ -162,6 +162,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import axios from 'axios';
 import { TransactionService } from '../services/transactions';
 import type { EstadoTransaccion } from '../services/transactions';
 
@@ -176,11 +177,13 @@ interface CompraResumen {
   comprador_documento: string;
   comprador_telefono: string;
   fecha_compra: string;
+  debito_automatico?: boolean;
 }
 
 const resumen = ref<CompraResumen | null>(null);
 const transaccionEstado = ref<EstadoTransaccion>('PENDING');
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
+let cobroEjecutado = false;
 
 const irAPlataforma = () => {
   window.open(import.meta.env.PUBLIC_ENLACE_PLATAFORMA || 'https://aliados.segurucolombia.com/', '_blank', 'noopener,noreferrer');
@@ -262,6 +265,31 @@ const consultarEstado = async () => {
   }
 };
 
+const cobrarPrimeraVentaMP = async (ventaId: string) => {
+  if (cobroEjecutado) return;
+  cobroEjecutado = true;
+
+  try {
+    const baseUrl = import.meta.env.PUBLIC_BASE_URL;
+    const response = await axios.post(`${baseUrl}/api-aliados/transacciones-mercado-pago/cobrar-primera-venta`, {
+      venta_id: ventaId,
+    });
+
+    const estadoMP: string = response.data?.data?.estado;
+
+    if (estadoMP === 'approved') {
+      transaccionEstado.value = 'APPROVED';
+    } else if (estadoMP === 'rejected') {
+      transaccionEstado.value = 'DECLINED';
+    } else {
+      transaccionEstado.value = 'ERROR';
+    }
+  } catch (err) {
+    console.error('Error cobrando primera venta MP:', err);
+    transaccionEstado.value = 'ERROR';
+  }
+};
+
 onMounted(() => {
   const resumenRaw = localStorage.getItem('compra_resumen');
   if (resumenRaw) {
@@ -272,8 +300,13 @@ onMounted(() => {
     }
   }
 
-  consultarEstado();
-  pollingInterval = setInterval(consultarEstado, 10_000);
+  if (resumen.value?.debito_automatico) {
+    const ventaId = resumen.value.transaccion_id;
+    cobrarPrimeraVentaMP(ventaId);
+  } else {
+    consultarEstado();
+    pollingInterval = setInterval(consultarEstado, 10_000);
+  }
 });
 
 onUnmounted(() => {
