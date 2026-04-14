@@ -282,7 +282,7 @@ const handleSubmit = async () => {
   try {
     await loadMercadoPago();
 
-    const mp = new window.MercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY, { locale: 'es-CO' });
+    const mp = new window.MercadoPago(import.meta.env.PUBLIC_MP_PUBLIC_KEY, { locale: 'es-CO' });
 
     const parts = expiry.value.split('/');
 
