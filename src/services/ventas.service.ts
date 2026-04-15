@@ -32,6 +32,7 @@ export interface CreateVentaDto {
 
 export interface CreateVentaResponse {
   transaccion_id: string;
+  venta_id?: string;
 }
 
 export class VentasService {

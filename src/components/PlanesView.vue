@@ -239,6 +239,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import axios from 'axios';
 import PlanesTable from './PlanesTable.vue';
 import PlanPurchaseWizard from './PlanPurchaseWizard.vue';
 import LoadingSpinner from '../utils/LoadingSpinner.vue';
@@ -577,31 +578,68 @@ const handleCompraDebito = async (data: {
     const cuponLocalStorage = localStorage.getItem('cupon');
     const aliadoIdLocalStorage = localStorage.getItem('aliado_id');
 
-    const ventaData = {
-      producto_id: productoPlanes.value.productoId,
-      version_id: versionId,
-      email: data.formData.email,
-      clave: data.formData.password,
-      tipo_documento: tipoDocumento,
-      numero_documento: data.formData.documentNumber,
-      nombres: data.formData.fullName,
-      apellidos: data.formData.lastName,
-      telefono: data.formData.phone,
-      ...(data.formData.dob && { dob: data.formData.dob }),
-      ...(data.formData.nit && { nit: data.formData.nit }),
-      ...(data.formData.companyName && { empresa_nombre: data.formData.companyName }),
-      tipo_persona: tipoPersona,
-      ...(cuponLocalStorage && { codigo_descuento: cuponLocalStorage }),
-      ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
-      ...(data.camposAdicionales && { datos_adicionales: data.camposAdicionales }),
-      condiciones: data.condiciones,
-      debito_automatico: true,
-      card_token_id: data.cardTokenId,
-    };
+    // Paso 1: crear venta con debito_automatico: false (sin card_token_id)
+    // Reutilizar venta_id si ya se creó en un intento anterior rechazado
+    let ventaId = localStorage.getItem('debito_venta_id');
 
-    const response = await VentasService.crear_venta(ventaData);
+    if (!ventaId) {
+      const ventaData = {
+        producto_id: productoPlanes.value.productoId,
+        version_id: versionId,
+        email: data.formData.email,
+        clave: data.formData.password,
+        tipo_documento: tipoDocumento,
+        numero_documento: data.formData.documentNumber,
+        nombres: data.formData.fullName,
+        apellidos: data.formData.lastName,
+        telefono: data.formData.phone,
+        ...(data.formData.dob && { dob: data.formData.dob }),
+        ...(data.formData.nit && { nit: data.formData.nit }),
+        ...(data.formData.companyName && { empresa_nombre: data.formData.companyName }),
+        tipo_persona: tipoPersona,
+        ...(cuponLocalStorage && { codigo_descuento: cuponLocalStorage }),
+        ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
+        ...(data.camposAdicionales && { datos_adicionales: data.camposAdicionales }),
+        condiciones: data.condiciones,
+        debito_automatico: false,
+      };
 
-    localStorage.setItem('transaccion_id', response.transaccion_id);
+      const ventaResponse = await VentasService.crear_venta(ventaData);
+      ventaId = ventaResponse.venta_id ?? ventaResponse.transaccion_id;
+      localStorage.setItem('debito_venta_id', ventaId);
+    }
+
+    // Paso 2: crear preapproval y cobrar primera venta (el backend lo maneja internamente)
+    const baseUrl = import.meta.env.PUBLIC_BASE_URL;
+    const preapprovalResponse = await axios.post(
+      `${baseUrl}/api-aliados/debito-automatico/crear-preapproval`,
+      {
+        venta_id: ventaId,
+        card_token_id: data.cardTokenId,
+        created_by: data.formData.email,
+      }
+    );
+
+    const cobro = preapprovalResponse.data?.cobro;
+
+    if (!cobro?.cobrado) {
+      // Cobro rechazado — mantener el wizard abierto para reintentar con otra tarjeta
+      // El mismo venta_id sigue guardado en localStorage para el siguiente intento
+      isProcessingPurchase.value = false;
+      const errorMsg = cobro?.error || 'El cobro fue rechazado por Mercado Pago. Intenta con otra tarjeta.';
+      const Swal = (await import('sweetalert2')).default;
+      await Swal.fire({
+        title: 'Cobro rechazado',
+        text: errorMsg,
+        icon: 'error',
+        confirmButtonColor: '#1e40af',
+      });
+      return;
+    }
+
+    // Cobro aprobado — limpiar venta_id temporal y redirigir a pantalla de éxito
+    localStorage.removeItem('debito_venta_id');
+    localStorage.setItem('transaccion_id', ventaId);
 
     const planSeleccionado = productoPlanes.value.planes.find(p => p.id === data.planId);
     const cuponValorStr = localStorage.getItem('cupon_valor');
@@ -610,7 +648,7 @@ const handleCompraDebito = async (data: {
     const precioFinal = Math.max(0, precioDebito - cuponValor);
 
     const compraResumen = {
-      transaccion_id: response.transaccion_id,
+      transaccion_id: ventaId,
       plan_nombre: planSeleccionado?.nombre || '',
       precio: precioFinal,
       comprador_nombre: data.formData.fullName,
