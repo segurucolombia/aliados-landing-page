@@ -274,7 +274,7 @@ onMounted(() => {
   }
 
   if (resumen.value?.debito_automatico) {
-    // El backend ya procesó el cobro dentro de crear-preapproval.
+    // El backend ya procesó el cobro dentro de POST /api/ventas.
     // Solo llegamos aquí si cobro.cobrado = true, así que mostramos APPROVED directamente.
     transaccionEstado.value = 'APPROVED';
   } else {

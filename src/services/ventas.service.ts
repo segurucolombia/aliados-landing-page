@@ -30,9 +30,30 @@ export interface CreateVentaDto {
   card_token_id?: string;
 }
 
+export interface CobroDebitoAutomatico {
+  cobrado: boolean;
+  payment_id?: string;
+  status?: string;
+  error?: string;
+  [key: string]: unknown;
+}
+
+export interface DebitoAutomaticoVentaResponse {
+  id: string | null;
+  cliente_id: string | null;
+  version_id: string;
+  mp_preapproval_id: string | null;
+  init_point: string | null;
+  external_reference: string;
+  estado: 'ACTIVO' | 'ERROR' | string;
+  monto_autorizado: number;
+  cobro: CobroDebitoAutomatico;
+}
+
 export interface CreateVentaResponse {
-  transaccion_id: string;
+  transaccion_id?: string;
   venta_id?: string;
+  debito_automatico?: DebitoAutomaticoVentaResponse;
 }
 
 export class VentasService {
