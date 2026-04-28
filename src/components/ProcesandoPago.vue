@@ -164,6 +164,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { TransactionService } from '../services/transactions';
 import type { EstadoTransaccion } from '../services/transactions';
+import { DebitoAutomaticoService } from '../services/debito-automatico.service';
 
 interface CompraResumen {
   transaccion_id: string;
@@ -179,13 +180,18 @@ interface CompraResumen {
   debito_automatico?: boolean;
 }
 
+const DEBITO_MAX_REINTENTOS = 3;
+const DEBITO_REINTENTO_MS = 4000;
+
 const resumen = ref<CompraResumen | null>(null);
 const transaccionEstado = ref<EstadoTransaccion>('PENDING');
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
+let debitoReintentoTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const irAPlataforma = () => {
   window.open(import.meta.env.PUBLIC_ENLACE_PLATAFORMA || 'https://aliados.segurucolombia.com/', '_blank', 'noopener,noreferrer');
   localStorage.removeItem('transaccion_id');
+  localStorage.removeItem('venta_pendiente_id');
   localStorage.removeItem('compra_resumen');
   localStorage.removeItem('cupon');
   localStorage.removeItem('cupon_valor');
@@ -263,6 +269,44 @@ const consultarEstado = async () => {
   }
 };
 
+const confirmarDebito = async (ventaId: string, intento: number) => {
+  try {
+    const response = await DebitoAutomaticoService.confirmar(ventaId);
+    const data = response.data;
+
+    if (data?.cobrado && data.estado_debito === 'ACTIVO') {
+      transaccionEstado.value = 'APPROVED';
+      localStorage.removeItem('venta_pendiente_id');
+      return;
+    }
+
+    const estadoFinalRechazo = ['CANCELADO', 'ERROR'].includes(data?.estado_debito || '');
+    const cobroFalladoConMensaje = data?.estado_debito === 'ACTIVO' && data?.cobro?.mensaje;
+
+    if (estadoFinalRechazo || cobroFalladoConMensaje) {
+      transaccionEstado.value = data?.estado_debito === 'ERROR' ? 'ERROR' : 'DECLINED';
+      localStorage.removeItem('venta_pendiente_id');
+      return;
+    }
+
+    // Pending — reintentar hasta DEBITO_MAX_REINTENTOS
+    if (intento < DEBITO_MAX_REINTENTOS) {
+      debitoReintentoTimeout = setTimeout(() => confirmarDebito(ventaId, intento + 1), DEBITO_REINTENTO_MS);
+      return;
+    }
+
+    // Excedimos reintentos sin estado final — quedamos en PENDING para que el usuario reintente manualmente.
+    console.warn('Débito automático sigue pendiente tras', intento, 'reintentos');
+  } catch (err) {
+    console.error('Error al confirmar débito automático:', err);
+    if (intento < DEBITO_MAX_REINTENTOS) {
+      debitoReintentoTimeout = setTimeout(() => confirmarDebito(ventaId, intento + 1), DEBITO_REINTENTO_MS);
+    } else {
+      transaccionEstado.value = 'ERROR';
+    }
+  }
+};
+
 onMounted(() => {
   const resumenRaw = localStorage.getItem('compra_resumen');
   if (resumenRaw) {
@@ -274,9 +318,12 @@ onMounted(() => {
   }
 
   if (resumen.value?.debito_automatico) {
-    // El backend ya procesó el cobro dentro de POST /api/ventas.
-    // Solo llegamos aquí si cobro.cobrado = true, así que mostramos APPROVED directamente.
-    transaccionEstado.value = 'APPROVED';
+    const ventaId = localStorage.getItem('venta_pendiente_id') || resumen.value.transaccion_id;
+    if (ventaId) {
+      confirmarDebito(ventaId, 1);
+    } else {
+      transaccionEstado.value = 'ERROR';
+    }
   } else {
     consultarEstado();
     pollingInterval = setInterval(consultarEstado, 10_000);
@@ -287,6 +334,10 @@ onUnmounted(() => {
   if (pollingInterval) {
     clearInterval(pollingInterval);
     pollingInterval = null;
+  }
+  if (debitoReintentoTimeout) {
+    clearTimeout(debitoReintentoTimeout);
+    debitoReintentoTimeout = null;
   }
 });
 </script>

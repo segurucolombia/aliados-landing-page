@@ -2,45 +2,38 @@ import axios from "axios";
 
 const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/api-aliados/debito-automatico';
 
-export interface CrearPreapprovalDto {
+export interface ConfirmarDebitoCobro {
+  transaccion_id?: string;
+  estado?: string;
+  mensaje?: string;
+  [key: string]: unknown;
+}
+
+export interface ConfirmarDebitoData {
   venta_id: string;
-  card_token_id: string;
-  created_by: string;
-}
-
-export interface CobroPreapproval {
+  preapproval_status: string;
+  estado_debito: string;
   cobrado: boolean;
-  error?: string;
-  [key: string]: unknown;
+  cobro?: ConfirmarDebitoCobro;
 }
 
-export interface CrearPreapprovalResponse {
-  cobro?: CobroPreapproval;
-  [key: string]: unknown;
+export interface ConfirmarDebitoResponse {
+  success: boolean;
+  data: ConfirmarDebitoData;
+  message?: string;
 }
 
 export class DebitoAutomaticoService {
   /**
-   * Crea un preapproval en Mercado Pago y cobra la primera venta.
-   * @param data Datos necesarios para crear el preapproval
-   * @returns Respuesta con el resultado del cobro
+   * Confirma el estado del débito automático tras volver de Mercado Pago.
+   * Idempotente: llamarlo varias veces NO duplica cobros.
    */
-  static async crear_preapproval(data: CrearPreapprovalDto): Promise<CrearPreapprovalResponse> {
-    try {
-      const response = await axios.post<CrearPreapprovalResponse>(
-        `${baseUrl}/crear-preapproval`,
-        data,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      return response.data;
-    } catch (error) {
-      console.error('Error al crear preapproval de débito automático:', error);
-      throw error;
-    }
+  static async confirmar(venta_id: string): Promise<ConfirmarDebitoResponse> {
+    const response = await axios.post<ConfirmarDebitoResponse>(
+      `${baseUrl}/confirmar`,
+      { venta_id },
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+    return response.data;
   }
 }

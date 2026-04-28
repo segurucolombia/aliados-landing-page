@@ -499,17 +499,20 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
 
     const response = await VentasService.crear_venta(ventaData);
 
-    // Guardar transaccion_id en localStorage
-    localStorage.setItem('transaccion_id', response.transaccion_id);
+    if (!response.transaccion_id) {
+      throw new Error('No se recibió transaccion_id desde el backend.');
+    }
+    const transaccionId = response.transaccion_id;
+
+    localStorage.setItem('transaccion_id', transaccionId);
 
     // Calcular precio final aplicando el descuento del cupón
     const cuponValorStr = localStorage.getItem('cupon_valor');
     const cuponValor = cuponValorStr ? parseFloat(cuponValorStr) || 0 : 0;
     const precioFinal = Math.max(0, planSeleccionado.precio - cuponValor);
 
-    // Guardar resumen de compra para mostrar en la pantalla de procesando pago
     const compraResumen = {
-      transaccion_id: response.transaccion_id,
+      transaccion_id: transaccionId,
       plan_nombre: planSeleccionado.nombre,
       precio: precioFinal,
       comprador_nombre: data.formData.fullName,
@@ -522,8 +525,7 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
     };
     localStorage.setItem('compra_resumen', JSON.stringify(compraResumen));
 
-    // Abrir Wompi en pestaña nueva y redirigir al usuario a la pantalla de procesando pago
-    await sendWompi(response.transaccion_id, precioFinal, data.formData, paymentWindow);
+    await sendWompi(transaccionId, precioFinal, data.formData, paymentWindow);
     window.location.href = '/procesando-pago';
 
     closePurchaseWizard();
@@ -577,7 +579,8 @@ const handleCompraDebito = async (data: {
     const cuponLocalStorage = localStorage.getItem('cupon');
     const aliadoIdLocalStorage = localStorage.getItem('aliado_id');
 
-    // POST /api/ventas crea la venta, el preapproval y ejecuta el primer cobro en una sola llamada.
+    // POST /ventas crea la venta + preapproval en MP. La autorización del cobro
+    // ocurre cuando el cliente confirma en MP y vuelve a back_url.
     const ventaData = {
       producto_id: productoPlanes.value.productoId,
       version_id: versionId,
@@ -598,30 +601,19 @@ const handleCompraDebito = async (data: {
       condiciones: data.condiciones,
       debito_automatico: true,
       card_token_id: data.cardTokenId,
+      back_url: `${window.location.origin}/procesando-pago`,
     };
 
     const ventaResponse = await VentasService.crear_venta(ventaData);
-    const cobro = ventaResponse.debito_automatico?.cobro;
+    const initPoint = ventaResponse.debito_automatico?.init_point;
+    const ventaId = ventaResponse.venta_id ?? '';
 
-    if (!cobro?.cobrado) {
-      // Cobro rechazado — la venta quedó registrada en estado PENDIENTE.
-      // El usuario puede cerrar e iniciar un nuevo flujo con otra tarjeta.
-      isProcessingPurchase.value = false;
-      const errorMsg = cobro?.error || 'El cobro fue rechazado por Mercado Pago. Intenta con otra tarjeta.';
-      const Swal = (await import('sweetalert2')).default;
-      await Swal.fire({
-        title: 'Cobro rechazado',
-        text: errorMsg,
-        icon: 'error',
-        confirmButtonColor: '#1e40af',
-      });
-      return;
+    if (!initPoint || !ventaId) {
+      throw new Error('No se recibió init_point o venta_id desde el backend.');
     }
 
-    // Cobro aprobado — redirigir a pantalla de éxito
-    const ventaId = ventaResponse.venta_id ?? ventaResponse.transaccion_id ?? '';
-    localStorage.setItem('transaccion_id', ventaId);
-
+    // Persistir resumen + venta_id antes de redirigir a MP. Al volver, /procesando-pago
+    // los lee y llama a /debito-automatico/confirmar.
     const planSeleccionado = productoPlanes.value.planes.find(p => p.id === data.planId);
     const cuponValorStr = localStorage.getItem('cupon_valor');
     const cuponValor = cuponValorStr ? parseFloat(cuponValorStr) || 0 : 0;
@@ -641,10 +633,12 @@ const handleCompraDebito = async (data: {
       fecha_compra: new Date().toISOString(),
       debito_automatico: true,
     };
+    localStorage.setItem('transaccion_id', ventaId);
+    localStorage.setItem('venta_pendiente_id', ventaId);
     localStorage.setItem('compra_resumen', JSON.stringify(compraResumen));
 
     closePurchaseWizard();
-    window.location.href = '/procesando-pago';
+    window.location.href = initPoint;
   } catch (error: any) {
     console.error('Error al procesar débito automático:', error);
     isProcessingPurchase.value = false;

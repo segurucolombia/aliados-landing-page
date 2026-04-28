@@ -28,14 +28,7 @@ export interface CreateVentaDto {
   condiciones: CondicionVentaInput[];
   debito_automatico?: boolean;
   card_token_id?: string;
-}
-
-export interface CobroDebitoAutomatico {
-  cobrado: boolean;
-  payment_id?: string;
-  status?: string;
-  error?: string;
-  [key: string]: unknown;
+  back_url?: string;
 }
 
 export interface DebitoAutomaticoVentaResponse {
@@ -43,11 +36,10 @@ export interface DebitoAutomaticoVentaResponse {
   cliente_id: string | null;
   version_id: string;
   mp_preapproval_id: string | null;
-  init_point: string | null;
+  init_point: string;
   external_reference: string;
-  estado: 'ACTIVO' | 'ERROR' | string;
+  estado: string;
   monto_autorizado: number;
-  cobro: CobroDebitoAutomatico;
 }
 
 export interface CreateVentaResponse {
