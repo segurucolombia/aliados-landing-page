@@ -152,7 +152,12 @@
         </div>
 
         <!-- Nota al pie -->
-        <p v-if="transaccionEstado === 'PENDING'" class="text-xs text-gray-400 text-center mt-5 leading-relaxed">
+        <div v-if="transaccionEstado === 'PENDING' && debitoEsperandoNotificacion" class="mt-5 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg p-4">
+          <p class="text-sm text-blue-800 font-medium">
+            Estamos esperando confirmación de Mercado Pago. Te notificaremos por correo apenas tengamos el resultado.
+          </p>
+        </div>
+        <p v-else-if="transaccionEstado === 'PENDING'" class="text-xs text-gray-400 text-center mt-5 leading-relaxed">
           Verificamos el estado de tu pago automáticamente.<br />No cierres esta ventana.
         </p>
       </div>
@@ -185,6 +190,7 @@ const DEBITO_REINTENTO_MS = 4000;
 
 const resumen = ref<CompraResumen | null>(null);
 const transaccionEstado = ref<EstadoTransaccion>('PENDING');
+const debitoEsperandoNotificacion = ref(false);
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
 let debitoReintentoTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -273,17 +279,22 @@ const confirmarDebito = async (ventaId: string, intento: number) => {
   try {
     const response = await DebitoAutomaticoService.confirmar(ventaId);
     const data = response.data;
+    const cobroEstado = data?.cobro?.estado;
 
-    if (data?.cobrado && data.estado_debito === 'ACTIVO') {
+    if (data?.estado_debito === 'ACTIVO' && cobroEstado === 'approved') {
       transaccionEstado.value = 'APPROVED';
       localStorage.removeItem('venta_pendiente_id');
       return;
     }
 
     const estadoFinalRechazo = ['CANCELADO', 'ERROR'].includes(data?.estado_debito || '');
-    const cobroFalladoConMensaje = data?.estado_debito === 'ACTIVO' && data?.cobro?.mensaje;
+    const cobroRechazadoPorTarjeta =
+      data?.estado_debito === 'ACTIVO' &&
+      cobroEstado &&
+      cobroEstado !== 'approved' &&
+      cobroEstado !== 'pending';
 
-    if (estadoFinalRechazo || cobroFalladoConMensaje) {
+    if (estadoFinalRechazo || cobroRechazadoPorTarjeta) {
       transaccionEstado.value = data?.estado_debito === 'ERROR' ? 'ERROR' : 'DECLINED';
       localStorage.removeItem('venta_pendiente_id');
       return;
@@ -295,8 +306,8 @@ const confirmarDebito = async (ventaId: string, intento: number) => {
       return;
     }
 
-    // Excedimos reintentos sin estado final — quedamos en PENDING para que el usuario reintente manualmente.
-    console.warn('Débito automático sigue pendiente tras', intento, 'reintentos');
+    // Reintentos agotados sin estado final — informamos al cliente que MP confirmará por correo.
+    debitoEsperandoNotificacion.value = true;
   } catch (err) {
     console.error('Error al confirmar débito automático:', err);
     if (intento < DEBITO_MAX_REINTENTOS) {
