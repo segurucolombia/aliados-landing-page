@@ -17,7 +17,7 @@
           </div>
         </div>
         <h1 class="text-2xl font-bold mb-1">Procesando tu pago</h1>
-        <p class="text-blue-100 text-sm">Por favor espera mientras confirmamos tu transacción</p>
+        <p class="text-blue-100 text-sm">{{ debitoMensajeProcesando || 'Por favor espera mientras confirmamos tu transacción' }}</p>
         <div class="flex justify-center gap-2 mt-4">
           <span class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0ms"></span>
           <span class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 150ms"></span>
@@ -185,12 +185,13 @@ interface CompraResumen {
   debito_automatico?: boolean;
 }
 
-const DEBITO_MAX_REINTENTOS = 3;
-const DEBITO_REINTENTO_MS = 4000;
+const DEBITO_MAX_REINTENTOS = 6;
+const DEBITO_REINTENTO_MS = 5000;
 
 const resumen = ref<CompraResumen | null>(null);
 const transaccionEstado = ref<EstadoTransaccion>('PENDING');
 const debitoEsperandoNotificacion = ref(false);
+const debitoMensajeProcesando = ref<string | null>(null);
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
 let debitoReintentoTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -280,27 +281,27 @@ const confirmarDebito = async (ventaId: string, intento: number) => {
     const response = await DebitoAutomaticoService.confirmar(ventaId);
     const data = response.data;
     const cobroEstado = data?.cobro?.estado;
+    const cobroMensaje = data?.cobro?.mensaje;
 
     if (data?.estado_debito === 'ACTIVO' && cobroEstado === 'approved') {
       transaccionEstado.value = 'APPROVED';
+      debitoMensajeProcesando.value = null;
       localStorage.removeItem('venta_pendiente_id');
       return;
     }
 
-    const estadoFinalRechazo = ['CANCELADO', 'ERROR'].includes(data?.estado_debito || '');
-    const cobroRechazadoPorTarjeta =
-      data?.estado_debito === 'ACTIVO' &&
-      cobroEstado &&
-      cobroEstado !== 'approved' &&
-      cobroEstado !== 'pending';
-
-    if (estadoFinalRechazo || cobroRechazadoPorTarjeta) {
+    if (['CANCELADO', 'ERROR'].includes(data?.estado_debito || '')) {
       transaccionEstado.value = data?.estado_debito === 'ERROR' ? 'ERROR' : 'DECLINED';
       localStorage.removeItem('venta_pendiente_id');
       return;
     }
 
-    // Pending — reintentar hasta DEBITO_MAX_REINTENTOS
+    // estado_debito='ACTIVO' + cobrado=false: el preapproval quedó autorizado
+    // pero el cobro depende del webhook de MP. Tratar como pending y reintentar.
+    if (typeof cobroMensaje === 'string' && cobroMensaje.trim()) {
+      debitoMensajeProcesando.value = cobroMensaje;
+    }
+
     if (intento < DEBITO_MAX_REINTENTOS) {
       debitoReintentoTimeout = setTimeout(() => confirmarDebito(ventaId, intento + 1), DEBITO_REINTENTO_MS);
       return;
