@@ -605,15 +605,15 @@ const handleCompraDebito = async (data: {
     };
 
     const ventaResponse = await VentasService.crear_venta(ventaData);
-    const initPoint = ventaResponse.debito_automatico?.init_point;
     const ventaId = ventaResponse.venta_id ?? '';
 
-    if (!initPoint || !ventaId) {
-      throw new Error('No se recibió init_point o venta_id desde el backend.');
+    if (!ventaId) {
+      throw new Error('No se recibió venta_id desde el backend.');
     }
 
-    // Persistir resumen + venta_id antes de redirigir a MP. Al volver, /procesando-pago
-    // los lee y llama a /debito-automatico/confirmar.
+    // El preapproval queda autorizado de inmediato en MP. Saltamos el redirect a init_point
+    // (que solo mostraría una pantalla intermedia molesta) y vamos directo a /procesando-pago,
+    // que polea /debito-automatico/confirmar hasta que el webhook complete el cobro.
     const planSeleccionado = productoPlanes.value.planes.find(p => p.id === data.planId);
     const cuponValorStr = localStorage.getItem('cupon_valor');
     const cuponValor = cuponValorStr ? parseFloat(cuponValorStr) || 0 : 0;
@@ -638,7 +638,7 @@ const handleCompraDebito = async (data: {
     localStorage.setItem('compra_resumen', JSON.stringify(compraResumen));
 
     closePurchaseWizard();
-    window.location.href = initPoint;
+    window.location.href = '/procesando-pago';
   } catch (error: any) {
     console.error('Error al procesar débito automático:', error);
     isProcessingPurchase.value = false;

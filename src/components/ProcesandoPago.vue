@@ -97,6 +97,32 @@
           </button>
         </div>
 
+        <!-- Mensaje DECLINED / ERROR -->
+        <div v-if="transaccionEstado === 'DECLINED' || transaccionEstado === 'ERROR'" class="mb-5 bg-white border-l-4 border-red-500 rounded-r-xl shadow-sm p-4">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 mt-0.5">
+              <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="text-gray-900 font-semibold mb-0.5">No pudimos procesar el cobro</p>
+              <p class="text-gray-600 text-sm">
+                Puedes intentar nuevamente con otra tarjeta o medio de pago.
+              </p>
+            </div>
+          </div>
+          <button
+            @click="reiniciarFlujo"
+            class="mt-4 w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm cursor-pointer"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Intentar con otra tarjeta
+          </button>
+        </div>
+
         <!-- Resumen de compra -->
         <div v-if="resumen" class="space-y-4">
           <h2 class="text-base font-semibold text-gray-800 border-b border-gray-100 pb-2">
@@ -185,8 +211,8 @@ interface CompraResumen {
   debito_automatico?: boolean;
 }
 
-const DEBITO_MAX_REINTENTOS = 6;
-const DEBITO_REINTENTO_MS = 5000;
+const DEBITO_MAX_REINTENTOS = 50;
+const DEBITO_REINTENTO_MS = 7000;
 
 const resumen = ref<CompraResumen | null>(null);
 const transaccionEstado = ref<EstadoTransaccion>('PENDING');
@@ -204,6 +230,13 @@ const irAPlataforma = () => {
   localStorage.removeItem('cupon_valor');
   localStorage.removeItem('aliado_id');
   window.location.href = '/';
+};
+
+const reiniciarFlujo = () => {
+  localStorage.removeItem('transaccion_id');
+  localStorage.removeItem('venta_pendiente_id');
+  localStorage.removeItem('compra_resumen');
+  window.location.href = '/productos';
 };
 
 const ESTADOS_FINALES: EstadoTransaccion[] = ['APPROVED', 'DECLINED', 'ERROR'];
@@ -280,10 +313,9 @@ const confirmarDebito = async (ventaId: string, intento: number) => {
   try {
     const response = await DebitoAutomaticoService.confirmar(ventaId);
     const data = response.data;
-    const cobroEstado = data?.cobro?.estado;
     const cobroMensaje = data?.cobro?.mensaje;
 
-    if (data?.estado_debito === 'ACTIVO' && cobroEstado === 'approved') {
+    if (data?.cobrado === true && data.estado_debito === 'ACTIVO') {
       transaccionEstado.value = 'APPROVED';
       debitoMensajeProcesando.value = null;
       localStorage.removeItem('venta_pendiente_id');
