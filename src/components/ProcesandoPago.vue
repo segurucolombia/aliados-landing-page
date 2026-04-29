@@ -1,5 +1,10 @@
 <template>
-  <div :class="transaccionEstado === 'APPROVED' ? 'from-green-300 to-green-400' : 'from-primary-700 to-primary-900'" class="min-h-screen bg-gradient-to-br flex items-center justify-center p-4">
+  <PagoProcesandoMensaje
+    v-if="esDebitoAutomatico"
+    :email="resumen?.comprador_email"
+    @volver="volverInicio"
+  />
+  <div v-else :class="transaccionEstado === 'APPROVED' ? 'from-green-300 to-green-400' : 'from-primary-700 to-primary-900'" class="min-h-screen bg-gradient-to-br flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
 
       <!-- Header: PENDING -->
@@ -17,7 +22,7 @@
           </div>
         </div>
         <h1 class="text-2xl font-bold mb-1">Procesando tu pago</h1>
-        <p class="text-blue-100 text-sm">{{ debitoMensajeProcesando || 'Por favor espera mientras confirmamos tu transacción' }}</p>
+        <p class="text-blue-100 text-sm">Por favor espera mientras confirmamos tu transacción</p>
         <div class="flex justify-center gap-2 mt-4">
           <span class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0ms"></span>
           <span class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 150ms"></span>
@@ -178,12 +183,7 @@
         </div>
 
         <!-- Nota al pie -->
-        <div v-if="transaccionEstado === 'PENDING' && debitoEsperandoNotificacion" class="mt-5 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg p-4">
-          <p class="text-sm text-blue-800 font-medium">
-            Estamos esperando confirmación de Mercado Pago. Te notificaremos por correo apenas tengamos el resultado.
-          </p>
-        </div>
-        <p v-else-if="transaccionEstado === 'PENDING'" class="text-xs text-gray-400 text-center mt-5 leading-relaxed">
+        <p v-if="transaccionEstado === 'PENDING'" class="text-xs text-gray-400 text-center mt-5 leading-relaxed">
           Verificamos el estado de tu pago automáticamente.<br />No cierres esta ventana.
         </p>
       </div>
@@ -195,7 +195,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { TransactionService } from '../services/transactions';
 import type { EstadoTransaccion } from '../services/transactions';
-import { DebitoAutomaticoService } from '../services/debito-automatico.service';
+import PagoProcesandoMensaje from './PagoProcesandoMensaje.vue';
 
 interface CompraResumen {
   transaccion_id: string;
@@ -211,15 +211,11 @@ interface CompraResumen {
   debito_automatico?: boolean;
 }
 
-const DEBITO_MAX_REINTENTOS = 50;
-const DEBITO_REINTENTO_MS = 7000;
-
 const resumen = ref<CompraResumen | null>(null);
 const transaccionEstado = ref<EstadoTransaccion>('PENDING');
-const debitoEsperandoNotificacion = ref(false);
-const debitoMensajeProcesando = ref<string | null>(null);
 let pollingInterval: ReturnType<typeof setInterval> | null = null;
-let debitoReintentoTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const esDebitoAutomatico = computed(() => resumen.value?.debito_automatico === true);
 
 const irAPlataforma = () => {
   window.open(import.meta.env.PUBLIC_ENLACE_PLATAFORMA || 'https://aliados.segurucolombia.com/', '_blank', 'noopener,noreferrer');
@@ -237,6 +233,16 @@ const reiniciarFlujo = () => {
   localStorage.removeItem('venta_pendiente_id');
   localStorage.removeItem('compra_resumen');
   window.location.href = '/productos';
+};
+
+const volverInicio = () => {
+  localStorage.removeItem('transaccion_id');
+  localStorage.removeItem('venta_pendiente_id');
+  localStorage.removeItem('compra_resumen');
+  localStorage.removeItem('cupon');
+  localStorage.removeItem('cupon_valor');
+  localStorage.removeItem('aliado_id');
+  window.location.href = '/';
 };
 
 const ESTADOS_FINALES: EstadoTransaccion[] = ['APPROVED', 'DECLINED', 'ERROR'];
@@ -309,48 +315,6 @@ const consultarEstado = async () => {
   }
 };
 
-const confirmarDebito = async (ventaId: string, intento: number) => {
-  try {
-    const response = await DebitoAutomaticoService.confirmar(ventaId);
-    const data = response.data;
-    const cobroMensaje = data?.cobro?.mensaje;
-
-    if (data?.cobrado === true && data.estado_debito === 'ACTIVO') {
-      transaccionEstado.value = 'APPROVED';
-      debitoMensajeProcesando.value = null;
-      localStorage.removeItem('venta_pendiente_id');
-      return;
-    }
-
-    if (['CANCELADO', 'ERROR'].includes(data?.estado_debito || '')) {
-      transaccionEstado.value = data?.estado_debito === 'ERROR' ? 'ERROR' : 'DECLINED';
-      localStorage.removeItem('venta_pendiente_id');
-      return;
-    }
-
-    // estado_debito='ACTIVO' + cobrado=false: el preapproval quedó autorizado
-    // pero el cobro depende del webhook de MP. Tratar como pending y reintentar.
-    if (typeof cobroMensaje === 'string' && cobroMensaje.trim()) {
-      debitoMensajeProcesando.value = cobroMensaje;
-    }
-
-    if (intento < DEBITO_MAX_REINTENTOS) {
-      debitoReintentoTimeout = setTimeout(() => confirmarDebito(ventaId, intento + 1), DEBITO_REINTENTO_MS);
-      return;
-    }
-
-    // Reintentos agotados sin estado final — informamos al cliente que MP confirmará por correo.
-    debitoEsperandoNotificacion.value = true;
-  } catch (err) {
-    console.error('Error al confirmar débito automático:', err);
-    if (intento < DEBITO_MAX_REINTENTOS) {
-      debitoReintentoTimeout = setTimeout(() => confirmarDebito(ventaId, intento + 1), DEBITO_REINTENTO_MS);
-    } else {
-      transaccionEstado.value = 'ERROR';
-    }
-  }
-};
-
 onMounted(() => {
   const resumenRaw = localStorage.getItem('compra_resumen');
   if (resumenRaw) {
@@ -361,27 +325,18 @@ onMounted(() => {
     }
   }
 
-  if (resumen.value?.debito_automatico) {
-    const ventaId = localStorage.getItem('venta_pendiente_id') || resumen.value.transaccion_id;
-    if (ventaId) {
-      confirmarDebito(ventaId, 1);
-    } else {
-      transaccionEstado.value = 'ERROR';
-    }
-  } else {
-    consultarEstado();
-    pollingInterval = setInterval(consultarEstado, 10_000);
-  }
+  // Para débito automático no hacemos polling: el cobro lo procesa MP en background
+  // y el cliente recibe el resultado por correo (PagoProcesandoMensaje cubre la pantalla).
+  if (esDebitoAutomatico.value) return;
+
+  consultarEstado();
+  pollingInterval = setInterval(consultarEstado, 10_000);
 });
 
 onUnmounted(() => {
   if (pollingInterval) {
     clearInterval(pollingInterval);
     pollingInterval = null;
-  }
-  if (debitoReintentoTimeout) {
-    clearTimeout(debitoReintentoTimeout);
-    debitoReintentoTimeout = null;
   }
 });
 </script>
