@@ -55,18 +55,18 @@
               <span class="price-label-debito">Con débito automático</span>
               <div class="price-main">
                 <span class="price-amount">${{ formatPrice(plan.version.valor_debito_automatico) }}</span>
-                <span class="price-period">/ {{ plan.version.nombre }}</span>
+                <span class="price-period">/ {{ formatVigencia(plan.version.vigencia_numero_meses) }}</span>
               </div>
             </div>
             <div class="price-row-regular">
               <span class="price-label-regular">Pago manual</span>
-              <span class="price-alt-value">${{ formatPrice(plan.version.precio) }} / {{ plan.version.nombre }}</span>
+              <span class="price-alt-value">${{ formatPrice(plan.version.precio) }} / {{ formatVigencia(plan.version.vigencia_numero_meses) }}</span>
             </div>
           </template>
           <template v-else>
             <div class="price-main">
               <span class="price-amount">${{ formatPrice(plan.version.precio) }}</span>
-              <span class="price-period">/ {{ plan.version.nombre }}</span>
+              <span class="price-period">/ {{ formatVigencia(plan.version.vigencia_numero_meses) }}</span>
             </div>
           </template>
         </div>
@@ -82,6 +82,10 @@
           <div class="info-item">
             <span class="info-label">Vigencia desde</span>
             <span class="info-value">{{ formatDate(plan.version.vigencia_inicio) }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Vigencia del plan</span>
+            <span class="info-value">{{ formatVigencia(plan.version.vigencia_numero_meses) }}</span>
           </div>
         </div>
 
@@ -209,6 +213,7 @@ import { ref, onMounted } from 'vue';
 import { PlanesService } from '../services/planes.service';
 import type { PlanWithDetails } from '../types/planes';
 import type { CondicionVentaInput } from '../services/ventas.service';
+import { formatVigencia } from '../utils/vigencia';
 
 const props = defineProps<{
   planId: string;
@@ -309,6 +314,7 @@ const formatPrice = (price: number): string => {
     maximumFractionDigits: 0,
   }).format(price);
 };
+
 
 const formatDate = (vigencia: string): string => {
   const formatter = new Intl.DateTimeFormat('es-CO', {

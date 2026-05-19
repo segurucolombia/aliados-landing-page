@@ -58,7 +58,7 @@ export interface Plan {
   descripcion: string;
   precio: number;
   moneda: string;
-  periodicidad: 'mensual' | 'trimestral' | 'semestral' | 'anual';
+  vigencia_numero_meses: number;
   destacado?: boolean;
   coberturas: CoberturaPlan[];
   caracteristicas?: string[];
@@ -165,6 +165,7 @@ export interface Version {
   documento_id: string | null;
   valor_asegurado: number;
   vigencia_inicio: string;
+  vigencia_numero_meses: number;
   precio: number;
   valor_debito_automatico?: number | null;
   created_at: Date;

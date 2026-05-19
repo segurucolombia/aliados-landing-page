@@ -276,7 +276,7 @@
               </div>
               <div class="payment-option-info">
                 <span class="payment-option-label">Débito automático</span>
-                <span class="payment-option-price">{{ formatCurrency(valorDebitoAutomatico!) }} <span class="payment-option-period">/ renovación</span></span>
+                <span class="payment-option-price">{{ formatCurrency(valorDebitoAutomatico!) }} <span class="payment-option-period">/ {{ vigenciaLabel }}</span></span>
               </div>
               <div class="payment-option-saving">
                 Ahorra {{ formatCurrency(planPrecio - valorDebitoAutomatico!) }}
@@ -310,7 +310,7 @@
                 <span class="payment-option-label">Otros medios de pago</span>
                 <span class="payment-option-price payment-option-price-secondary">
                   {{ formatCurrency(cuponValor > 0 ? totalAPagar : planPrecio) }}
-                  <span class="payment-option-period">/ renovación</span>
+                  <span class="payment-option-period">/ {{ vigenciaLabel }}</span>
                   <span v-if="cuponValor > 0" class="cupon-applied-badge">Cupón aplicado</span>
                 </span>
               </div>
@@ -370,6 +370,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue';
 import { DOCUMENT_TYPES } from '../utils/documentTypes';
+import { formatVigencia } from '../utils/vigencia';
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
@@ -398,11 +399,15 @@ export interface PurchaseFormData {
 const props = withDefaults(defineProps<{
   planPrecio: number;
   valorDebitoAutomatico?: number | null;
+  vigenciaNumeroMeses?: number | null;
   hasNextStep?: boolean;
 }>(), {
   hasNextStep: false,
-  valorDebitoAutomatico: null
+  valorDebitoAutomatico: null,
+  vigenciaNumeroMeses: null
 });
+
+const vigenciaLabel = computed(() => formatVigencia(props.vigenciaNumeroMeses) || 'renovación');
 
 const emit = defineEmits<{
   (e: 'submit', data: PurchaseFormData): void;

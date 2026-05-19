@@ -32,16 +32,16 @@
           <template v-if="plan.valor_debito_automatico != null">
             <div class="flex items-baseline gap-1">
               <span class="text-2xl font-bold text-green-700">{{ formatPrice(plan.valor_debito_automatico) }}</span>
-              <span class="text-xs text-gray-500">{{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }}</span>
+              <span class="text-xs text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
             </div>
             <div class="text-xs text-gray-400 leading-tight">
-              {{ formatPrice(plan.precio) }} {{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }} sin pago automático
+              {{ formatPrice(plan.precio) }} {{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }} sin pago automático
             </div>
           </template>
           <template v-else>
             <div class="flex items-baseline gap-1">
               <span class="text-2xl font-bold text-primary-700">{{ formatPrice(plan.precio) }}</span>
-              <span class="text-xs text-gray-500">{{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }}</span>
+              <span class="text-xs text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
             </div>
           </template>
         </div>
@@ -122,16 +122,16 @@
                   <template v-if="plan.valor_debito_automatico != null">
                     <div class="flex items-baseline gap-1">
                       <span class="text-2xl font-bold text-green-700">{{ formatPrice(plan.valor_debito_automatico) }}</span>
-                      <span class="text-xs text-gray-500">{{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }}</span>
+                      <span class="text-xs text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
                     </div>
                     <div class="text-xs text-gray-400">
-                      <span class="">{{ formatPrice(plan.precio) }} {{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }}</span> sin pago automático
+                      <span class="">{{ formatPrice(plan.precio) }} {{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span> sin pago automático
                     </div>
                   </template>
                   <template v-else>
                     <div class="flex items-baseline gap-1">
                       <span class="text-2xl font-bold text-primary-700">{{ formatPrice(plan.precio) }}</span>
-                      <span class="text-xs text-gray-500">{{ plan.moneda }}/{{ formatPeriodicidad(plan.periodicidad) }}</span>
+                      <span class="text-xs text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
                     </div>
                   </template>
                 </div>
@@ -246,6 +246,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Plan, Cobertura, CoberturaPlan, EstilosAseguradora } from '../types/planes';
+import { formatVigencia } from '../utils/vigencia';
 
 interface Props {
   planes: Plan[];
@@ -306,15 +307,6 @@ const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
-const formatPeriodicidad = (periodicidad: string): string => {
-  const map: Record<string, string> = {
-    mensual: 'mes',
-    trimestral: 'trimestre',
-    semestral: 'semestre',
-    anual: 'año'
-  };
-  return map[periodicidad] || periodicidad;
-};
 </script>
 
 <style scoped>

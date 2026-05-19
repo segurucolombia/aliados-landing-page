@@ -144,6 +144,11 @@
             </p>
           </div>
 
+          <div v-if="resumen.vigencia_numero_meses" class="flex items-center justify-between gap-2">
+            <p class="text-xs text-gray-400 uppercase tracking-wide">Vigencia del plan</p>
+            <p class="font-semibold text-gray-800 text-sm">{{ formatVigencia(resumen.vigencia_numero_meses) }}</p>
+          </div>
+
           <div class="h-px bg-gray-100"></div>
 
           <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Datos del comprador</p>
@@ -196,11 +201,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { TransactionService } from '../services/transactions';
 import type { EstadoTransaccion } from '../services/transactions';
 import PagoProcesandoMensaje from './PagoProcesandoMensaje.vue';
+import { formatVigencia } from '../utils/vigencia';
 
 interface CompraResumen {
   transaccion_id: string;
   plan_nombre: string;
   precio: number;
+  vigencia_numero_meses?: number;
   comprador_nombre: string;
   comprador_apellido: string;
   comprador_email: string;
@@ -292,6 +299,7 @@ const formatDate = (dateStr: string) =>
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(dateStr));
+
 
 const consultarEstado = async () => {
   const transaccionId = localStorage.getItem('transaccion_id');

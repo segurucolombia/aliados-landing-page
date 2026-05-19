@@ -41,6 +41,7 @@
         <PlanPurchaseFormStep
           :plan-precio="planPrecio"
           :valor-debito-automatico="planData?.version?.valor_debito_automatico ?? null"
+          :vigencia-numero-meses="planData?.version?.vigencia_numero_meses ?? null"
           :has-next-step="hasCamposAdicionales"
           @submit="handlePurchaseFormSubmit"
           @submit-debito="handleDebitoAutomaticoSubmit"
