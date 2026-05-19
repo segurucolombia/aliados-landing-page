@@ -30,18 +30,21 @@
         </div>
         <div style="margin-top: -0.25rem;">
           <template v-if="plan.valor_debito_automatico != null">
+            <span class="inline-block bg-green-50 text-green-700 text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap mb-1">
+              Pagando con débito automático
+            </span>
             <div class="flex items-baseline gap-1">
-              <span class="text-2xl font-bold text-green-700">{{ formatPrice(plan.valor_debito_automatico) }}</span>
-              <span class="text-xs text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
+              <span class="text-2xl font-bold text-green-700">${{ formatPrice(plan.valor_debito_automatico) }}</span>
+              <span class="text-[11px] text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
             </div>
-            <div class="text-xs text-gray-400 leading-tight">
-              {{ formatPrice(plan.precio) }} {{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }} sin pago automático
+            <div class="text-[11px] text-gray-400 leading-tight">
+              ${{ formatPrice(plan.precio) }} Otros medios de pago
             </div>
           </template>
           <template v-else>
             <div class="flex items-baseline gap-1">
-              <span class="text-2xl font-bold text-primary-700">{{ formatPrice(plan.precio) }}</span>
-              <span class="text-xs text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
+              <span class="text-2xl font-bold text-primary-700">${{ formatPrice(plan.precio) }}</span>
+              <span class="text-[11px] text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
             </div>
           </template>
         </div>
@@ -120,18 +123,21 @@
                   <span class="text-xl font-bold text-gray-900 mb-1">{{ plan.nombre }}</span>
                   <span class="text-sm text-gray-600 mb-2">{{ plan.descripcion }}</span>
                   <template v-if="plan.valor_debito_automatico != null">
+                    <span class="inline-block bg-green-50 text-green-700 text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap mb-1">
+                      Pagando con débito automático
+                    </span>
                     <div class="flex items-baseline gap-1">
-                      <span class="text-2xl font-bold text-green-700">{{ formatPrice(plan.valor_debito_automatico) }}</span>
-                      <span class="text-xs text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
+                      <span class="text-2xl font-bold text-green-700">${{ formatPrice(plan.valor_debito_automatico) }}</span>
+                      <span class="text-[11px] text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
                     </div>
-                    <div class="text-xs text-gray-400">
-                      <span class="">{{ formatPrice(plan.precio) }} {{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span> sin pago automático
+                    <div class="text-[11px] text-gray-400 leading-tight mt-0.5">
+                      ${{ formatPrice(plan.precio) }} Otros medios de pago
                     </div>
                   </template>
                   <template v-else>
                     <div class="flex items-baseline gap-1">
-                      <span class="text-2xl font-bold text-primary-700">{{ formatPrice(plan.precio) }}</span>
-                      <span class="text-xs text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
+                      <span class="text-2xl font-bold text-primary-700">${{ formatPrice(plan.precio) }}</span>
+                      <span class="text-[11px] text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
                     </div>
                   </template>
                 </div>
