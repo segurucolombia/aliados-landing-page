@@ -59,7 +59,7 @@
               </div>
             </div>
             <div class="price-row-regular">
-              <span class="price-label-regular">Pago manual</span>
+              <span class="price-label-regular">Otros medios de pago</span>
               <span class="price-alt-value">${{ formatPrice(plan.version.precio) }} / {{ formatVigencia(plan.version.vigencia_numero_meses) }}</span>
             </div>
           </template>
