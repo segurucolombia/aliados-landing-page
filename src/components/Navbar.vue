@@ -12,48 +12,17 @@
         <!-- Desktop Menu -->
         <div class="hidden md:flex items-center space-x-7">
           <a
-            href="#inicio"
+            v-for="item in menuItems"
+            :key="item.key"
+            :href="item.href"
             :class="[
               'font-medium text-sm transition-all duration-200',
-              activeSection === 'inicio'
+              activeSection === item.key
                 ? 'text-primary-600 border-b-2 border-primary-600 pb-0.5'
                 : 'text-gray-700 hover:text-primary-600'
             ]"
           >
-            Inicio
-          </a>
-          <a
-            href="#productos"
-            :class="[
-              'font-medium text-sm transition-all duration-200',
-              activeSection === 'productos'
-                ? 'text-primary-600 border-b-2 border-primary-600 pb-0.5'
-                : 'text-gray-700 hover:text-primary-600'
-            ]"
-          >
-            Productos
-          </a>
-          <a
-            href="#nosotros"
-            :class="[
-              'font-medium text-sm transition-all duration-200',
-              activeSection === 'nosotros'
-                ? 'text-primary-600 border-b-2 border-primary-600 pb-0.5'
-                : 'text-gray-700 hover:text-primary-600'
-            ]"
-          >
-            Nosotros
-          </a>
-          <a
-            href="#contacto"
-            :class="[
-              'font-medium text-sm transition-all duration-200',
-              activeSection === 'contacto'
-                ? 'text-primary-600 border-b-2 border-primary-600 pb-0.5'
-                : 'text-gray-700 hover:text-primary-600'
-            ]"
-          >
-            Contacto
+            {{ item.label }}
           </a>
         </div>
 
@@ -81,10 +50,20 @@
 
       <!-- Mobile Menu -->
       <div v-if="isMenuOpen" class="md:hidden py-4 border-t border-gray-100 space-y-1">
-        <a href="#inicio" @click="isMenuOpen = false" class="block py-2.5 px-4 rounded-lg text-gray-700 hover:text-primary-600 hover:bg-primary-50 font-medium transition-colors">Inicio</a>
-        <a href="#productos" @click="isMenuOpen = false" class="block py-2.5 px-4 rounded-lg text-gray-700 hover:text-primary-600 hover:bg-primary-50 font-medium transition-colors">Productos</a>
-        <a href="#nosotros" @click="isMenuOpen = false" class="block py-2.5 px-4 rounded-lg text-gray-700 hover:text-primary-600 hover:bg-primary-50 font-medium transition-colors">Nosotros</a>
-        <a href="#contacto" @click="isMenuOpen = false" class="block py-2.5 px-4 rounded-lg text-gray-700 hover:text-primary-600 hover:bg-primary-50 font-medium transition-colors">Contacto</a>
+        <a
+          v-for="item in menuItems"
+          :key="item.key"
+          :href="item.href"
+          @click="isMenuOpen = false"
+          :class="[
+            'block py-2.5 px-4 rounded-lg font-medium transition-colors',
+            activeSection === item.key
+              ? 'text-primary-600 bg-primary-50'
+              : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50'
+          ]"
+        >
+          {{ item.label }}
+        </a>
         <div class="pt-2 pb-1 px-4">
           <a
             href="tel:+573154603134"
@@ -102,25 +81,55 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+
+type SectionKey = 'inicio' | 'productos' | 'nosotros' | 'contacto';
+
+interface MenuItem {
+  key: SectionKey;
+  label: string;
+  // Si es ancla: '#inicio' o '#productos'. Si es ruta absoluta: '/nosotros'
+  anchor?: string;
+  path?: string;
+}
+
+const baseMenu: MenuItem[] = [
+  { key: 'inicio', label: 'Inicio', anchor: '#inicio' },
+  { key: 'productos', label: 'Productos', anchor: '#productos' },
+  { key: 'nosotros', label: 'Nosotros', path: '/nosotros' },
+  { key: 'contacto', label: 'Contacto', path: '/contacto' },
+];
 
 const isMenuOpen = ref(false);
-const activeSection = ref('inicio');
+const activeSection = ref<SectionKey | ''>('');
+const isHome = ref(true);
+
+const menuItems = computed(() =>
+  baseMenu.map((item) => ({
+    ...item,
+    // En home las anclas son relativas; fuera de home prefijamos con / para volver al index
+    href: item.path
+      ? item.path
+      : isHome.value
+        ? item.anchor!
+        : `/${item.anchor}`,
+  }))
+);
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
 };
 
 const updateActiveSection = () => {
-  const sections = ['inicio', 'productos', 'nosotros', 'contacto'];
+  if (!isHome.value) return;
+  const anchorKeys: SectionKey[] = ['inicio', 'productos'];
   const scrollPosition = window.scrollY + 100;
 
-  for (const section of sections) {
+  for (const section of anchorKeys) {
     const element = document.getElementById(section);
     if (element) {
       const offsetTop = element.offsetTop;
       const offsetBottom = offsetTop + element.offsetHeight;
-
       if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
         activeSection.value = section;
         break;
@@ -130,11 +139,16 @@ const updateActiveSection = () => {
 };
 
 onMounted(() => {
-  // Si estamos en una ruta específica, marcar el ítem correspondiente
   const path = window.location.pathname;
-  if (path.startsWith('/productos') || path.startsWith('/planes')) {
+  isHome.value = path === '/' || path === '/index.html';
+
+  if (path.startsWith('/contacto')) {
+    activeSection.value = 'contacto';
+  } else if (path.startsWith('/nosotros')) {
+    activeSection.value = 'nosotros';
+  } else if (path.startsWith('/productos') || path.startsWith('/planes')) {
     activeSection.value = 'productos';
-  } else {
+  } else if (isHome.value) {
     window.addEventListener('scroll', updateActiveSection);
     updateActiveSection();
   }
@@ -143,5 +157,4 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', updateActiveSection);
 });
-
 </script>

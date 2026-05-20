@@ -60,7 +60,7 @@
             </div>
             <div class="price-row-regular">
               <span class="price-label-regular">Otros medios de pago</span>
-              <span class="price-alt-value">${{ formatPrice(plan.version.precio) }} / {{ formatVigencia(plan.version.vigencia_numero_meses) }}</span>
+              <span class="price-label-regular">${{ formatPrice(plan.version.precio) }} / {{ formatVigencia(plan.version.vigencia_numero_meses) }}</span>
             </div>
           </template>
           <template v-else>

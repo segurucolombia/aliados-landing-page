@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.vue';
+import ContactoView from '../components/ContactoView.vue';
+import Footer from '../components/Footer.vue';
+---
+
+<Layout title="Contacto - Seguru">
+  <Navbar client:load/>
+  <ContactoView client:only="vue"/>
+  <Footer client:only="vue"/>
+</Layout>

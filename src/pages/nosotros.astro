@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.vue';
+import NosotrosView from '../components/NosotrosView.vue';
+import Footer from '../components/Footer.vue';
+---
+
+<Layout title="Nosotros - Seguru">
+  <Navbar client:load/>
+  <NosotrosView client:only="vue"/>
+  <Footer client:only="vue"/>
+</Layout>
