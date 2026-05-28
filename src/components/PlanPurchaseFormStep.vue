@@ -398,6 +398,7 @@ export interface PurchaseFormData {
 
 const props = withDefaults(defineProps<{
   planPrecio: number;
+  versionId: string;
   valorDebitoAutomatico?: number | null;
   vigenciaNumeroMeses?: number | null;
   hasNextStep?: boolean;
@@ -617,10 +618,9 @@ const applyDiscount = async () => {
   try {
     isLoadingCupon.value = true;
 
-    // Buscar el cupón usando el servicio
-    const cupon = await CuponesService.find(formData.discountCode.trim());
+    const result = await CuponesService.find(formData.discountCode.trim(), props.versionId);
 
-    if (!cupon) {
+    if (!result) {
       toast.add({
         severity: 'error',
         summary: 'Cupón no válido',
@@ -631,7 +631,19 @@ const applyDiscount = async () => {
       return;
     }
 
-    // Validar que el cupón esté activo
+    const { cupon, aplica } = result;
+
+    if (!aplica) {
+      toast.add({
+        severity: 'error',
+        summary: 'Cupón no aplicable',
+        detail: 'El cupón no aplica para este plan',
+        life: 3000
+      });
+      cuponValor.value = 0;
+      return;
+    }
+
     if (!cupon.estado) {
       toast.add({
         severity: 'error',
@@ -643,7 +655,6 @@ const applyDiscount = async () => {
       return;
     }
 
-    // Aplicar el descuento
     cuponValor.value = cupon.valor;
 
     toast.add({
@@ -653,7 +664,6 @@ const applyDiscount = async () => {
       life: 4000
     });
 
-    // Guardar el código del cupón en localStorage para uso posterior
     localStorage.setItem('cupon_valor', cupon.valor.toString());
 
   } catch (error) {

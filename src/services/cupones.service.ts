@@ -16,6 +16,11 @@ export interface CuponDescuento {
   updated_by: string;
 }
 
+export interface FindCuponResult {
+  cupon: CuponDescuento;
+  aplica: boolean;
+}
+
 export class CuponesService {
     buscar(params:TFiltrosBuscarCupones):Promise<{data:TCuponAttributes | null}> {
         return axios.get(`${baseUrl}/buscar`, {
@@ -26,14 +31,10 @@ export class CuponesService {
         })
     }
 
-    /**
-     * Obtiene un cupón por su código
-     * @param codigo Código del cupón
-     * @returns Cupón encontrado o null si no existe
-     */
-    static async find(codigo: string): Promise<CuponDescuento | null> {
+    static async find(codigo: string, versionId: string): Promise<FindCuponResult | null> {
         try {
-            const response = await axios.get<CuponDescuento>(`${baseUrl}/codigo/${codigo}`, {
+            const response = await axios.get<FindCuponResult>(`${baseUrl}/codigo/${codigo}`, {
+                params: { version_id: versionId },
                 headers: {
                     'Content-Type': 'application/json',
                 },

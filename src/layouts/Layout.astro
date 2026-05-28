@@ -22,7 +22,6 @@ const { title } = Astro.props;
 		<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 		<script>
 			import { AliadosService } from '../services/aliados.service';
-			import { CuponesService } from '../services/cupones.service';
 
 			// Función para mostrar toast
 			function showToast(severity: 'success' | 'error' | 'warn' | 'info', summary: string, detail: string) {
@@ -136,37 +135,11 @@ const { title } = Astro.props;
 				urlParams.delete('aliado_id');
 			}
 
-			// Procesar cupón
+			// Procesar cupón: guardar el código para validar después contra la versión del plan
 			if (codigoCupon) {
-				// Consultar el cupón
-				CuponesService.find(codigoCupon).then((cupon) => {
-					if (!cupon) {
-						// No se encontró el cupón
-						showToast('error', 'Cupón inválido', 'No se encontró un cupón con el código proporcionado');
-					} else {
-						// Guardar en localStorage
-						localStorage.setItem('cupon', cupon.codigo);
-						localStorage.setItem('cupon_valor', cupon.valor.toString());
+				localStorage.setItem('cupon', codigoCupon);
+				showToast('info', 'Cupón guardado', 'Aplica tu cupón al seleccionar un plan');
 
-						// Si el cupón tiene un aliado asociado, también guardarlo
-						if (cupon.aliado_id) {
-							localStorage.setItem('aliado_id', cupon.aliado_id);
-						}
-
-						// Construir el mensaje
-						const mensajeDescuento = `Felicidades, tienes un cupón de descuento por $${cupon.valor.toLocaleString()}`;
-						const mensajeAsesor = cupon.aliado_nombre
-							? ` y tu aliado es ${cupon.aliado_nombre}`
-							: '';
-
-						showToast('success', 'Cupón aplicado', mensajeDescuento + mensajeAsesor);
-					}
-				}).catch((error) => {
-					console.error('Error al consultar cupón:', error);
-					showToast('error', 'Error al aplicar cupón', 'Ocurrió un error al consultar el cupón');
-				});
-
-				// Eliminar el parámetro de la URL
 				urlParams.delete('cupon_descuento');
 			}
 

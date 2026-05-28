@@ -40,6 +40,7 @@
       <div v-show="currentStep === 2" class="step-content">
         <PlanPurchaseFormStep
           :plan-precio="planPrecio"
+          :version-id="planData?.version?.id ?? ''"
           :valor-debito-automatico="planData?.version?.valor_debito_automatico ?? null"
           :vigencia-numero-meses="planData?.version?.vigencia_numero_meses ?? null"
           :has-next-step="hasCamposAdicionales"
