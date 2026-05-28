@@ -266,7 +266,7 @@
 
         <div class="payment-options">
           <!-- Débito automático -->
-          <button class="payment-option payment-option-recommended" @click="handleSelectDebitoAutomatico">
+          <div class="payment-option payment-option-recommended">
             <div class="payment-option-badge">Recomendado</div>
             <div class="payment-option-top">
               <div class="payment-option-icon">
@@ -296,7 +296,12 @@
                 Precio especial por activar la renovación automática
               </li>
             </ul>
-          </button>
+
+            <button type="button" class="debito-continue-btn" @click="handleSelectDebitoAutomatico">
+              Pagar con débito
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            </button>
+          </div>
 
           <!-- Pago manual -->
           <div class="payment-option payment-option-secondary payment-option-wompi">
@@ -1299,5 +1304,28 @@ const handleCancel = () => {
 
 .wompi-continue-btn:hover {
   background: #1f2937;
+}
+
+.debito-continue-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.debito-continue-btn:hover {
+  background: #1d4ed8;
 }
 </style>
