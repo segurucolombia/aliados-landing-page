@@ -27,7 +27,24 @@ export interface ObtenerEstadoTransaccionResponse {
   };
 }
 
+export interface CrearTransaccionWompiResponse {
+  success: boolean;
+  transaccion_id: string;
+}
+
 export class TransactionService {
+    /**
+     * Crea una transacción Wompi para una venta ya existente.
+     * POST /transacciones-wompi/crear-transaccion
+     */
+    crearTransaccion(params: { venta_id: string }): Promise<{ data: CrearTransaccionWompiResponse }> {
+        return axios.post(`${baseUrl}/crear-transaccion`, params, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+    }
+
     obtenerEstadoTransaccion(params: { transaccion_id: string }): Promise<{ data: ObtenerEstadoTransaccionResponse }> {
         return axios.get(`${baseUrl}/${params.transaccion_id}/estado`, {
             params,
