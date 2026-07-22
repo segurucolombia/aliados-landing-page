@@ -76,6 +76,17 @@ function transformarCampo(campo: any): CampoAdicional {
     };
   }
 
+  // Si es edad (se captura como fecha de nacimiento y se calcula la edad)
+  if (campo.tipo === 'edad') {
+    return {
+      tipo: 'edad',
+      nombre: campo.nombre,
+      requerido: resolverRequerido(campo),
+      edadMinima: campo.edadMinima,
+      edadMaxima: campo.edadMaxima
+    } as any;
+  }
+
   // Para otros tipos (text, number, email, date, tel, precio, plano)
   // El backend envía estos como tipo directo, pero nosotros necesitamos tipo: "input"
   const tiposInput = ['text', 'number', 'email', 'date', 'fecha', 'tel', 'precio', 'plano', 'ciudad', 'textarea'];

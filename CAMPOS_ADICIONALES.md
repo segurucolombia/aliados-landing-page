@@ -109,7 +109,35 @@ Los campos adicionales se configuran en el campo `campos_adicionales` de la tabl
 }
 ```
 
-### 5. Grupo de Inputs (Repetible)
+### 5. Edad (Fecha de nacimiento con validación de rango)
+
+En lugar de pedir la edad directamente, se le solicita al cliente su **fecha de nacimiento** (input tipo `date`) y la edad se **calcula** a la fecha actual.
+
+```json
+{
+  "tipo": "edad",
+  "nombre": "Edad del asegurado",
+  "obligatorio": true,
+  "edadMinima": 18,
+  "edadMaxima": 65
+}
+```
+
+**Comportamiento:**
+- Se muestra un input de fecha (fecha de nacimiento), no un campo de edad.
+- La edad se calcula en años cumplidos a la fecha actual.
+- Se valida que la edad calculada esté dentro del rango **inclusivo** `[edadMinima, edadMaxima]`.
+- Si la edad queda fuera de rango, **no se permite continuar** y se muestra: _"Este plan aplica para personas entre {edadMinima} y {edadMaxima} años."_
+- Si `obligatorio` es `true`, la fecha de nacimiento es requerida antes de continuar.
+- Se guarda tanto la fecha de nacimiento capturada como la edad calculada:
+
+```json
+{
+  "Edad del asegurado": { "fechaNacimiento": "1990-05-15", "edad": 35 }
+}
+```
+
+### 6. Grupo de Inputs (Repetible)
 
 Permite agregar múltiples registros del mismo tipo de información:
 

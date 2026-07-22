@@ -299,7 +299,15 @@ export interface CampoAutocomplete {
   requerido?: boolean;
 }
 
-export type CampoAdicional = CampoInput | CampoDropdown | CampoMultiselect | CampoGrupoInputs | CampoAutocomplete;
+export interface CampoEdad {
+  tipo: 'edad';
+  nombre: string;
+  requerido?: boolean;
+  edadMinima?: number;
+  edadMaxima?: number;
+}
+
+export type CampoAdicional = CampoInput | CampoDropdown | CampoMultiselect | CampoGrupoInputs | CampoAutocomplete | CampoEdad;
 
 export interface SeccionCamposAdicionales {
   titulo: string;

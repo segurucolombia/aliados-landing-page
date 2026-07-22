@@ -106,6 +106,31 @@
             </span>
           </div>
 
+          <!-- Edad (se captura la fecha de nacimiento y se calcula la edad) -->
+          <div v-else-if="campo.tipo === 'edad'" class="campo-group">
+            <label :for="`campo-${seccionIndex}-${campoIndex}`" class="text-sm italic text-gray-600 mb-1 block">
+              {{ campo.nombre }} <span v-if="esRequerido(campo)" class="text-red-600">*</span>
+            </label>
+            <input
+              :id="`campo-${seccionIndex}-${campoIndex}`"
+              type="date"
+              :max="hoyISO"
+              :class="['p-2 border rounded-md w-full', {'border-red-400': hasError(seccion.titulo, campo.nombre)}]"
+              v-model="datosFormulario[seccion.titulo][campo.nombre]"
+              @blur="validarCampoEdad(seccion.titulo, campo)"
+              @change="validarCampoEdad(seccion.titulo, campo)"
+            />
+            <span
+              v-if="datosFormulario[seccion.titulo][campo.nombre] && !hasError(seccion.titulo, campo.nombre)"
+              class="text-xs text-gray-600 italic mt-1 block"
+            >
+              Edad: {{ calcularEdad(datosFormulario[seccion.titulo][campo.nombre]) }} años
+            </span>
+            <span v-if="hasError(seccion.titulo, campo.nombre)" class="text-xs text-red-600 italic mt-1 block">
+              {{ mensajeErrorEdad(seccion.titulo, campo) }}
+            </span>
+          </div>
+
           <!-- Grupo de Inputs Repetibles -->
           <div v-else-if="campo.tipo === 'grupo_inputs'" class="campo-group">
             <label class="text-sm font-medium text-gray-700 mb-2 block">
@@ -281,6 +306,61 @@ const esRequerido = (campo: any): boolean => {
   return false;
 };
 
+// Fecha máxima seleccionable en el input de fecha de nacimiento (hoy)
+const hoyISO = computed(() => new Date().toISOString().split('T')[0]);
+
+// Calcula la edad en años cumplidos a la fecha actual
+const calcularEdad = (fechaNacimiento: string): number => {
+  const hoy = new Date();
+  const nac = new Date(fechaNacimiento);
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  const m = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) {
+    edad--;
+  }
+  return edad;
+};
+
+// Verifica que la edad calculada esté dentro del rango inclusivo configurado
+const edadEnRango = (campo: any, fechaNacimiento: string): boolean => {
+  if (!fechaNacimiento) return true; // ausencia de valor la maneja la validación de "requerido"
+  const edad = calcularEdad(fechaNacimiento);
+  if (campo?.edadMinima != null && edad < campo.edadMinima) return false;
+  if (campo?.edadMaxima != null && edad > campo.edadMaxima) return false;
+  return true;
+};
+
+// Mensaje de error para un campo de tipo edad según su estado actual
+const mensajeErrorEdad = (tituloSeccion: string, campo: any): string => {
+  const valor = datosFormulario.value[tituloSeccion]?.[campo.nombre];
+  if (esRequerido(campo) && (!valor || valor === '')) {
+    return 'Este campo es obligatorio';
+  }
+  if (valor && !edadEnRango(campo, valor)) {
+    return `Este plan aplica para personas entre ${campo.edadMinima} y ${campo.edadMaxima} años.`;
+  }
+  return '';
+};
+
+// Valida un campo de tipo edad (obligatoriedad y rango de edad)
+const validarCampoEdad = (tituloSeccion: string, campo: any) => {
+  if (!errores.value[tituloSeccion]) {
+    errores.value[tituloSeccion] = new Set();
+  }
+
+  const valor = datosFormulario.value[tituloSeccion]?.[campo.nombre];
+
+  if (esRequerido(campo) && (!valor || valor === '')) {
+    errores.value[tituloSeccion].add(campo.nombre);
+  } else if (valor && !edadEnRango(campo, valor)) {
+    errores.value[tituloSeccion].add(campo.nombre);
+  } else {
+    errores.value[tituloSeccion].delete(campo.nombre);
+  }
+
+  validarTodo();
+};
+
 const getInputType = (tipoInput: TipoInput | string): string => {
   if (!tipoInput) {
     console.warn('tipoInput es undefined o null');
@@ -357,6 +437,9 @@ const inicializarDatosFormulario = () => {
         datos[seccion.titulo][campo.nombre] = [];
       } else if (campo.tipo === 'autocomplete') {
         datos[seccion.titulo][campo.nombre] = null;
+      } else if (campo.tipo === 'edad') {
+        // Se almacena la fecha de nacimiento capturada (string YYYY-MM-DD)
+        datos[seccion.titulo][campo.nombre] = '';
       } else if (campo.tipo === 'grupo_inputs') {
         // Los campos ya están normalizados
         // Inicializar con un registro vacío
@@ -493,6 +576,21 @@ const validarTodo = (): boolean => {
     }
 
     seccion.campos.forEach(campo => {
+      // La edad valida tanto obligatoriedad como el rango, incluso si no es requerida
+      if (campo.tipo === 'edad') {
+        const valor = datosFormulario.value[seccion.titulo][campo.nombre];
+        if (esRequerido(campo) && (!valor || valor === '')) {
+          esValido = false;
+          errores.value[seccion.titulo].add(campo.nombre);
+        } else if (valor && !edadEnRango(campo, valor)) {
+          esValido = false;
+          errores.value[seccion.titulo].add(campo.nombre);
+        } else {
+          errores.value[seccion.titulo].delete(campo.nombre);
+        }
+        return;
+      }
+
       if (esRequerido(campo)) {
         const valor = datosFormulario.value[seccion.titulo][campo.nombre];
 
@@ -575,6 +673,11 @@ const emitirDatos = () => {
         datosSeccion.datos[campo.nombre] = valor.name || valor;
       } else if (campo.tipo === 'input' && campo.tipoInput === 'ciudad' && typeof valor === 'object' && valor !== null) {
         datosSeccion.datos[campo.nombre] = valor.name || valor;
+      } else if (campo.tipo === 'edad') {
+        // Guardar la fecha de nacimiento capturada y la edad calculada
+        datosSeccion.datos[campo.nombre] = valor
+          ? { fechaNacimiento: valor, edad: calcularEdad(valor) }
+          : { fechaNacimiento: '', edad: null };
       } else {
         datosSeccion.datos[campo.nombre] = valor;
       }
@@ -592,6 +695,14 @@ const calcularEsValido = (): boolean => {
 
   for (const seccion of camposAdicionalesNormalizados.value.secciones) {
     for (const campo of seccion.campos) {
+      // La edad valida obligatoriedad y rango; el rango aplica aunque no sea requerida
+      if (campo.tipo === 'edad') {
+        const valorEdad = datosFormulario.value[seccion.titulo]?.[campo.nombre];
+        if (esRequerido(campo) && (!valorEdad || valorEdad === '')) return false;
+        if (valorEdad && !edadEnRango(campo, valorEdad)) return false;
+        continue;
+      }
+
       if (!esRequerido(campo)) continue;
 
       const valor = datosFormulario.value[seccion.titulo]?.[campo.nombre];
