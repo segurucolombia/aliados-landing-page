@@ -42,10 +42,8 @@
           :plan-precio="planPrecio"
           :version-id="planData?.version?.id ?? ''"
           :valor-debito-automatico="planData?.version?.valor_debito_automatico ?? null"
-          :vigencia-numero-meses="planData?.version?.vigencia_numero_meses ?? null"
-          :has-next-step="hasCamposAdicionales"
+          :has-next-step="hasCamposAdicionales || tieneModalDePago"
           @submit="handlePurchaseFormSubmit"
-          @submit-debito="handleDebitoAutomaticoSubmit"
           @back="goToStep(1)"
           @cancel="handleCancel"
         />
@@ -63,17 +61,29 @@
         />
       </div>
 
-      <!-- Paso tarjeta MP (solo si es débito automático) -->
-      <div v-if="isDebitoAutomatico" v-show="currentStep === cardStepNumber" class="step-content">
+      <!-- Paso 4: tarjeta MP (solo si es débito automático) -->
+      <div v-if="isDebitoAutomatico" v-show="currentStep === CARD_STEP" class="step-content">
         <MercadoPagoCardStep
           :initial-doc-type="purchaseFormData?.documentType"
           :initial-doc-number="purchaseFormData?.documentNumber"
           @card-tokenized="handleCardTokenized"
-          @back="goToStep(hasCamposAdicionales ? 3 : 2)"
+          @back="volverAlPago"
           @cancel="handleCancel"
         />
       </div>
     </div>
+
+    <!-- Selección del medio de pago: último paso, sobre el contenido actual -->
+    <PaymentMethodModal
+      v-if="showPaymentModal && planData?.version?.valor_debito_automatico != null"
+      :plan-precio="planPrecio"
+      :version-id="planData?.version?.id ?? ''"
+      :valor-debito-automatico="planData.version.valor_debito_automatico"
+      :vigencia-numero-meses="planData?.version?.vigencia_numero_meses ?? null"
+      @select-pago-unico="handleSelectPagoUnico"
+      @select-debito="handleSelectDebito"
+      @close="showPaymentModal = false"
+    />
   </div>
 </template>
 
@@ -83,6 +93,7 @@ import PlanDetailStep from './PlanDetailStep.vue';
 import PlanPurchaseFormStep from './PlanPurchaseFormStep.vue';
 import PlanCamposAdicionalesStep from './PlanCamposAdicionalesStep.vue';
 import MercadoPagoCardStep from './MercadoPagoCardStep.vue';
+import PaymentMethodModal from './PaymentMethodModal.vue';
 import type { PurchaseFormData } from './PlanPurchaseFormStep.vue';
 import type { PlanWithDetails, CamposAdicionalesCapturados } from '../types/planes';
 import type { CondicionVentaInput } from '../services/ventas.service';
@@ -105,14 +116,18 @@ const camposAdicionalesDatos = ref<CamposAdicionalesCapturados | null>(null);
 const condicionesDatos = ref<CondicionVentaInput[]>([]);
 const isDebitoAutomatico = ref(false);
 const cardTokenId = ref('');
+const showPaymentModal = ref(false);
 
 // Computed property to check if plan has campos_adicionales
 const hasCamposAdicionales = computed(() => {
   return !!(planData.value?.version?.campos_adicionales?.secciones?.length);
 });
 
-// Número de paso donde va el formulario de tarjeta MP
-const cardStepNumber = computed(() => hasCamposAdicionales.value ? 4 : 3);
+// Solo hay selección de medio de pago cuando el plan ofrece débito automático
+const tieneModalDePago = computed(() => planData.value?.version?.valor_debito_automatico != null);
+
+// El formulario de tarjeta MP es siempre el último paso: va después de elegir el medio de pago
+const CARD_STEP = 4;
 
 const handleCondicionesAceptadas = (condiciones: CondicionVentaInput[]) => {
   condicionesDatos.value = condiciones;
@@ -134,23 +149,45 @@ const handlePurchaseFormSubmit = (formData: PurchaseFormData) => {
   purchaseFormData.value = formData;
   console.log('Purchase form data captured:', formData);
 
-  // Si hay campos adicionales, ir a step 3
-  // Si no hay campos adicionales, finalizar compra
+  // Primero los campos adicionales (si el plan los pide); el pago siempre va al final
   if (hasCamposAdicionales.value) {
     goToStep(3);
   } else {
-    finalizarCompra();
+    irAlPago();
   }
 };
 
 const handleCamposAdicionalesNext = (datos: CamposAdicionalesCapturados) => {
   camposAdicionalesDatos.value = datos;
   console.log('Campos adicionales captured:', datos);
-  if (isDebitoAutomatico.value) {
-    goToStep(cardStepNumber.value);
+  irAlPago();
+};
+
+// Último paso: si el plan tiene débito automático se elige el medio de pago,
+// si no, se va directo a la pasarela
+const irAlPago = () => {
+  if (tieneModalDePago.value) {
+    showPaymentModal.value = true;
   } else {
     finalizarCompra();
   }
+};
+
+const handleSelectPagoUnico = () => {
+  showPaymentModal.value = false;
+  finalizarCompra();
+};
+
+const handleSelectDebito = () => {
+  showPaymentModal.value = false;
+  isDebitoAutomatico.value = true;
+  goToStep(CARD_STEP);
+};
+
+// Desde la tarjeta MP se vuelve a la selección del medio de pago
+const volverAlPago = () => {
+  goToStep(hasCamposAdicionales.value ? 3 : 2);
+  showPaymentModal.value = true;
 };
 
 const finalizarCompra = () => {
@@ -174,17 +211,6 @@ const finalizarCompra = () => {
     camposAdicionales: camposAdicionalesData,
     condiciones: condicionesDatos.value,
   });
-};
-
-const handleDebitoAutomaticoSubmit = (formData: PurchaseFormData) => {
-  purchaseFormData.value = formData;
-  isDebitoAutomatico.value = true;
-
-  if (hasCamposAdicionales.value) {
-    goToStep(3);
-  } else {
-    goToStep(cardStepNumber.value);
-  }
 };
 
 const handleCardTokenized = (tokenId: string) => {

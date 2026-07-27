@@ -107,50 +107,70 @@ const { title } = Astro.props;
 			const urlParams = new URLSearchParams(window.location.search);
 			const aliadoId = urlParams.get('aliado_id');
 			const codigoCupon = urlParams.get('cupon_descuento');
+			const productoId = urlParams.get('producto_id');
 
-			// Procesar aliado_id
-			if (aliadoId) {
-				// Consultar el aliado
-				AliadosService.find(aliadoId).then((aliado) => {
-					if (!aliado) {
-						// No se encontró el aliado
-						showToast('error', 'Error al enlazar aliado', 'No se pudo enlazar un aliado con el ID proporcionado');
-					} else {
-						// Guardar en localStorage
-						localStorage.setItem('aliado_id', aliadoId);
+			// Si el enlace trae producto_id, se lleva al usuario a los planes de ese producto.
+			// Los demás parámetros viajan con la redirección para procesarlos allá (y mostrar el toast
+			// del aliado en la vista donde el usuario realmente se queda).
+			const rutaPlanes = productoId ? `/planes/${encodeURIComponent(productoId)}` : null;
 
-						// Obtener el nombre del aliado
-						const nombreAsesor = aliado.usuario?.persona?.nombre
-							|| aliado.usuario?.usuario
-							|| 'tu aliado';
+			if (rutaPlanes && window.location.pathname !== rutaPlanes) {
+				const paramsDestino = new URLSearchParams(urlParams);
+				paramsDestino.delete('producto_id');
 
-						showToast('success', `Aliado: ${nombreAsesor}`, `Has sido enlazado correctamente con tu aliado`);
-					}
-				}).catch((error) => {
-					console.error('Error al consultar aliado:', error);
-					showToast('error', 'Error al enlazar aliado', 'Ocurrió un error al consultar el aliado');
-				});
+				const query = paramsDestino.toString();
+				// replace para que el botón "atrás" no devuelva al enlace con los parámetros
+				window.location.replace(rutaPlanes + (query ? '?' + query : ''));
+			} else {
+				// Procesar aliado_id
+				if (aliadoId) {
+					// Consultar el aliado
+					AliadosService.find(aliadoId).then((aliado) => {
+						if (!aliado) {
+							// No se encontró el aliado
+							showToast('error', 'Error al enlazar aliado', 'No se pudo enlazar un aliado con el ID proporcionado');
+						} else {
+							// Guardar en localStorage
+							localStorage.setItem('aliado_id', aliadoId);
 
-				// Eliminar el parámetro de la URL
-				urlParams.delete('aliado_id');
-			}
+							// Obtener el nombre del aliado
+							const nombreAsesor = aliado.usuario?.persona?.nombre
+								|| aliado.usuario?.usuario
+								|| 'tu aliado';
 
-			// Procesar cupón: guardar el código para validar después contra la versión del plan
-			if (codigoCupon) {
-				localStorage.setItem('cupon', codigoCupon);
-				showToast('info', 'Cupón guardado', 'Aplica tu cupón al seleccionar un plan');
+							showToast('success', `Aliado: ${nombreAsesor}`, `Has sido enlazado correctamente con tu aliado`);
+						}
+					}).catch((error) => {
+						console.error('Error al consultar aliado:', error);
+						showToast('error', 'Error al enlazar aliado', 'Ocurrió un error al consultar el aliado');
+					});
 
-				urlParams.delete('cupon_descuento');
-			}
+					// Eliminar el parámetro de la URL
+					urlParams.delete('aliado_id');
+				}
 
-			// Actualizar la URL si se eliminaron parámetros
-			if (aliadoId || codigoCupon) {
-				const newUrl = window.location.pathname +
-					(urlParams.toString() ? '?' + urlParams.toString() : '') +
-					window.location.hash;
+				// Procesar cupón: guardar el código para validar después contra la versión del plan
+				if (codigoCupon) {
+					localStorage.setItem('cupon', codigoCupon);
+					showToast('info', 'Cupón guardado', 'Aplica tu cupón al seleccionar un plan');
 
-				// Actualizar la URL sin recargar la página
-				window.history.replaceState({}, '', newUrl);
+					urlParams.delete('cupon_descuento');
+				}
+
+				// Ya estamos en la vista del producto, el parámetro sobra
+				if (productoId) {
+					urlParams.delete('producto_id');
+				}
+
+				// Actualizar la URL si se eliminaron parámetros
+				if (aliadoId || codigoCupon || productoId) {
+					const newUrl = window.location.pathname +
+						(urlParams.toString() ? '?' + urlParams.toString() : '') +
+						window.location.hash;
+
+					// Actualizar la URL sin recargar la página
+					window.history.replaceState({}, '', newUrl);
+				}
 			}
 		</script>
 	</body>

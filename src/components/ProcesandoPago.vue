@@ -175,9 +175,8 @@
           <div class="h-px bg-gray-100"></div>
 
           <div class="bg-gray-50 rounded-xl p-3">
-            <p class="text-xs text-gray-400 mb-1">ID de Transacción</p>
-            <p class="font-mono text-sm text-gray-700 break-all">{{ resumen.transaccion_id }}</p>
-            <p class="text-xs text-gray-400 mt-1">{{ formatDate(resumen.fecha_compra) }}</p>
+            <p class="text-xs text-gray-400 mb-1">Fecha de compra</p>
+            <p class="text-sm text-gray-700">{{ formatDate(resumen.fecha_compra) }}</p>
           </div>
         </div>
 

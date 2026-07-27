@@ -110,6 +110,57 @@
         </div>
       </div>
 
+      <!-- Aliado que acompaña la compra -->
+      <div v-if="aliadoVinculado" class="aliado-section aliado-section--vinculado">
+        <svg class="aliado-icon" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+        </svg>
+        <div class="aliado-content">
+          <p class="aliado-vinculado-text">
+            Te está ayudando <strong>{{ aliadoVinculado.nombre }}</strong>
+          </p>
+          <p v-if="aliadoVinculado.codigo" class="aliado-vinculado-codigo">
+            Código: {{ aliadoVinculado.codigo }}
+          </p>
+        </div>
+        <button v-if="aliadoEditable" type="button" class="aliado-quitar" @click="quitarAliado">
+          Quitar
+        </button>
+      </div>
+
+      <div v-else class="aliado-section">
+        <svg class="aliado-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+        </svg>
+        <div class="aliado-content">
+          <h3 class="aliado-title">¿Alguien te está ayudando con tu compra?</h3>
+          <p class="aliado-subtitle">
+            Si un aliado Seguru te está asesorando, ingresa su código para vincularlo a tu compra. Es opcional.
+          </p>
+          <div class="aliado-input-wrapper">
+            <input
+              v-model="codigoAliado"
+              type="text"
+              maxlength="255"
+              placeholder="Código del aliado (ej. ABC123)"
+              class="aliado-input"
+              :disabled="validandoAliado"
+              @input="errorAliado = ''"
+              @keyup.enter="validarCodigoAliado"
+            />
+            <button
+              type="button"
+              class="aliado-btn"
+              :disabled="validandoAliado || !codigoAliado.trim()"
+              @click="validarCodigoAliado"
+            >
+              {{ validandoAliado ? 'Validando...' : 'Vincular' }}
+            </button>
+          </div>
+          <p v-if="errorAliado" class="aliado-error">{{ errorAliado }}</p>
+        </div>
+      </div>
+
       <!-- Políticas de privacidad y condiciones -->
       <div class="privacy-section">
         <label v-if="plan.version?.documento" class="privacy-checkbox">
@@ -211,6 +262,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { PlanesService } from '../services/planes.service';
+import { AliadosService, type Aliado } from '../services/aliados.service';
 import type { PlanWithDetails } from '../types/planes';
 import type { CondicionVentaInput } from '../services/ventas.service';
 import { formatVigencia } from '../utils/vigencia';
@@ -236,6 +288,70 @@ const loadingDocument = ref(false);
 const showDataUsageModal = ref(false);
 const clientIp = ref('');
 const condicionesAceptadas = ref<CondicionVentaInput[]>([]);
+
+// Aliado que acompaña la compra (puede venir del link ?aliado_id= o ingresarse aquí por código)
+const codigoAliado = ref('');
+const validandoAliado = ref(false);
+const errorAliado = ref('');
+const aliadoVinculado = ref<{ nombre: string; codigo: string | null } | null>(null);
+// Solo se puede quitar el aliado si se vinculó en este paso; el que llega por el link se respeta
+const aliadoEditable = ref(false);
+
+const nombreDeAliado = (aliado: Aliado): string => {
+  return aliado.usuario?.persona?.nombre || aliado.usuario?.usuario || 'tu aliado';
+};
+
+const cargarAliadoVinculado = async () => {
+  const aliadoId = localStorage.getItem('aliado_id');
+  if (!aliadoId) return;
+
+  const aliado = await AliadosService.find(aliadoId);
+  if (!aliado) {
+    // El id guardado ya no corresponde a un aliado válido: se limpia para poder ingresar un código
+    localStorage.removeItem('aliado_id');
+    return;
+  }
+
+  aliadoVinculado.value = { nombre: nombreDeAliado(aliado), codigo: aliado.codigo_unico ?? null };
+};
+
+const validarCodigoAliado = async () => {
+  const codigo = codigoAliado.value.trim();
+  errorAliado.value = '';
+
+  if (!codigo) {
+    errorAliado.value = 'Ingresa el código de tu aliado';
+    return;
+  }
+
+  try {
+    validandoAliado.value = true;
+    const aliado = await AliadosService.encontrarAliado({ codigo_unico: codigo });
+
+    if (!aliado) {
+      errorAliado.value = 'No encontramos un aliado con ese código. Verifícalo e intenta de nuevo.';
+      return;
+    }
+
+    // Se guarda igual que cuando llega por la ruta con aliado_id, para que la venta lo envíe
+    localStorage.setItem('aliado_id', aliado.id);
+    aliadoVinculado.value = { nombre: nombreDeAliado(aliado), codigo: aliado.codigo_unico ?? codigo };
+    aliadoEditable.value = true;
+    codigoAliado.value = '';
+  } catch (err: any) {
+    errorAliado.value = err?.message || 'Ocurrió un error al validar el código. Intenta de nuevo.';
+  } finally {
+    validandoAliado.value = false;
+  }
+};
+
+const quitarAliado = () => {
+  localStorage.removeItem('aliado_id');
+  aliadoVinculado.value = null;
+  aliadoEditable.value = false;
+  codigoAliado.value = '';
+  errorAliado.value = '';
+};
 
 const fetchClientIp = async () => {
   try {
@@ -346,6 +462,7 @@ const formatDate = (vigencia: string): string => {
 onMounted(() => {
   loadPlanDetail();
   fetchClientIp();
+  cargarAliadoVinculado();
 });
 </script>
 
@@ -731,6 +848,147 @@ onMounted(() => {
   margin: 0;
 }
 
+/* Aliado */
+.aliado-section {
+  margin: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.aliado-section--vinculado {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  align-items: center;
+}
+
+.aliado-icon {
+  width: 24px;
+  height: 24px;
+  color: #3b82f6;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.aliado-section--vinculado .aliado-icon {
+  color: #10b981;
+  margin-top: 0;
+}
+
+.aliado-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.aliado-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+}
+
+.aliado-subtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.aliado-input-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.aliado-input {
+  flex: 1;
+  min-width: 180px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #1f2937;
+  background: white;
+  text-transform: uppercase;
+}
+
+.aliado-input::placeholder {
+  text-transform: none;
+}
+
+.aliado-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.aliado-input:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.aliado-btn {
+  padding: 0.6rem 1.25rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.aliado-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.aliado-btn:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.aliado-error {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+  color: #dc2626;
+}
+
+.aliado-vinculado-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #166534;
+}
+
+.aliado-vinculado-codigo {
+  margin: 0.15rem 0 0 0;
+  font-size: 0.8rem;
+  color: #059669;
+}
+
+.aliado-quitar {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #dc2626;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  flex-shrink: 0;
+}
+
+.aliado-quitar:hover {
+  color: #b91c1c;
+}
+
 .privacy-section {
   background: #f1f5f9;
   border-top: 1px solid #e2e8f0;
@@ -1017,6 +1275,15 @@ onMounted(() => {
 
   .coberturas-list {
     grid-template-columns: 1fr;
+  }
+
+  .aliado-section {
+    margin: 1.25rem;
+    padding: 1rem;
+  }
+
+  .aliado-btn {
+    width: 100%;
   }
 
   .document-info {
