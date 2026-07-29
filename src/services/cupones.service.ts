@@ -1,5 +1,11 @@
 import axios from "axios"
-import type { TCuponAttributes, TFiltrosBuscarCupones } from "../types/cupones"
+import type {
+    TCuponAttributes,
+    TFiltrosBuscarCupones,
+    ValidarCuponData,
+    ValidarCuponInput,
+    ValidarCuponResponse,
+} from "../types/cupones"
 const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/api-aliados/cupones-descuento'
 
 export interface CuponDescuento {
@@ -29,6 +35,31 @@ export class CuponesService {
                 'Content-Type': 'application/json',
             },
         })
+    }
+
+    /**
+     * Valida un cupón contra el plan que el usuario está comprando.
+     * El endpoint responde 200 tanto si el cupón es válido como si no lo es:
+     * el detalle del rechazo viene en `data.valido`, `data.motivo` y `data.mensaje`.
+     * @param codigo Código del cupón ingresado por el usuario
+     * @param planId ID del plan (no el version_id)
+     * @throws Error de axios si el body es inválido (422) o falla la petición
+     */
+    static async validarCupon(codigo: string, planId: string): Promise<ValidarCuponData> {
+        try {
+            const body: ValidarCuponInput = { codigo, plan_id: planId };
+
+            const response = await axios.post<ValidarCuponResponse>(`${baseUrl}/validar-cupon`, body, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            return response.data.data;
+        } catch (error) {
+            console.error('Error al validar cupón:', error);
+            throw error;
+        }
     }
 
     static async find(codigo: string, versionId: string): Promise<FindCuponResult | null> {

@@ -40,7 +40,7 @@
       <div v-show="currentStep === 2" class="step-content">
         <PlanPurchaseFormStep
           :plan-precio="planPrecio"
-          :version-id="planData?.version?.id ?? ''"
+          :plan-id="planId"
           :valor-debito-automatico="planData?.version?.valor_debito_automatico ?? null"
           :has-next-step="hasCamposAdicionales || tieneModalDePago"
           @submit="handlePurchaseFormSubmit"
@@ -77,7 +77,7 @@
     <PaymentMethodModal
       v-if="showPaymentModal && planData?.version?.valor_debito_automatico != null"
       :plan-precio="planPrecio"
-      :version-id="planData?.version?.id ?? ''"
+      :plan-id="planId"
       :valor-debito-automatico="planData.version.valor_debito_automatico"
       :vigencia-numero-meses="planData?.version?.vigencia_numero_meses ?? null"
       @select-pago-unico="handleSelectPagoUnico"

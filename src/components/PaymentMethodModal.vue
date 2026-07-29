@@ -1,6 +1,4 @@
 <template>
-  <Toast />
-
   <!-- Modal de selección de método de pago: es el último paso antes de pagar -->
   <div class="payment-modal-overlay" @click.self="$emit('close')">
     <div class="payment-modal">
@@ -57,9 +55,9 @@
             <div class="payment-option-info">
               <span class="payment-option-label">Otros medios de pago</span>
               <span class="payment-option-price payment-option-price-secondary">
-                {{ formatCurrency(cuponValor > 0 ? totalAPagar : planPrecio) }}
+                {{ formatCurrency(totalAPagar) }}
                 <span class="payment-option-period">/ {{ vigenciaLabel }}</span>
-                <span v-if="cuponValor > 0" class="cupon-applied-badge">Cupón aplicado</span>
+                <span v-if="cuponValidado" class="cupon-applied-badge">Cupón aplicado</span>
               </span>
             </div>
           </div>
@@ -76,29 +74,32 @@
 
           <!-- Cupón de descuento (solo para pago con Wompi) -->
           <div class="modal-cupon-section" @click.stop>
-            <div v-if="cuponValor > 0" class="modal-cupon-aplicado">
+            <div v-if="cuponValidado" class="modal-cupon-aplicado">
               <svg width="16" height="16" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-              Cupón aplicado: <strong>-{{ formatCurrency(cuponValor) }}</strong>
-              <button type="button" class="cupon-quitar" @click.stop="clearCupon">Quitar</button>
+              Cupón {{ cuponAplicado?.codigo }} aplicado: <strong>-{{ formatCurrency(valorDescuento) }}</strong>
+              <button type="button" class="cupon-quitar" @click.stop="quitarCupon">Quitar</button>
             </div>
-            <div v-else class="modal-cupon-input">
-              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m9 14.25 6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0c1.1.128 1.907 1.077 1.907 2.185Z"/></svg>
-              <input
-                v-model="discountCode"
-                placeholder="¿Tienes un cupón?"
-                class="modal-cupon-field"
-                @keydown.enter.prevent="applyDiscount"
-              />
-              <button
-                v-if="discountCode"
-                type="button"
-                class="modal-cupon-btn"
-                @click.stop="applyDiscount"
-                :disabled="isLoadingCupon"
-              >
-                {{ isLoadingCupon ? '...' : 'Aplicar' }}
-              </button>
-            </div>
+            <template v-else>
+              <div class="modal-cupon-input">
+                <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m9 14.25 6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0c1.1.128 1.907 1.077 1.907 2.185Z"/></svg>
+                <input
+                  v-model="codigoIngresado"
+                  placeholder="¿Tienes un cupón?"
+                  class="modal-cupon-field"
+                  :class="{ 'modal-cupon-field-error': errorCupon }"
+                  @keydown.enter.prevent="handleAplicarCupon"
+                />
+                <button
+                  type="button"
+                  class="modal-cupon-btn"
+                  @click.stop="handleAplicarCupon"
+                  :disabled="!puedeAplicar"
+                >
+                  {{ validandoCupon ? 'Validando...' : 'Aplicar' }}
+                </button>
+              </div>
+              <p v-if="errorCupon" class="modal-cupon-error">{{ errorCupon }}</p>
+            </template>
           </div>
 
           <!-- Botón continuar con Wompi -->
@@ -115,15 +116,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { formatVigencia } from '../utils/vigencia';
-import { CuponesService } from '../services/cupones.service';
-import { useToast } from 'primevue/usetoast';
-import Toast from 'primevue/toast';
+import useCupon from '../composables/cupon';
 
 const props = withDefaults(defineProps<{
   planPrecio: number;
-  versionId: string;
+  planId: string;
   valorDebitoAutomatico: number;
   vigenciaNumeroMeses?: number | null;
 }>(), {
@@ -136,14 +135,23 @@ const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const toast = useToast();
-const discountCode = ref('');
-const cuponValor = ref(0);
-const isLoadingCupon = ref(false);
+const {
+  codigoIngresado,
+  cuponAplicado,
+  errorCupon,
+  validandoCupon,
+  valorDescuento,
+  cuponValidado,
+  puedeAplicar,
+  totalConDescuento,
+  aplicarCupon,
+  quitarCupon,
+  sincronizarConPlan,
+} = useCupon();
 
 const vigenciaLabel = computed(() => formatVigencia(props.vigenciaNumeroMeses) || 'renovación');
 
-const totalAPagar = computed(() => Math.max(0, props.planPrecio - cuponValor.value));
+const totalAPagar = computed(() => totalConDescuento(props.planPrecio));
 
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('es-CO', {
@@ -154,95 +162,13 @@ const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
-// El cupón se pudo haber aplicado antes (ej. al reabrir el modal)
+// El cupón se pudo haber aplicado antes (ej. al reabrir el modal o en otro plan):
+// si se validó contra otro plan se revalida contra el plan que se está comprando
 onMounted(() => {
-  const cuponValorStr = localStorage.getItem('cupon_valor');
-  if (cuponValorStr) {
-    cuponValor.value = parseFloat(cuponValorStr) || 0;
-  }
+  sincronizarConPlan(props.planId);
 });
 
-const applyDiscount = async () => {
-  if (!discountCode.value?.trim()) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Código requerido',
-      detail: 'Por favor ingrese un código de descuento',
-      life: 3000
-    });
-    return;
-  }
-
-  try {
-    isLoadingCupon.value = true;
-
-    const result = await CuponesService.find(discountCode.value.trim(), props.versionId);
-
-    if (!result) {
-      toast.add({
-        severity: 'error',
-        summary: 'Cupón no válido',
-        detail: 'El código de descuento ingresado no existe',
-        life: 3000
-      });
-      cuponValor.value = 0;
-      return;
-    }
-
-    const { cupon, aplica } = result;
-
-    if (!aplica) {
-      toast.add({
-        severity: 'error',
-        summary: 'Cupón no aplicable',
-        detail: 'El cupón no aplica para este plan',
-        life: 3000
-      });
-      cuponValor.value = 0;
-      return;
-    }
-
-    if (!cupon.estado) {
-      toast.add({
-        severity: 'error',
-        summary: 'Cupón inactivo',
-        detail: 'El código de descuento no está activo',
-        life: 3000
-      });
-      cuponValor.value = 0;
-      return;
-    }
-
-    cuponValor.value = cupon.valor;
-
-    toast.add({
-      severity: 'success',
-      summary: '¡Descuento aplicado!',
-      detail: `Se ha aplicado un descuento de ${formatCurrency(cupon.valor)}`,
-      life: 4000
-    });
-
-    localStorage.setItem('cupon_valor', cupon.valor.toString());
-
-  } catch (error) {
-    console.error('Error al aplicar el descuento:', error);
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'Ocurrió un error al validar el cupón. Intente nuevamente.',
-      life: 3000
-    });
-    cuponValor.value = 0;
-  } finally {
-    isLoadingCupon.value = false;
-  }
-};
-
-const clearCupon = () => {
-  cuponValor.value = 0;
-  discountCode.value = '';
-  localStorage.removeItem('cupon_valor');
-};
+const handleAplicarCupon = () => aplicarCupon(props.planId);
 
 const handleSelectPagoUnico = () => {
   emit('select-pago-unico');
@@ -535,6 +461,16 @@ const handleSelectDebitoAutomatico = () => {
 .modal-cupon-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.modal-cupon-field-error {
+  border-color: #dc2626;
+}
+
+.modal-cupon-error {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: #dc2626;
 }
 
 .cupon-applied-badge {

@@ -103,7 +103,7 @@
               </svg>
               <div class="cobertura-content">
                 <h4 class="cobertura-name">{{ cobertura.cobertura.nombre }}</h4>
-                <p class="cobertura-value">{{ cobertura.valor }}</p>
+                <p class="cobertura-value">${{ formatPrice(Number(cobertura.valor)) }}</p>
               </div>
             </div>
           </div>
@@ -117,7 +117,7 @@
         </svg>
         <div class="aliado-content">
           <p class="aliado-vinculado-text">
-            Te está ayudando <strong>{{ aliadoVinculado.nombre }}</strong>
+            Referido por <strong>{{ aliadoVinculado.nombre }}</strong>
           </p>
           <p v-if="aliadoVinculado.codigo" class="aliado-vinculado-codigo">
             Código: {{ aliadoVinculado.codigo }}

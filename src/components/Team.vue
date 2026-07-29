@@ -178,17 +178,6 @@ const teamMembers = ref<TeamMember[]>([
     }
   },
   {
-    id: '2',
-    name: 'July Natalia Gaona Prada',
-    position: 'Asesor Jurídico',
-    image: 'team-3-1.jpg',
-    socialLinks: {
-      facebook: 'https://facebook.com',
-      instagram: 'https://instagram.com',
-      linkedin: 'https://linkedin.com'
-    }
-  },
-  {
     id: '3',
     name: 'Victor Rangel Alvarez',
     position: 'Desarrollo de Negocios',

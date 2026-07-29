@@ -1,6 +1,5 @@
 <template>
   <div class="purchase-form-wrapper">
-    <Toast />
     <!-- Hero Header -->
     <section class="form-hero">
       <div class="hero-content">
@@ -187,42 +186,53 @@
               <label for="discountCode">¿Tienes un código de descuento?</label>
 
               <!-- Mensaje de felicitación si hay cupón -->
-              <div v-if="cuponValor > 0" class="cupon-mensaje">
+              <div v-if="cuponValidado" class="cupon-mensaje">
                 <p class="text-green-700 font-semibold">
-                  ¡Felicidades! Tienes un cupón de descuento por {{ formatCurrency(cuponValor) }}
+                  ¡Felicidades! Tienes un cupón de descuento por {{ formatCurrency(valorDescuento) }}
                 </p>
+                <Button
+                  label="Quitar"
+                  icon="pi pi-times"
+                  class="p-button-text p-button-sm"
+                  @click="quitarCupon"
+                  type="button"
+                />
               </div>
 
-              <div v-else class="discount-input-wrapper">
-                <InputText
-                  id="discountCode"
-                  v-model="formData.discountCode"
-                  placeholder="Ingresa tu código aquí"
-                  class="discount-input"
-                />
-                <Button
-                  v-if="formData.discountCode"
-                  label="Aplicar"
-                  icon="pi pi-check"
-                  class="p-button-success"
-                  @click="applyDiscount"
-                  type="button"
-                  :loading="isLoadingCupon"
-                  :disabled="isLoadingCupon"
-                />
-              </div>
+              <template v-else>
+                <div class="discount-input-wrapper">
+                  <InputText
+                    id="discountCode"
+                    v-model="codigoIngresado"
+                    placeholder="Ingresa tu código aquí"
+                    class="discount-input"
+                    :class="{ 'p-invalid': errorCupon }"
+                    @keydown.enter.prevent="handleAplicarCupon"
+                  />
+                  <Button
+                    label="Aplicar"
+                    icon="pi pi-check"
+                    class="p-button-success"
+                    @click="handleAplicarCupon"
+                    type="button"
+                    :loading="validandoCupon"
+                    :disabled="!puedeAplicar"
+                  />
+                </div>
+                <small v-if="errorCupon" class="p-error">{{ errorCupon }}</small>
+              </template>
             </div>
           </div>
 
           <!-- Resumen de precios -->
-          <div v-if="cuponValor > 0" class="price-summary">
+          <div v-if="cuponValidado" class="price-summary">
             <div class="price-row">
               <span>Precio del plan:</span>
               <span>{{ formatCurrency(planPrecio) }}</span>
             </div>
             <div class="price-row discount-row">
               <span>Descuento:</span>
-              <span>- {{ formatCurrency(cuponValor) }}</span>
+              <span>- {{ formatCurrency(valorDescuento) }}</span>
             </div>
             <div class="price-row total-row">
               <span class="total-label">Total a pagar:</span>
@@ -261,14 +271,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue';
+import { computed, reactive, onMounted } from 'vue';
 import { DOCUMENT_TYPES } from '../utils/documentTypes';
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
-import { CuponesService } from '../services/cupones.service';
-import { useToast } from 'primevue/usetoast';
-import Toast from 'primevue/toast';
+import useCupon from '../composables/cupon';
 
 // Tipos de documento para representante legal (sin NIT)
 const LEGAL_REP_DOCUMENT_TYPES = DOCUMENT_TYPES.filter(doc => doc.tipo !== 'NIT');
@@ -290,7 +298,7 @@ export interface PurchaseFormData {
 
 const props = withDefaults(defineProps<{
   planPrecio: number;
-  versionId: string;
+  planId: string;
   valorDebitoAutomatico?: number | null;
   hasNextStep?: boolean;
 }>(), {
@@ -304,10 +312,20 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-// Estado del cupón
-const cuponValor = ref(0);
-const toast = useToast();
-const isLoadingCupon = ref(false);
+// Estado del cupón (compartido con el resumen de compra)
+const {
+  codigoIngresado,
+  errorCupon,
+  validandoCupon,
+  valorDescuento,
+  cuponValidado,
+  puedeAplicar,
+  totalConDescuento,
+  aplicarCupon,
+  quitarCupon,
+  sincronizarConPlan,
+  codigoParaVenta,
+} = useCupon();
 
 const formData = reactive<PurchaseFormData>({
   documentType: '',
@@ -488,87 +506,11 @@ const isFormValid = computed(() => {
   return basicFieldsValid && nitFieldsValid && noErrors;
 });
 
-const applyDiscount = async () => {
-  // Validar que haya un código ingresado
-  if (!formData.discountCode || formData.discountCode.trim() === '') {
-    toast.add({
-      severity: 'warn',
-      summary: 'Código requerido',
-      detail: 'Por favor ingrese un código de descuento',
-      life: 3000
-    });
-    return;
-  }
-
-  try {
-    isLoadingCupon.value = true;
-
-    const result = await CuponesService.find(formData.discountCode.trim(), props.versionId);
-
-    if (!result) {
-      toast.add({
-        severity: 'error',
-        summary: 'Cupón no válido',
-        detail: 'El código de descuento ingresado no existe',
-        life: 3000
-      });
-      cuponValor.value = 0;
-      return;
-    }
-
-    const { cupon, aplica } = result;
-
-    if (!aplica) {
-      toast.add({
-        severity: 'error',
-        summary: 'Cupón no aplicable',
-        detail: 'El cupón no aplica para este plan',
-        life: 3000
-      });
-      cuponValor.value = 0;
-      return;
-    }
-
-    if (!cupon.estado) {
-      toast.add({
-        severity: 'error',
-        summary: 'Cupón inactivo',
-        detail: 'El código de descuento no está activo',
-        life: 3000
-      });
-      cuponValor.value = 0;
-      return;
-    }
-
-    cuponValor.value = cupon.valor;
-
-    toast.add({
-      severity: 'success',
-      summary: '¡Descuento aplicado!',
-      detail: `Se ha aplicado un descuento de ${formatCurrency(cupon.valor)}`,
-      life: 4000
-    });
-
-    localStorage.setItem('cupon_valor', cupon.valor.toString());
-
-  } catch (error) {
-    console.error('Error al aplicar el descuento:', error);
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'Ocurrió un error al validar el cupón. Intente nuevamente.',
-      life: 3000
-    });
-    cuponValor.value = 0;
-  } finally {
-    isLoadingCupon.value = false;
-  }
-};
+// Valida el cupón contra el plan que se está comprando
+const handleAplicarCupon = () => aplicarCupon(props.planId);
 
 // Calcular total a pagar
-const totalAPagar = computed(() => {
-  return Math.max(0, props.planPrecio - cuponValor.value);
-});
+const totalAPagar = computed(() => totalConDescuento(props.planPrecio));
 
 // Formatear moneda
 const formatCurrency = (value: number): string => {
@@ -580,19 +522,19 @@ const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
-// Cargar cupón del localStorage al montar (solo si no hay débito automático disponible)
+// El cupón puede venir aplicado desde antes (otro paso u otro plan):
+// se revalida contra el plan actual antes de mantenerlo
 onMounted(() => {
   if (props.valorDebitoAutomatico == null) {
-    const cuponValorStr = localStorage.getItem('cupon_valor');
-    if (cuponValorStr) {
-      cuponValor.value = parseFloat(cuponValorStr) || 0;
-    }
+    sincronizarConPlan(props.planId);
   }
 });
 
 const handleSubmit = () => {
   if (validateAllFields()) {
     formData.password = formData.documentNumber;
+    // Solo viaja el código si el cupón quedó validado contra este plan
+    formData.discountCode = codigoParaVenta(props.planId);
     // El medio de pago se elige al final del flujo, no aquí
     emit('submit', { ...formData });
   }
@@ -752,6 +694,11 @@ const handleCancel = () => {
 
 .cupon-mensaje {
   margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 /* Resumen de precios */

@@ -228,8 +228,7 @@ const irAPlataforma = () => {
   localStorage.removeItem('transaccion_id');
   localStorage.removeItem('venta_pendiente_id');
   localStorage.removeItem('compra_resumen');
-  localStorage.removeItem('cupon');
-  localStorage.removeItem('cupon_valor');
+  localStorage.removeItem('cupon_aplicado');
   localStorage.removeItem('aliado_id');
   window.location.href = '/';
 };
@@ -245,8 +244,7 @@ const volverInicio = () => {
   localStorage.removeItem('transaccion_id');
   localStorage.removeItem('venta_pendiente_id');
   localStorage.removeItem('compra_resumen');
-  localStorage.removeItem('cupon');
-  localStorage.removeItem('cupon_valor');
+  localStorage.removeItem('cupon_aplicado');
   localStorage.removeItem('aliado_id');
   window.location.href = '/';
 };

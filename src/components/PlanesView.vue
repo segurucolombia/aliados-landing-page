@@ -245,6 +245,7 @@ import LoadingSpinner from '../utils/LoadingSpinner.vue';
 import { PlanesService } from '../services/planes.service';
 import { VentasService } from '../services/ventas.service';
 import { ProductosService } from '../services/productos.service';
+import useCupon from '../composables/cupon';
 import type { ProductoPlanes, Plan, Cobertura, CoberturaPlan, PlanConCoberturas, EstilosAseguradora } from '../types/planes';
 import type { PurchaseFormData } from './PlanPurchaseFormStep.vue';
 
@@ -294,6 +295,9 @@ const accentTextStyle = computed(() => {
   if (!aseguradoraEstilos.value) return {};
   return { color: aseguradoraEstilos.value.color_secundario };
 });
+
+// Cupón de descuento aplicado en el resumen de compra
+const { valorDescuento, codigoParaVenta, sincronizarConPlan, rechazarCuponDesdeVenta } = useCupon();
 
 const productoPlanes = ref<ProductoPlanes>({
   productoId: '',
@@ -421,6 +425,8 @@ const handleSeleccionarPlan = (plan: Plan) => {
   console.log('Plan seleccionado:', plan);
   selectedPlanId.value = plan.id;
   showPurchaseWizard.value = true;
+  // Si venía un cupón aplicado a otro plan, se limpia y se revalida contra este
+  sincronizarConPlan(plan.id);
 };
 
 const closePurchaseWizard = () => {
@@ -432,6 +438,26 @@ const selectedPlan = computed(() => {
   if (!selectedPlanId.value) return null;
   return productoPlanes.value.planes.find(p => p.id === selectedPlanId.value);
 });
+
+/**
+ * Obtiene el mensaje de error de una venta fallida. Si el backend rechazó el cupón
+ * al revalidarlo (400 con { success: false, message }), lo quita del resumen.
+ */
+const resolverErrorVenta = (error: any, codigoCupon?: string): string => {
+  const mensaje = error?.response?.data?.message
+    || error?.message
+    || 'Ocurrió un error al procesar la compra. Por favor intenta de nuevo.';
+
+  const cuponRechazado = !!codigoCupon
+    && error?.response?.status === 400
+    && error?.response?.data?.success === false;
+
+  if (cuponRechazado) {
+    rechazarCuponDesdeVenta(mensaje);
+  }
+
+  return mensaje;
+};
 
 const handleCompra = async (data: { planId: string; formData: PurchaseFormData; camposAdicionales?: import('../types/planes').CamposAdicionalesCapturados; condiciones: import('../services/ventas.service').CondicionVentaInput[] }) => {
   console.log('Datos de compra:', data);
@@ -448,11 +474,10 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
     return;
   }
 
-  // Calcular precio estimado con datos síncronos (localStorage) antes de cualquier await
+  // Calcular precio estimado con datos síncronos (cupón ya validado) antes de cualquier await
   // para poder abrir la ventana de pago en el contexto de gesto del usuario (requerido en móvil)
-  const cuponValorStrPrev = localStorage.getItem('cupon_valor');
-  const cuponValorPrev = cuponValorStrPrev ? parseFloat(cuponValorStrPrev) || 0 : 0;
-  const precioEstimado = Math.max(0, planSeleccionado.precio - cuponValorPrev);
+  const codigoCupon = codigoParaVenta(data.planId);
+  const precioEstimado = Math.max(0, planSeleccionado.precio - valorDescuento.value);
 
   // Abrir ventana ANTES de las operaciones async para que el navegador móvil lo permita
   const paymentWindow = precioEstimado > 0 ? window.open('', '_blank') : null;
@@ -473,7 +498,6 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
       : data.formData.documentType;
 
     // Obtener datos del localStorage
-    const cuponLocalStorage = localStorage.getItem('cupon');
     const aliadoIdLocalStorage = localStorage.getItem('aliado_id');
 
     // Crear la venta
@@ -491,7 +515,7 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
       ...(data.formData.nit && { nit: data.formData.nit }),
       ...(data.formData.companyName && { empresa_nombre: data.formData.companyName }),
       tipo_persona: tipoPersona,
-      ...(cuponLocalStorage && { codigo_descuento: cuponLocalStorage }),
+      ...(codigoCupon && { codigo_descuento: codigoCupon }),
       ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
       ...(data.camposAdicionales && { datos_adicionales: data.camposAdicionales }),
       condiciones: data.condiciones,
@@ -507,9 +531,7 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
     localStorage.setItem('transaccion_id', transaccionId);
 
     // Calcular precio final aplicando el descuento del cupón
-    const cuponValorStr = localStorage.getItem('cupon_valor');
-    const cuponValor = cuponValorStr ? parseFloat(cuponValorStr) || 0 : 0;
-    const precioFinal = Math.max(0, planSeleccionado.precio - cuponValor);
+    const precioFinal = Math.max(0, planSeleccionado.precio - valorDescuento.value);
 
     const compraResumen = {
       transaccion_id: transaccionId,
@@ -536,7 +558,7 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
     // Cerrar la ventana de pago si se abrió pero ocurrió un error
     paymentWindow?.close();
 
-    const errorMessage = error?.response?.data?.message || error?.message || 'Ocurrió un error al procesar la compra. Por favor intenta de nuevo.';
+    const errorMessage = resolverErrorVenta(error, codigoCupon);
 
     const Swal = (await import('sweetalert2')).default;
     Swal.fire({
@@ -564,6 +586,8 @@ const handleCompraDebito = async (data: {
   console.log('Compra con débito automático:', data);
   isProcessingPurchase.value = true;
 
+  const codigoCupon = codigoParaVenta(data.planId);
+
   try {
     const planDetalles = await PlanesService.findById(data.planId);
     const versionId = planDetalles.data.version?.id;
@@ -577,7 +601,6 @@ const handleCompraDebito = async (data: {
       ? data.formData.legalRepDocumentType || ''
       : data.formData.documentType;
 
-    const cuponLocalStorage = localStorage.getItem('cupon');
     const aliadoIdLocalStorage = localStorage.getItem('aliado_id');
 
     // POST /ventas crea la venta + preapproval en MP. La autorización del cobro
@@ -596,7 +619,7 @@ const handleCompraDebito = async (data: {
       ...(data.formData.nit && { nit: data.formData.nit }),
       ...(data.formData.companyName && { empresa_nombre: data.formData.companyName }),
       tipo_persona: tipoPersona,
-      ...(cuponLocalStorage && { codigo_descuento: cuponLocalStorage }),
+      ...(codigoCupon && { codigo_descuento: codigoCupon }),
       ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
       ...(data.camposAdicionales && { datos_adicionales: data.camposAdicionales }),
       condiciones: data.condiciones,
@@ -616,10 +639,8 @@ const handleCompraDebito = async (data: {
     // (que solo mostraría una pantalla intermedia molesta) y vamos directo a /procesando-pago,
     // que polea /debito-automatico/confirmar hasta que el webhook complete el cobro.
     const planSeleccionado = productoPlanes.value.planes.find(p => p.id === data.planId);
-    const cuponValorStr = localStorage.getItem('cupon_valor');
-    const cuponValor = cuponValorStr ? parseFloat(cuponValorStr) || 0 : 0;
     const precioDebito = planSeleccionado?.valor_debito_automatico ?? planSeleccionado?.precio ?? 0;
-    const precioFinal = Math.max(0, precioDebito - cuponValor);
+    const precioFinal = Math.max(0, precioDebito - valorDescuento.value);
 
     const compraResumen = {
       transaccion_id: ventaId,
@@ -645,7 +666,7 @@ const handleCompraDebito = async (data: {
     console.error('Error al procesar débito automático:', error);
     isProcessingPurchase.value = false;
 
-    const errorMessage = error?.response?.data?.message || error?.message || 'Ocurrió un error al procesar el débito automático. Por favor intenta de nuevo.';
+    const errorMessage = resolverErrorVenta(error, codigoCupon);
 
     const Swal = (await import('sweetalert2')).default;
     Swal.fire({
