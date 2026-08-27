@@ -243,7 +243,7 @@ import PlanesTable from './PlanesTable.vue';
 import PlanPurchaseWizard from './PlanPurchaseWizard.vue';
 import LoadingSpinner from '../utils/LoadingSpinner.vue';
 import { PlanesService } from '../services/planes.service';
-import { VentasService } from '../services/ventas.service';
+import { VentasService, extraerRechazos } from '../services/ventas.service';
 import { ProductosService } from '../services/productos.service';
 import useCupon from '../composables/cupon';
 import type { ProductoPlanes, Plan, Cobertura, CoberturaPlan, PlanConCoberturas, EstilosAseguradora } from '../types/planes';
@@ -444,6 +444,14 @@ const selectedPlan = computed(() => {
  * al revalidarlo (400 con { success: false, message }), lo quita del resumen.
  */
 const resolverErrorVenta = (error: any, codigoCupon?: string): string => {
+  // 422: el backend recotizó y la venta ya no se puede hacer. Vienen todos los motivos,
+  // escritos para que los lea el cliente.
+  const rechazos = extraerRechazos(error);
+  if (rechazos.length > 0) {
+    const motivos = rechazos.map(rechazo => `• ${rechazo.mensaje}`).join('\n');
+    return `${error?.response?.data?.message || 'La venta no se puede realizar con los datos ingresados'}\n\n${motivos}`;
+  }
+
   const mensaje = error?.response?.data?.message
     || error?.message
     || 'Ocurrió un error al procesar la compra. Por favor intenta de nuevo.';
@@ -459,12 +467,19 @@ const resolverErrorVenta = (error: any, codigoCupon?: string): string => {
   return mensaje;
 };
 
-const handleCompra = async (data: { planId: string; formData: PurchaseFormData; camposAdicionales?: import('../types/planes').CamposAdicionalesCapturados; condiciones: import('../services/ventas.service').CondicionVentaInput[] }) => {
-  console.log('Datos de compra:', data);
-  if (data.camposAdicionales) {
-    console.log('Campos adicionales recibidos:', data.camposAdicionales);
-  }
+/** Lo que emite el wizard al confirmar la compra */
+interface DatosCompraWizard {
+  planId: string;
+  formData: PurchaseFormData;
+  camposAdicionales?: import('../types/planes').CamposAdicionalesCapturados;
+  /** Las mismas respuestas que se cotizaron */
+  respuestas: import('../types/cotizacion').RespuestaCampo[];
+  /** Total cotizado por el backend; null si no se alcanzó a cotizar */
+  valorTotal: number | null;
+  condiciones: import('../services/ventas.service').CondicionVentaInput[];
+}
 
+const handleCompra = async (data: DatosCompraWizard) => {
   isProcessingPurchase.value = true;
 
   // Buscar el plan seleccionado para obtener producto_id y version_id
@@ -474,10 +489,10 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
     return;
   }
 
-  // Calcular precio estimado con datos síncronos (cupón ya validado) antes de cualquier await
+  // Calcular precio estimado con datos síncronos (cotización ya recibida) antes de cualquier await
   // para poder abrir la ventana de pago en el contexto de gesto del usuario (requerido en móvil)
   const codigoCupon = codigoParaVenta(data.planId);
-  const precioEstimado = Math.max(0, planSeleccionado.precio - valorDescuento.value);
+  const precioEstimado = data.valorTotal ?? Math.max(0, planSeleccionado.precio - valorDescuento.value);
 
   // Abrir ventana ANTES de las operaciones async para que el navegador móvil lo permita
   const paymentWindow = precioEstimado > 0 ? window.open('', '_blank') : null;
@@ -517,6 +532,7 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
       tipo_persona: tipoPersona,
       ...(codigoCupon && { codigo_descuento: codigoCupon }),
       ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
+      ...(data.respuestas.length > 0 && { respuestas: data.respuestas }),
       ...(data.camposAdicionales && { datos_adicionales: data.camposAdicionales }),
       condiciones: data.condiciones,
     };
@@ -530,8 +546,8 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
 
     localStorage.setItem('transaccion_id', transaccionId);
 
-    // Calcular precio final aplicando el descuento del cupón
-    const precioFinal = Math.max(0, planSeleccionado.precio - valorDescuento.value);
+    // El valor a cobrar es el que cotizó el backend (plan + adicionales - descuento)
+    const precioFinal = data.valorTotal ?? Math.max(0, planSeleccionado.precio - valorDescuento.value);
 
     const compraResumen = {
       transaccion_id: transaccionId,
@@ -576,14 +592,7 @@ const handleCompra = async (data: { planId: string; formData: PurchaseFormData; 
   }
 };
 
-const handleCompraDebito = async (data: {
-  planId: string;
-  formData: PurchaseFormData;
-  camposAdicionales?: import('../types/planes').CamposAdicionalesCapturados;
-  condiciones: import('../services/ventas.service').CondicionVentaInput[];
-  cardTokenId: string;
-}) => {
-  console.log('Compra con débito automático:', data);
+const handleCompraDebito = async (data: DatosCompraWizard & { cardTokenId: string }) => {
   isProcessingPurchase.value = true;
 
   const codigoCupon = codigoParaVenta(data.planId);
@@ -621,6 +630,7 @@ const handleCompraDebito = async (data: {
       tipo_persona: tipoPersona,
       ...(codigoCupon && { codigo_descuento: codigoCupon }),
       ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
+      ...(data.respuestas.length > 0 && { respuestas: data.respuestas }),
       ...(data.camposAdicionales && { datos_adicionales: data.camposAdicionales }),
       condiciones: data.condiciones,
       debito_automatico: true,
@@ -640,7 +650,7 @@ const handleCompraDebito = async (data: {
     // que polea /debito-automatico/confirmar hasta que el webhook complete el cobro.
     const planSeleccionado = productoPlanes.value.planes.find(p => p.id === data.planId);
     const precioDebito = planSeleccionado?.valor_debito_automatico ?? planSeleccionado?.precio ?? 0;
-    const precioFinal = Math.max(0, precioDebito - valorDescuento.value);
+    const precioFinal = data.valorTotal ?? Math.max(0, precioDebito - valorDescuento.value);
 
     const compraResumen = {
       transaccion_id: ventaId,

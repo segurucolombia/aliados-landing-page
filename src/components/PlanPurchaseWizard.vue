@@ -55,6 +55,14 @@
           v-if="planData?.version?.campos_adicionales"
           :campos-adicionales="planData.version.campos_adicionales"
           :plan-nombre="planData.producto.nombre"
+          :cotizacion="cotizacion"
+          :rechazos="rechazos"
+          :mensaje-rechazo="mensajeRechazo"
+          :error-cotizacion="errorCotizacion"
+          :cotizando="cotizando"
+          :puede-pagar="puedePagar"
+          @update:respuestas="handleRespuestasUpdate"
+          @update:valid="handleFormularioValido"
           @next="handleCamposAdicionalesNext"
           @back="goToStep(2)"
           @cancel="handleCancel"
@@ -80,6 +88,8 @@
       :plan-id="planId"
       :valor-debito-automatico="planData.version.valor_debito_automatico"
       :vigencia-numero-meses="planData?.version?.vigencia_numero_meses ?? null"
+      :total-pago-unico="cotizacion?.valor_total ?? null"
+      :total-debito-automatico="cotizacionDebito?.valor_total ?? null"
       @select-pago-unico="handleSelectPagoUnico"
       @select-debito="handleSelectDebito"
       @close="showPaymentModal = false"
@@ -88,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import PlanDetailStep from './PlanDetailStep.vue';
 import PlanPurchaseFormStep from './PlanPurchaseFormStep.vue';
 import PlanCamposAdicionalesStep from './PlanCamposAdicionalesStep.vue';
@@ -96,16 +106,31 @@ import MercadoPagoCardStep from './MercadoPagoCardStep.vue';
 import PaymentMethodModal from './PaymentMethodModal.vue';
 import type { PurchaseFormData } from './PlanPurchaseFormStep.vue';
 import type { PlanWithDetails, CamposAdicionalesCapturados } from '../types/planes';
+import type { CotizarVentaInput, RespuestaCampo } from '../types/cotizacion';
 import type { CondicionVentaInput } from '../services/ventas.service';
+import useCotizacion, { DEBOUNCE_COTIZACION_MS } from '../composables/cotizacion';
+import useCupon from '../composables/cupon';
 
 const props = defineProps<{
   planId: string;
   planPrecio: number;
 }>();
 
+/** Datos comunes de una compra: incluyen las respuestas que se cotizaron */
+interface DatosCompra {
+  planId: string;
+  formData: PurchaseFormData;
+  camposAdicionales?: CamposAdicionalesCapturados;
+  /** Las mismas respuestas que se mandaron a cotizar */
+  respuestas: RespuestaCampo[];
+  /** Total que cotizó el backend; null si no hay cotización vigente */
+  valorTotal: number | null;
+  condiciones: CondicionVentaInput[];
+}
+
 const emit = defineEmits<{
-  (e: 'purchase', data: { planId: string; formData: PurchaseFormData; camposAdicionales?: CamposAdicionalesCapturados; condiciones: CondicionVentaInput[] }): void;
-  (e: 'purchase-debito', data: { planId: string; formData: PurchaseFormData; camposAdicionales?: CamposAdicionalesCapturados; condiciones: CondicionVentaInput[]; cardTokenId: string }): void;
+  (e: 'purchase', data: DatosCompra): void;
+  (e: 'purchase-debito', data: DatosCompra & { cardTokenId: string }): void;
   (e: 'cancel'): void;
 }>();
 
@@ -129,14 +154,87 @@ const tieneModalDePago = computed(() => planData.value?.version?.valor_debito_au
 // El formulario de tarjeta MP es siempre el último paso: va después de elegir el medio de pago
 const CARD_STEP = 4;
 
+/* ------------------------------------------------------------------ *
+ * Cotización: el total y los adicionales siempre los calcula el backend
+ * ------------------------------------------------------------------ */
+
+const { codigoParaVenta } = useCupon();
+
+const {
+  cotizacion,
+  rechazos,
+  mensajeRechazo,
+  errorCotizacion,
+  cotizando,
+  puedePagar,
+  cotizar,
+  cotizarAhora,
+  cancelarCotizacion,
+} = useCotizacion();
+
+// Cotización paralela con débito automático: se cobra sobre valor_debito_automatico
+const cotizacionDebitoState = useCotizacion();
+const cotizacionDebito = cotizacionDebitoState.cotizacion;
+
+/** Respuestas del formulario de campos adicionales, ya normalizadas */
+const respuestas = ref<RespuestaCampo[]>([]);
+/** El formulario tiene todos los obligatorios: recién ahí vale la pena cotizar */
+const formularioCompleto = ref(false);
+
+const versionId = computed(() => planData.value?.version?.id ?? '');
+const codigoCupon = computed(() => codigoParaVenta(props.planId));
+
+const armarInputCotizacion = (debitoAutomatico: boolean): CotizarVentaInput => ({
+  version_id: versionId.value,
+  ...(codigoCupon.value ? { codigo_descuento: codigoCupon.value } : {}),
+  ...(debitoAutomatico ? { debito_automatico: true } : {}),
+  respuestas: respuestas.value,
+});
+
+/** Solo se cotiza con la versión cargada y el formulario completo */
+const listoParaCotizar = computed(
+  () => versionId.value !== '' && (!hasCamposAdicionales.value || formularioCompleto.value),
+);
+
+const handleRespuestasUpdate = (nuevas: RespuestaCampo[]) => {
+  respuestas.value = nuevas;
+};
+
+const handleFormularioValido = (valido: boolean) => {
+  formularioCompleto.value = valido;
+};
+
+// Cada cambio del formulario (o del cupón) recotiza, con debounce
+watch(
+  [respuestas, codigoCupon, listoParaCotizar],
+  () => {
+    if (!listoParaCotizar.value) {
+      cancelarCotizacion();
+      return;
+    }
+    cotizar(armarInputCotizacion(false), DEBOUNCE_COTIZACION_MS);
+  },
+  { deep: true },
+);
+
+// El modal de medio de pago muestra los dos totales: hay que cotizar el de débito
+watch([showPaymentModal, codigoCupon], () => {
+  if (!showPaymentModal.value || !tieneModalDePago.value || !listoParaCotizar.value) return;
+  void cotizacionDebitoState.cotizarAhora(armarInputCotizacion(true));
+});
+
 const handleCondicionesAceptadas = (condiciones: CondicionVentaInput[]) => {
   condicionesDatos.value = condiciones;
 };
 
 const handlePlanLoaded = (plan: PlanWithDetails) => {
   planData.value = plan;
-  console.log('Plan loaded in wizard:', plan);
-  console.log('Has campos adicionales?', hasCamposAdicionales.value);
+
+  // Sin campos adicionales no hay nada que esperar: se cotiza de una para tener
+  // el total del backend listo cuando el cliente llegue al pago
+  if (!hasCamposAdicionales.value && versionId.value) {
+    void cotizarAhora(armarInputCotizacion(false));
+  }
 };
 
 const goToStep = (step: number) => {
@@ -157,9 +255,9 @@ const handlePurchaseFormSubmit = (formData: PurchaseFormData) => {
   }
 };
 
-const handleCamposAdicionalesNext = (datos: CamposAdicionalesCapturados) => {
-  camposAdicionalesDatos.value = datos;
-  console.log('Campos adicionales captured:', datos);
+const handleCamposAdicionalesNext = (payload: { datos: CamposAdicionalesCapturados; respuestas: RespuestaCampo[] }) => {
+  camposAdicionalesDatos.value = payload.datos;
+  respuestas.value = payload.respuestas;
   irAlPago();
 };
 
@@ -209,6 +307,8 @@ const finalizarCompra = () => {
     planId: props.planId,
     formData: purchaseFormData.value,
     camposAdicionales: camposAdicionalesData,
+    respuestas: respuestas.value,
+    valorTotal: cotizacion.value?.valor_total ?? null,
     condiciones: condicionesDatos.value,
   });
 };
@@ -229,6 +329,8 @@ const finalizarCompraDebito = () => {
     planId: props.planId,
     formData: purchaseFormData.value,
     camposAdicionales: camposAdicionalesData,
+    respuestas: respuestas.value,
+    valorTotal: cotizacionDebito.value?.valor_total ?? null,
     condiciones: condicionesDatos.value,
     cardTokenId: cardTokenId.value,
   });

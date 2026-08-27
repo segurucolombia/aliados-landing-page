@@ -1,4 +1,11 @@
 import axios from "axios";
+import type {
+  CotizacionVenta,
+  CotizarVentaInput,
+  CotizarVentaResponse,
+  RechazoVenta,
+  RespuestaCampo,
+} from "../types/cotizacion";
 
 const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/api-aliados/ventas';
 
@@ -24,6 +31,8 @@ export interface CreateVentaDto {
   tipo_persona?: string;
   aliado_id?: string;
   codigo_descuento?: string;
+  /** Las mismas respuestas que se cotizaron. El backend recotiza con ellas. */
+  respuestas?: RespuestaCampo[];
   datos_adicionales?: import('../types/planes').CamposAdicionalesCapturados;
   condiciones: CondicionVentaInput[];
   debito_automatico?: boolean;
@@ -118,7 +127,31 @@ export interface VentaDetalle {
   suscripcion: { id: string; fecha_inicio: string; fecha_fin: string; estado: string } | null;
 }
 
+/**
+ * Extrae los motivos de rechazo de un error de venta (HTTP 422).
+ * Devuelve [] si el error es de otro tipo.
+ */
+export function extraerRechazos(error: any): RechazoVenta[] {
+  if (error?.response?.status !== 422) return [];
+  const rechazos = error?.response?.data?.rechazos;
+  return Array.isArray(rechazos) ? rechazos : [];
+}
+
 export class VentasService {
+  /**
+   * Cotiza la venta con las respuestas del formulario. No crea ni reserva nada,
+   * así que se puede llamar en cada cambio del formulario (con debounce).
+   *
+   * @throws Error de axios. Un 422 trae los motivos por los que no se puede vender
+   *         en `response.data.rechazos` (ver `extraerRechazos`).
+   */
+  static async cotizar(input: CotizarVentaInput): Promise<CotizacionVenta> {
+    const response = await axios.post<CotizarVentaResponse>(`${baseUrl}/cotizar`, input, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return response.data.data;
+  }
+
   /**
    * Obtiene el detalle completo de una venta por su ID.
    */

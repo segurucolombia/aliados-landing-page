@@ -21,8 +21,22 @@
       <div class="campos-adicionales-content">
         <CamposAdicionales
           :campos-adicionales="camposAdicionales"
+          :rechazos="rechazos"
           @update:datos="handleDatosUpdate"
+          @update:respuestas="handleRespuestasUpdate"
           @update:valid="handleValidUpdate"
+        />
+      </div>
+
+      <!-- Desglose: el cliente no llega al pago sin ver de dónde sale cada peso -->
+      <div class="desglose-wrapper">
+        <DesgloseCotizacion
+          :cotizacion="isValid ? cotizacion : null"
+          :plan-nombre="planNombre"
+          :cotizando="cotizando"
+          :rechazos="rechazos"
+          :mensaje-rechazo="mensajeRechazo"
+          :error-cotizacion="errorCotizacion"
         />
       </div>
 
@@ -48,7 +62,7 @@
           iconPos="right"
           class="p-button-primary"
           @click="handleContinue"
-          :disabled="!isValid"
+          :disabled="!puedeContinuar"
           type="button"
         />
       </div>
@@ -57,37 +71,68 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineAsyncComponent } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
 import Button from 'primevue/button';
+import DesgloseCotizacion from './DesgloseCotizacion.vue';
 import type { CamposAdicionalesConfig, CamposAdicionalesCapturados } from '../types/planes';
+import type { CotizacionVenta, RechazoVenta, RespuestaCampo } from '../types/cotizacion';
 
 const CamposAdicionales = defineAsyncComponent(() => import('./register/components/CamposAdicionales.vue'));
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   camposAdicionales?: CamposAdicionalesConfig;
-}>();
+  planNombre?: string;
+  /** Cotización vigente calculada por el backend con las respuestas actuales */
+  cotizacion?: CotizacionVenta | null;
+  rechazos?: RechazoVenta[];
+  mensajeRechazo?: string;
+  errorCotizacion?: string;
+  cotizando?: boolean;
+  /** El backend cotizó sin rechazos: recién ahí se puede avanzar al pago */
+  puedePagar?: boolean;
+}>(), {
+  planNombre: '',
+  cotizacion: null,
+  rechazos: () => [],
+  mensajeRechazo: '',
+  errorCotizacion: '',
+  cotizando: false,
+  puedePagar: false,
+});
 
 const emit = defineEmits<{
-  (e: 'next', datos: CamposAdicionalesCapturados): void;
+  (e: 'next', datos: { datos: CamposAdicionalesCapturados; respuestas: RespuestaCampo[] }): void;
+  (e: 'update:respuestas', respuestas: RespuestaCampo[]): void;
+  (e: 'update:valid', valid: boolean): void;
   (e: 'back'): void;
   (e: 'cancel'): void;
 }>();
 
 const datosCapturados = ref<CamposAdicionalesCapturados | null>(null);
+const respuestas = ref<RespuestaCampo[]>([]);
 const isValid = ref(false);
+
+/** Sin cotización válida no se avanza: con 422 el botón queda deshabilitado */
+const puedeContinuar = computed(() => isValid.value && props.puedePagar);
 
 const handleDatosUpdate = (datos: CamposAdicionalesCapturados) => {
   datosCapturados.value = datos;
 };
 
+const handleRespuestasUpdate = (nuevas: RespuestaCampo[]) => {
+  respuestas.value = nuevas;
+  emit('update:respuestas', nuevas);
+};
+
 const handleValidUpdate = (valid: boolean) => {
   isValid.value = valid;
+  emit('update:valid', valid);
 };
 
 const handleContinue = () => {
-  if (isValid.value && datosCapturados.value) {
-    emit('next', datosCapturados.value);
-  }
+  if (!puedeContinuar.value || !datosCapturados.value) return;
+
+  emit('next', { datos: datosCapturados.value, respuestas: respuestas.value });
 };
 </script>
 
@@ -156,6 +201,10 @@ const handleContinue = () => {
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.desglose-wrapper {
   margin-bottom: 2rem;
 }
 

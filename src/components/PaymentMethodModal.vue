@@ -17,10 +17,10 @@
             </div>
             <div class="payment-option-info">
               <span class="payment-option-label">Débito automático</span>
-              <span class="payment-option-price">{{ formatCurrency(valorDebitoAutomatico) }} <span class="payment-option-period">/ {{ vigenciaLabel }}</span></span>
+              <span class="payment-option-price">{{ formatCurrency(totalDebito) }} <span class="payment-option-period">/ {{ vigenciaLabel }}</span></span>
             </div>
-            <div class="payment-option-saving">
-              Ahorra {{ formatCurrency(planPrecio - valorDebitoAutomatico) }}
+            <div v-if="ahorroDebito > 0" class="payment-option-saving">
+              Ahorra {{ formatCurrency(ahorroDebito) }}
             </div>
           </div>
           <ul class="payment-option-details">
@@ -125,8 +125,17 @@ const props = withDefaults(defineProps<{
   planId: string;
   valorDebitoAutomatico: number;
   vigenciaNumeroMeses?: number | null;
+  /**
+   * Totales cotizados por el backend (incluyen adicionales y descuento).
+   * Cuando llegan mandan ellos: el cálculo local es solo el respaldo mientras
+   * la cotización no está lista.
+   */
+  totalPagoUnico?: number | null;
+  totalDebitoAutomatico?: number | null;
 }>(), {
   vigenciaNumeroMeses: null,
+  totalPagoUnico: null,
+  totalDebitoAutomatico: null,
 });
 
 const emit = defineEmits<{
@@ -151,7 +160,14 @@ const {
 
 const vigenciaLabel = computed(() => formatVigencia(props.vigenciaNumeroMeses) || 'renovación');
 
-const totalAPagar = computed(() => totalConDescuento(props.planPrecio));
+/** Total del pago único: el cotizado si ya llegó, si no el precio del plan con descuento */
+const totalAPagar = computed(() => props.totalPagoUnico ?? totalConDescuento(props.planPrecio));
+
+/** Total del débito automático: el cotizado si ya llegó, si no el valor de la versión */
+const totalDebito = computed(() => props.totalDebitoAutomatico ?? props.valorDebitoAutomatico);
+
+/** Cuánto se ahorra con débito automático, sobre los valores que se están mostrando */
+const ahorroDebito = computed(() => Math.max(0, totalAPagar.value - totalDebito.value));
 
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('es-CO', {

@@ -235,9 +235,13 @@
               <span>- {{ formatCurrency(valorDescuento) }}</span>
             </div>
             <div class="price-row total-row">
-              <span class="total-label">Total a pagar:</span>
+              <span class="total-label">{{ hasNextStep ? 'Subtotal:' : 'Total a pagar:' }}</span>
               <span class="total-value">{{ formatCurrency(totalAPagar) }}</span>
             </div>
+            <!-- Los datos del plan pueden agregar cargos: el total sale de la cotización -->
+            <p v-if="hasNextStep" class="price-note">
+              El valor final se calcula con la información adicional del siguiente paso.
+            </p>
           </div>
         </div>
 
@@ -737,6 +741,12 @@ const handleCancel = () => {
   font-size: 1.125rem;
   font-weight: 700;
   color: #166534;
+}
+
+.price-note {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 0.5rem 0 0 0;
 }
 
 .total-value {

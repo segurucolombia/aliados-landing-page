@@ -1,7 +1,7 @@
 <template>
   <div v-if="tieneCamposAdicionales" class="campos-adicionales w-full">
     <div
-      v-for="(seccion, seccionIndex) in camposAdicionalesNormalizados?.secciones || []"
+      v-for="(seccion, seccionIndex) in secciones"
       :key="seccionIndex"
       class="seccion-card bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm"
     >
@@ -11,124 +11,156 @@
       </div>
 
       <div class="seccion-campos space-y-4">
-        <div v-for="(campo, campoIndex) in seccion.campos" :key="campoIndex">
+        <div v-for="campo in seccion.campos" :key="campo.clave">
           <!-- Input Simple -->
           <div v-if="campo.tipo === 'input'" class="campo-group">
-            <label :for="`campo-${seccionIndex}-${campoIndex}`" class="text-sm italic text-gray-600 mb-1 block">
+            <label :for="idCampo(seccionIndex, campo)" class="text-sm italic text-gray-600 mb-1 block">
               {{ campo.nombre }} <span v-if="esRequerido(campo)" class="text-red-600">*</span>
             </label>
+
             <!-- Textarea -->
             <textarea
               v-if="campo.tipoInput === 'textarea'"
-              :id="`campo-${seccionIndex}-${campoIndex}`"
-              :class="['p-2 border rounded-md w-full', {'border-red-400': hasError(seccion.titulo, campo.nombre)}]"
-              v-model="datosFormulario[seccion.titulo][campo.nombre]"
-              @blur="validateField(seccion.titulo, campo.nombre, esRequerido(campo))"
+              :id="idCampo(seccionIndex, campo)"
+              :class="['p-2 border rounded-md w-full', { 'border-red-400': hasError(seccionIndex, campo.clave) }]"
+              v-model="datosFormulario[seccionIndex][campo.clave]"
+              @blur="validarCampo(seccionIndex, campo)"
               rows="4"
             ></textarea>
-            <!-- Autocomplete para ciudades -->
+
+            <!-- Ciudades -->
             <AutoComplete
               v-else-if="campo.tipoInput === 'ciudad'"
-              :id="`campo-${seccionIndex}-${campoIndex}`"
-              v-model="datosFormulario[seccion.titulo][campo.nombre]"
+              :id="idCampo(seccionIndex, campo)"
+              v-model="datosFormulario[seccionIndex][campo.clave]"
               option-label="name"
-              :class="['w-full', {'border-red-400': hasError(seccion.titulo, campo.nombre)}]"
+              :class="['w-full', { 'border-red-400': hasError(seccionIndex, campo.clave) }]"
               input-class="w-full"
               :suggestions="ciudadesBuscadas"
               @complete="buscarCiudades"
-              @change="validateField(seccion.titulo, campo.nombre, esRequerido(campo))"
+              @change="validarCampo(seccionIndex, campo)"
             />
-            <!-- Input normal -->
+
+            <!-- Precio: número con formato de moneda -->
+            <InputNumber
+              v-else-if="campo.tipoInput === 'precio'"
+              :input-id="idCampo(seccionIndex, campo)"
+              v-model="datosFormulario[seccionIndex][campo.clave]"
+              mode="currency"
+              currency="COP"
+              locale="es-CO"
+              :max-fraction-digits="0"
+              :class="['w-full', { 'border-red-400': hasError(seccionIndex, campo.clave) }]"
+              input-class="w-full"
+              @blur="validarCampo(seccionIndex, campo)"
+            />
+
+            <!-- Plano: número sin formato -->
+            <InputNumber
+              v-else-if="campo.tipoInput === 'plano'"
+              :input-id="idCampo(seccionIndex, campo)"
+              v-model="datosFormulario[seccionIndex][campo.clave]"
+              :use-grouping="false"
+              :class="['w-full', { 'border-red-400': hasError(seccionIndex, campo.clave) }]"
+              input-class="w-full"
+              @blur="validarCampo(seccionIndex, campo)"
+            />
+
+            <!-- Input normal (text, fecha, email, tel) -->
             <input
               v-else
-              :id="`campo-${seccionIndex}-${campoIndex}`"
+              :id="idCampo(seccionIndex, campo)"
               :type="getInputType(campo.tipoInput)"
-              :class="['p-2 border rounded-md w-full', {'border-red-400': hasError(seccion.titulo, campo.nombre)}]"
-              v-model="datosFormulario[seccion.titulo][campo.nombre]"
-              @blur="validateField(seccion.titulo, campo.nombre, esRequerido(campo))"
+              :class="['p-2 border rounded-md w-full', { 'border-red-400': hasError(seccionIndex, campo.clave) }]"
+              v-model="datosFormulario[seccionIndex][campo.clave]"
+              @blur="validarCampo(seccionIndex, campo)"
+              @change="validarCampo(seccionIndex, campo)"
             />
-            <span v-if="hasError(seccion.titulo, campo.nombre)" class="text-xs text-red-600 italic mt-1">
-              Este campo es obligatorio
-            </span>
+
+            <CampoAvisos :campo="campo" />
+            <MensajeError :texto="mensajeError(seccionIndex, campo)" />
           </div>
 
           <!-- Dropdown -->
           <div v-else-if="campo.tipo === 'dropdown'" class="campo-group">
-            <label :for="`campo-${seccionIndex}-${campoIndex}`" class="text-sm italic text-gray-600 mb-1 block">
+            <label :for="idCampo(seccionIndex, campo)" class="text-sm italic text-gray-600 mb-1 block">
               {{ campo.nombre }} <span v-if="esRequerido(campo)" class="text-red-600">*</span>
             </label>
             <Select
-              :id="`campo-${seccionIndex}-${campoIndex}`"
-              v-model="datosFormulario[seccion.titulo][campo.nombre]"
+              :id="idCampo(seccionIndex, campo)"
+              v-model="datosFormulario[seccionIndex][campo.clave]"
               :options="campo.opciones"
-              :class="['w-full', {'border-red-400': hasError(seccion.titulo, campo.nombre)}]"
-              @change="validateField(seccion.titulo, campo.nombre, esRequerido(campo))"
-            />
-            <span v-if="hasError(seccion.titulo, campo.nombre)" class="text-xs text-red-600 italic mt-1">
-              Debe seleccionar una opción
-            </span>
+              option-label="etiqueta"
+              option-value="clave"
+              :class="['w-full', { 'border-red-400': hasError(seccionIndex, campo.clave) }]"
+              @change="validarCampo(seccionIndex, campo)"
+            >
+              <template #option="{ option }">
+                <OpcionConRecargo :campo="campo" :opcion="option" />
+              </template>
+            </Select>
+
+            <CampoAvisos :campo="campo" />
+            <MensajeError :texto="mensajeError(seccionIndex, campo)" />
           </div>
 
           <!-- Multiselect -->
           <div v-else-if="campo.tipo === 'multiselect'" class="campo-group">
-            <label :for="`campo-${seccionIndex}-${campoIndex}`" class="text-sm italic text-gray-600 mb-1 block">
+            <label :for="idCampo(seccionIndex, campo)" class="text-sm italic text-gray-600 mb-1 block">
               {{ campo.nombre }} <span v-if="esRequerido(campo)" class="text-red-600">*</span>
             </label>
             <MultiSelect
-              :id="`campo-${seccionIndex}-${campoIndex}`"
-              v-model="datosFormulario[seccion.titulo][campo.nombre]"
+              :id="idCampo(seccionIndex, campo)"
+              v-model="datosFormulario[seccionIndex][campo.clave]"
               :options="campo.opciones"
-              :class="['w-full', {'border-red-400': hasError(seccion.titulo, campo.nombre)}]"
-              @change="validateField(seccion.titulo, campo.nombre, esRequerido(campo))"
-            />
-            <span v-if="hasError(seccion.titulo, campo.nombre)" class="text-xs text-red-600 italic mt-1">
-              Debe seleccionar al menos una opción
-            </span>
+              option-label="etiqueta"
+              option-value="clave"
+              :class="['w-full', { 'border-red-400': hasError(seccionIndex, campo.clave) }]"
+              @change="validarCampo(seccionIndex, campo)"
+            >
+              <template #option="{ option }">
+                <OpcionConRecargo :campo="campo" :opcion="option" />
+              </template>
+            </MultiSelect>
+
+            <CampoAvisos :campo="campo" />
+            <MensajeError :texto="mensajeError(seccionIndex, campo)" />
           </div>
-          
+
           <!-- Autocomplete de ciudades -->
-          <div v-else-if="campo.tipo === 'autocomplete' && campo.fuente === 'ciudades'" class="campo-group">
-            <label :for="`campo-${seccionIndex}-${campoIndex}`" class="text-sm italic text-gray-600 mb-1 block">
+          <div v-else-if="campo.tipo === 'autocomplete'" class="campo-group">
+            <label :for="idCampo(seccionIndex, campo)" class="text-sm italic text-gray-600 mb-1 block">
               {{ campo.nombre }} <span v-if="esRequerido(campo)" class="text-red-600">*</span>
             </label>
             <AutoComplete
-              :id="`campo-${seccionIndex}-${campoIndex}`"
-              v-model="datosFormulario[seccion.titulo][campo.nombre]"
+              :id="idCampo(seccionIndex, campo)"
+              v-model="datosFormulario[seccionIndex][campo.clave]"
               option-label="name"
-              :class="['w-full', {'border-red-400': hasError(seccion.titulo, campo.nombre)}]"
+              :class="['w-full', { 'border-red-400': hasError(seccionIndex, campo.clave) }]"
               input-class="w-full"
               :suggestions="ciudadesBuscadas"
               @complete="buscarCiudades"
-              @change="validateField(seccion.titulo, campo.nombre, esRequerido(campo))"
-            />hjksdfvjksdsdf
-            <span v-if="hasError(seccion.titulo, campo.nombre)" class="text-xs text-red-600 italic mt-1">
-              Este campo es obligatorio
-            </span>
+              @change="validarCampo(seccionIndex, campo)"
+            />
+
+            <CampoAvisos :campo="campo" />
+            <MensajeError :texto="mensajeError(seccionIndex, campo)" />
           </div>
 
           <!-- Edad (se captura la fecha de nacimiento y se calcula la edad) -->
           <div v-else-if="campo.tipo === 'edad'" class="campo-group">
-            <label :for="`campo-${seccionIndex}-${campoIndex}`" class="text-sm italic text-gray-600 mb-1 block">
+            <label :for="idCampo(seccionIndex, campo)" class="text-sm italic text-gray-600 mb-1 block">
               {{ campo.nombre }} <span v-if="esRequerido(campo)" class="text-red-600">*</span>
             </label>
-            <input
-              :id="`campo-${seccionIndex}-${campoIndex}`"
-              type="date"
-              :max="hoyISO"
-              :class="['p-2 border rounded-md w-full', {'border-red-400': hasError(seccion.titulo, campo.nombre)}]"
-              v-model="datosFormulario[seccion.titulo][campo.nombre]"
-              @blur="validarCampoEdad(seccion.titulo, campo)"
-              @change="validarCampoEdad(seccion.titulo, campo)"
+            <CampoEdadInput
+              :id="idCampo(seccionIndex, campo)"
+              :campo="campo"
+              v-model="datosFormulario[seccionIndex][campo.clave]"
+              :invalido="hasError(seccionIndex, campo.clave)"
+              @change="validarCampo(seccionIndex, campo)"
             />
-            <span
-              v-if="datosFormulario[seccion.titulo][campo.nombre] && !hasError(seccion.titulo, campo.nombre)"
-              class="text-xs text-gray-600 italic mt-1 block"
-            >
-              Edad: {{ calcularEdad(datosFormulario[seccion.titulo][campo.nombre]) }} años
-            </span>
-            <span v-if="hasError(seccion.titulo, campo.nombre)" class="text-xs text-red-600 italic mt-1 block">
-              {{ mensajeErrorEdad(seccion.titulo, campo) }}
-            </span>
+
+            <MensajeError :texto="mensajeError(seccionIndex, campo)" />
           </div>
 
           <!-- Grupo de Inputs Repetibles -->
@@ -138,7 +170,7 @@
             </label>
 
             <div
-              v-for="(entrada, entradaIndex) in datosFormulario[seccion.titulo][campo.nombre]"
+              v-for="(entrada, entradaIndex) in datosFormulario[seccionIndex][campo.clave]"
               :key="entradaIndex"
               class="grupo-entrada bg-gray-50 border border-gray-300 rounded-md p-4 mb-3 relative"
             >
@@ -147,8 +179,8 @@
                   {{ campo.nombre }} #{{ Number(entradaIndex) + 1 }}
                 </span>
                 <button
-                  v-if="datosFormulario[seccion.titulo][campo.nombre].length > 1"
-                  @click="eliminarEntrada(seccion.titulo, campo.nombre, Number(entradaIndex))"
+                  v-if="datosFormulario[seccionIndex][campo.clave].length > 1"
+                  @click="eliminarEntrada(seccionIndex, campo.clave, Number(entradaIndex))"
                   class="text-red-600 hover:text-red-800 p-1 rounded-md hover:bg-red-50 transition-colors"
                   type="button"
                   :aria-label="`Eliminar ${campo.nombre} #${Number(entradaIndex) + 1}`"
@@ -160,43 +192,80 @@
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div v-for="(subcampo, subcampoIndex) in campo.campos" :key="subcampoIndex" class="subcampo">
+                <div v-for="subcampo in campo.campos" :key="subcampo.clave" class="subcampo">
                   <!-- Input dentro del grupo -->
                   <div v-if="subcampo.tipo === 'input'">
-                    <label :for="`subcampo-${seccionIndex}-${campoIndex}-${entradaIndex}-${subcampoIndex}`" class="text-xs italic text-gray-600 mb-1 block">
+                    <label :for="idSubcampo(seccionIndex, campo, Number(entradaIndex), subcampo)" class="text-xs italic text-gray-600 mb-1 block">
                       {{ subcampo.nombre }} <span v-if="esRequerido(subcampo)" class="text-red-600">*</span>
                     </label>
+                    <InputNumber
+                      v-if="subcampo.tipoInput === 'precio' || subcampo.tipoInput === 'plano'"
+                      :input-id="idSubcampo(seccionIndex, campo, Number(entradaIndex), subcampo)"
+                      v-model="entrada[subcampo.clave]"
+                      :mode="subcampo.tipoInput === 'precio' ? 'currency' : 'decimal'"
+                      currency="COP"
+                      locale="es-CO"
+                      :max-fraction-digits="0"
+                      :use-grouping="subcampo.tipoInput === 'precio'"
+                      class="w-full text-sm"
+                      input-class="w-full"
+                    />
                     <input
-                      :id="`subcampo-${seccionIndex}-${campoIndex}-${entradaIndex}-${subcampoIndex}`"
+                      v-else
+                      :id="idSubcampo(seccionIndex, campo, Number(entradaIndex), subcampo)"
                       :type="getInputType(subcampo.tipoInput)"
-                      class="p-2 border rounded-md w-full text-sm"
-                      v-model="entrada[subcampo.nombre]"
+                      :class="['p-2 border rounded-md w-full text-sm', { 'border-red-400': !!errorDeSubcampo(seccionIndex, campo, subcampo, Number(entradaIndex)) }]"
+                      v-model="entrada[subcampo.clave]"
+                    />
+                  </div>
+
+                  <!-- Fecha de nacimiento dentro del grupo -->
+                  <div v-else-if="subcampo.tipo === 'edad'">
+                    <label :for="idSubcampo(seccionIndex, campo, Number(entradaIndex), subcampo)" class="text-xs italic text-gray-600 mb-1 block">
+                      {{ subcampo.nombre }} <span v-if="esRequerido(subcampo)" class="text-red-600">*</span>
+                    </label>
+                    <CampoEdadInput
+                      :id="idSubcampo(seccionIndex, campo, Number(entradaIndex), subcampo)"
+                      :campo="subcampo"
+                      v-model="entrada[subcampo.clave]"
+                      :invalido="!!errorDeSubcampo(seccionIndex, campo, subcampo, Number(entradaIndex))"
+                      compacto
                     />
                   </div>
 
                   <!-- Dropdown dentro del grupo -->
                   <div v-else-if="subcampo.tipo === 'dropdown'">
-                    <label :for="`subcampo-${seccionIndex}-${campoIndex}-${entradaIndex}-${subcampoIndex}`" class="text-xs italic text-gray-600 mb-1 block">
+                    <label :for="idSubcampo(seccionIndex, campo, Number(entradaIndex), subcampo)" class="text-xs italic text-gray-600 mb-1 block">
                       {{ subcampo.nombre }} <span v-if="esRequerido(subcampo)" class="text-red-600">*</span>
                     </label>
                     <Select
-                      :id="`subcampo-${seccionIndex}-${campoIndex}-${entradaIndex}-${subcampoIndex}`"
-                      v-model="entrada[subcampo.nombre]"
+                      :id="idSubcampo(seccionIndex, campo, Number(entradaIndex), subcampo)"
+                      v-model="entrada[subcampo.clave]"
                       :options="subcampo.opciones"
-                      class="w-full text-sm"
-                    />
+                      option-label="etiqueta"
+                      option-value="clave"
+                      :class="['w-full text-sm', { 'border-red-400': !!errorDeSubcampo(seccionIndex, campo, subcampo, Number(entradaIndex)) }]"
+                    >
+                      <template #option="{ option }">
+                        <OpcionConRecargo :campo="subcampo" :opcion="option" />
+                      </template>
+                    </Select>
                   </div>
+
+                  <MensajeError :texto="errorDeSubcampo(seccionIndex, campo, subcampo, Number(entradaIndex))" />
                 </div>
               </div>
+
+              <MensajeError :texto="rechazoDeRegistro(seccionIndex, campo, Number(entradaIndex))" />
             </div>
 
-            <div class="flex items-center gap-3 mt-2">
+            <div class="flex flex-wrap items-center gap-3 mt-2">
               <button
-                @click="agregarEntrada(seccion.titulo, campo)"
-                :disabled="!puedeAgregarMasRegistros(seccion.titulo, campo)"
+                @click="agregarEntrada(seccionIndex, campo)"
+                :disabled="!puedeAgregarMasRegistros(seccionIndex, campo)"
                 :class="[
                   'px-4 py-2 text-white rounded-md transition-colors flex items-center justify-center gap-2 text-sm font-medium',
-                  !puedeAgregarMasRegistros(seccion.titulo, campo)
+                  !puedeAgregarMasRegistros(seccionIndex, campo)
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700'
                 ]"
@@ -208,14 +277,18 @@
                 Agregar {{ campo.nombre }}
               </button>
 
+              <!-- Anticipo del cobro por registro adicional -->
+              <span v-if="avisoRegistroAdicional(campo)" class="text-xs font-medium text-amber-700">
+                {{ avisoRegistroAdicional(campo) }}
+              </span>
+
               <span v-if="campo.cantidad_maxima_registros" class="text-xs text-gray-600">
-                {{ obtenerContadorRegistros(seccion.titulo, campo) }}
+                {{ obtenerContadorRegistros(seccionIndex, campo) }}
               </span>
             </div>
 
-            <span v-if="hasError(seccion.titulo, campo.nombre)" class="text-xs text-red-600 italic mt-1 block">
-              Debe agregar al menos un registro
-            </span>
+            <CampoAvisos :campo="campo" />
+            <MensajeError :texto="mensajeError(seccionIndex, campo)" />
           </div>
         </div>
       </div>
@@ -224,57 +297,111 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { Select, MultiSelect, AutoComplete } from 'primevue';
+import { computed, h, ref, watch } from 'vue';
+import { Select, MultiSelect, AutoComplete, InputNumber } from 'primevue';
 import type {
   CamposAdicionalesConfig,
   CampoAdicional,
   CampoGrupoInputs,
-  TipoInput,
   CamposAdicionalesCapturados,
-  DatosSeccionCapturados
+  DatosSeccionCapturados,
+  OpcionCampo,
+  TipoInput,
 } from '../../../types/planes';
+import type { RechazoVenta, RespuestaCampo } from '../../../types/cotizacion';
 import { CiudadesColombiaService, type Ciudad } from '../../../services/ciudades-colombia.service';
+import CampoEdadInput from './CampoEdadInput.vue';
+import {
+  construirRespuestas,
+  nombreCiudad,
+  numerosDeRegistro,
+  registroTieneDatos,
+  type DatosFormulario,
+} from '../../../utils/respuestasCampos';
+import {
+  avisosDeRecargo,
+  avisosDeRechazo,
+  calcularEdad,
+  evaluarReglasEdad,
+  recargoDeOpcion,
+  recargoRegistroAdicional,
+  rechazoDeOpcion,
+} from '../../../utils/reglasCampos';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   camposAdicionales?: CamposAdicionalesConfig;
-}>();
+  /** Rechazos devueltos por el backend (422): marcan los campos que impiden la venta */
+  rechazos?: RechazoVenta[];
+}>(), {
+  rechazos: () => [],
+});
 
 const emit = defineEmits<{
+  /** Snapshot crudo del formulario (se manda como `datos_adicionales`) */
   'update:datos': [datos: CamposAdicionalesCapturados];
+  /** Respuestas normalizadas que se mandan a cotizar y a crear la venta */
+  'update:respuestas': [respuestas: RespuestaCampo[]];
   'update:valid': [valid: boolean];
 }>();
 
-// Estado
-const datosFormulario = ref<Record<string, Record<string, any>>>({});
-const errores = ref<Record<string, Set<string>>>({});
+/**
+ * Estado del formulario indexado por posición de sección y por `clave` del campo.
+ * La clave es lo que el backend espera en `campo_clave`; el nombre solo se muestra.
+ */
+const datosFormulario = ref<DatosFormulario>({});
+const errores = ref<Record<number, Set<string>>>({});
 const ciudadesBuscadas = ref<Array<Ciudad & { name: string }>>([]);
 
-// Computed
-const tieneCamposAdicionales = computed(() => {
-  return props.camposAdicionales?.secciones && props.camposAdicionales.secciones.length > 0;
-});
+const secciones = computed(() => props.camposAdicionales?.secciones ?? []);
 
-const camposAdicionalesNormalizados = computed(() => {
-  if (!props.camposAdicionales?.secciones) return null;
+const tieneCamposAdicionales = computed(() => secciones.value.length > 0);
 
-  return {
-    secciones: props.camposAdicionales.secciones.map(seccion => ({
-      ...seccion,
-      campos: seccion.campos.map(campo => {
-        if (campo.tipo === 'grupo_inputs') {
-          return {
-            ...campo,
-            campos: campo.campos.map(normalizarCampo)
-          };
-        }
-        return campo;
-      })
-    }))
-  };
-});
+/* ------------------------------------------------------------------ *
+ * Presentación de las reglas de precio (solo anticipo: cobra el backend)
+ * ------------------------------------------------------------------ */
 
-// Métodos
+/** Opción de un select con su recargo al lado */
+const OpcionConRecargo = ({ campo, opcion }: { campo: CampoAdicional; opcion: OpcionCampo }) => {
+  const recargo = recargoDeOpcion(campo, opcion.clave);
+  const rechazo = rechazoDeOpcion(campo, opcion.clave);
+
+  return h('div', { class: 'flex items-center justify-between gap-3 w-full' }, [
+    h('span', opcion.etiqueta),
+    recargo ? h('span', { class: 'text-xs font-semibold text-amber-700 whitespace-nowrap' }, recargo) : null,
+    !recargo && rechazo ? h('span', { class: 'text-xs font-semibold text-red-600 whitespace-nowrap' }, 'No disponible') : null,
+  ]);
+};
+
+/** Avisos de recargo/rechazo del campo que no dependen de una opción puntual */
+const CampoAvisos = ({ campo }: { campo: CampoAdicional }) => {
+  const recargos = avisosDeRecargo(campo);
+  const rechazosConfigurados = avisosDeRechazo(campo);
+  if (recargos.length === 0 && rechazosConfigurados.length === 0) return null;
+
+  return h('div', { class: 'mt-1 space-y-0.5' }, [
+    ...recargos.map((texto) => h('span', { class: 'block text-xs text-amber-700' }, texto)),
+    ...rechazosConfigurados.map((texto) => h('span', { class: 'block text-xs text-gray-500 italic' }, texto)),
+  ]);
+};
+
+const MensajeError = ({ texto }: { texto: string }) => {
+  if (!texto) return null;
+  return h('span', { class: 'block text-xs text-red-600 italic mt-1' }, texto);
+};
+
+const avisoRegistroAdicional = (campo: CampoAdicional): string => {
+  return recargoRegistroAdicional(campo, (campo.nombre || '').toLowerCase());
+};
+
+/* ------------------------------------------------------------------ *
+ * Utilidades de campos
+ * ------------------------------------------------------------------ */
+
+const idCampo = (seccionIndex: number, campo: CampoAdicional): string => `campo-${seccionIndex}-${campo.clave}`;
+
+const idSubcampo = (seccionIndex: number, campo: CampoAdicional, registro: number, subcampo: CampoAdicional): string =>
+  `subcampo-${seccionIndex}-${campo.clave}-${registro}-${subcampo.clave}`;
+
 const parseBanderaBoolean = (valor: unknown): boolean | undefined => {
   if (typeof valor === 'boolean') return valor;
 
@@ -306,344 +433,206 @@ const esRequerido = (campo: any): boolean => {
   return false;
 };
 
-// Fecha máxima seleccionable en el input de fecha de nacimiento (hoy)
-const hoyISO = computed(() => new Date().toISOString().split('T')[0]);
+const getInputType = (tipoInput: TipoInput | string): string => {
+  const typeMap: Record<string, string> = {
+    text: 'text',
+    fecha: 'date',
+    date: 'date',
+    email: 'email',
+    tel: 'tel',
+    number: 'number',
+    precio: 'number',
+    plano: 'number',
+    ciudad: 'text',
+    textarea: 'text',
+  };
 
-// Calcula la edad en años cumplidos a la fecha actual
-const calcularEdad = (fechaNacimiento: string): number => {
-  const hoy = new Date();
-  const nac = new Date(fechaNacimiento);
-  let edad = hoy.getFullYear() - nac.getFullYear();
-  const m = hoy.getMonth() - nac.getMonth();
-  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) {
-    edad--;
-  }
-  return edad;
+  return typeMap[tipoInput as string] || 'text';
 };
 
-// Verifica que la edad calculada esté dentro del rango inclusivo configurado
-const edadEnRango = (campo: any, fechaNacimiento: string): boolean => {
-  if (!fechaNacimiento) return true; // ausencia de valor la maneja la validación de "requerido"
-  const edad = calcularEdad(fechaNacimiento);
-  if (campo?.edadMinima != null && edad < campo.edadMinima) return false;
-  if (campo?.edadMaxima != null && edad > campo.edadMaxima) return false;
-  return true;
+/**
+ * Motivo por el que la fecha de nacimiento elegida impide vender, según las reglas
+ * del campo. Un límite con regla `COBRAR` no bloquea: se permite y se cobra.
+ */
+const rechazoPorEdad = (campo: CampoAdicional, valor: any): string => {
+  if (!valor) return ''; // la ausencia de valor la maneja la validación de "requerido"
+  return evaluarReglasEdad(campo, String(valor)).rechazos[0] ?? '';
 };
 
-// Mensaje de error para un campo de tipo edad según su estado actual
-const mensajeErrorEdad = (tituloSeccion: string, campo: any): string => {
-  const valor = datosFormulario.value[tituloSeccion]?.[campo.nombre];
-  if (esRequerido(campo) && (!valor || valor === '')) {
-    return 'Este campo es obligatorio';
-  }
-  if (valor && !edadEnRango(campo, valor)) {
-    return `Este plan aplica para personas entre ${campo.edadMinima} y ${campo.edadMaxima} años.`;
-  }
+const valorVacio = (valor: any): boolean => {
+  if (valor === null || valor === undefined || valor === '') return true;
+  if (Array.isArray(valor)) return valor.length === 0;
+  if (typeof valor === 'object') return !valor.name && !valor.nombre;
+  return false;
+};
+
+/* ------------------------------------------------------------------ *
+ * Rechazos del backend
+ * ------------------------------------------------------------------ */
+
+const rechazoDeCampo = (clave: string): string => {
+  return props.rechazos.find((rechazo) => rechazo.campo_clave === clave)?.mensaje ?? '';
+};
+
+/** Registros cargados de un grupo */
+const registrosDe = (seccionIndex: number, grupo: CampoGrupoInputs): Record<string, any>[] => {
+  const registros = datosFormulario.value[seccionIndex]?.[grupo.clave];
+  return Array.isArray(registros) ? registros : [];
+};
+
+/**
+ * Número con el que viaja un registro en las respuestas. No es su posición en
+ * pantalla: los registros en blanco no se mandan y no consumen número.
+ */
+const numeroDeRegistro = (seccionIndex: number, grupo: CampoGrupoInputs, entradaIndex: number): number | null => {
+  return numerosDeRegistro(grupo, registrosDe(seccionIndex, grupo))[entradaIndex] ?? null;
+};
+
+/** Rechazo sobre un registro puntual de un grupo (campo_clave del grupo + numero_registro) */
+const rechazoDeRegistro = (seccionIndex: number, grupo: CampoGrupoInputs, entradaIndex: number): string => {
+  const numero = numeroDeRegistro(seccionIndex, grupo, entradaIndex);
+  if (numero === null) return '';
+
+  return props.rechazos.find(
+    (rechazo) => rechazo.campo_clave === grupo.clave && rechazo.numero_registro === numero,
+  )?.mensaje ?? '';
+};
+
+/**
+ * Error a mostrar en un subcampo: el rechazo del backend o de las reglas, o la
+ * obligatoriedad, que aplica desde que el registro existe (tiene algún dato).
+ */
+const errorDeSubcampo = (
+  seccionIndex: number,
+  grupo: CampoGrupoInputs,
+  subcampo: CampoAdicional,
+  entradaIndex: number,
+): string => {
+  const rechazo = rechazoDeSubcampo(seccionIndex, grupo, subcampo, entradaIndex);
+  if (rechazo) return rechazo;
+
+  const entrada = registrosDe(seccionIndex, grupo)[entradaIndex];
+  if (!entrada || !registroTieneDatos(grupo, entrada)) return '';
+
+  if (esRequerido(subcampo) && valorVacio(entrada[subcampo.clave])) return 'Este campo es obligatorio';
+
   return '';
 };
 
-// Valida un campo de tipo edad (obligatoriedad y rango de edad)
-const validarCampoEdad = (tituloSeccion: string, campo: any) => {
-  if (!errores.value[tituloSeccion]) {
-    errores.value[tituloSeccion] = new Set();
+/** Rechazo sobre un subcampo de un registro puntual */
+const rechazoDeSubcampo = (
+  seccionIndex: number,
+  grupo: CampoGrupoInputs,
+  subcampo: CampoAdicional,
+  entradaIndex: number,
+): string => {
+  const numero = numeroDeRegistro(seccionIndex, grupo, entradaIndex);
+  if (numero === null) return '';
+
+  const rechazoBackend = props.rechazos.find((rechazo) => {
+    if (rechazo.campo_clave !== subcampo.clave) return false;
+    return rechazo.numero_registro == null || rechazo.numero_registro === numero;
+  })?.mensaje;
+  if (rechazoBackend) return rechazoBackend;
+
+  // Las reglas que rechazan se muestran apenas se elige la fecha, sin esperar a cotizar
+  if (subcampo.tipo === 'edad') {
+    const entrada = registrosDe(seccionIndex, grupo)[entradaIndex] ?? {};
+    return rechazoPorEdad(subcampo, entrada[subcampo.clave]);
   }
 
-  const valor = datosFormulario.value[tituloSeccion]?.[campo.nombre];
+  return '';
+};
 
-  if (esRequerido(campo) && (!valor || valor === '')) {
-    errores.value[tituloSeccion].add(campo.nombre);
-  } else if (valor && !edadEnRango(campo, valor)) {
-    errores.value[tituloSeccion].add(campo.nombre);
+/* ------------------------------------------------------------------ *
+ * Validación local (obligatoriedad y rangos: feedback inmediato)
+ * ------------------------------------------------------------------ */
+
+const hasError = (seccionIndex: number, clave: string): boolean => {
+  return errores.value[seccionIndex]?.has(clave) || !!rechazoDeCampo(clave);
+};
+
+/** Texto de error del campo: primero el del backend, que está escrito para el cliente */
+const mensajeError = (seccionIndex: number, campo: CampoAdicional): string => {
+  const rechazo = rechazoDeCampo(campo.clave);
+  if (rechazo) return rechazo;
+
+  if (!errores.value[seccionIndex]?.has(campo.clave)) return '';
+
+  const valor = datosFormulario.value[seccionIndex]?.[campo.clave];
+
+  if (campo.tipo === 'edad') {
+    const rechazoEdad = rechazoPorEdad(campo, valor);
+    if (rechazoEdad) return rechazoEdad;
+  }
+
+  if (campo.tipo === 'grupo_inputs') {
+    const registros = registrosDe(seccionIndex, campo as CampoGrupoInputs);
+    const hayRegistros = registros.some((entrada) => registroTieneDatos(campo as CampoGrupoInputs, entrada));
+    // Lo que falta dentro de un registro se marca en cada subcampo
+    return hayRegistros ? '' : 'Debe agregar al menos un registro';
+  }
+  if (campo.tipo === 'dropdown') return 'Debe seleccionar una opción';
+  if (campo.tipo === 'multiselect') return 'Debe seleccionar al menos una opción';
+
+  return 'Este campo es obligatorio';
+};
+
+const campoInvalido = (seccionIndex: number, campo: CampoAdicional): boolean => {
+  const valor = datosFormulario.value[seccionIndex]?.[campo.clave];
+
+  if (campo.tipo === 'edad') {
+    if (esRequerido(campo) && valorVacio(valor)) return true;
+    return !!rechazoPorEdad(campo, valor);
+  }
+
+  if (campo.tipo === 'grupo_inputs') {
+    const grupo = campo as CampoGrupoInputs;
+    const registros: Record<string, any>[] = Array.isArray(valor) ? valor : [];
+
+    // Un registro en blanco es un registro que el cliente no llenó, no un error
+    const conDatos = registros.filter((entrada) => registroTieneDatos(grupo, entrada));
+
+    if (esRequerido(campo) && conDatos.length === 0) return true;
+
+    // Un registro que ya existe tiene que quedar completo, y su fecha de
+    // nacimiento no puede caer en un rango que impida vender
+    return conDatos.some((entrada) =>
+      grupo.campos.some((subcampo) => {
+        if (esRequerido(subcampo) && valorVacio(entrada[subcampo.clave])) return true;
+        return subcampo.tipo === 'edad' && !!rechazoPorEdad(subcampo, entrada[subcampo.clave]);
+      }),
+    );
+  }
+
+  return esRequerido(campo) && valorVacio(valor);
+};
+
+const validarCampo = (seccionIndex: number, campo: CampoAdicional): void => {
+  if (!errores.value[seccionIndex]) errores.value[seccionIndex] = new Set();
+
+  if (campoInvalido(seccionIndex, campo)) {
+    errores.value[seccionIndex].add(campo.clave);
   } else {
-    errores.value[tituloSeccion].delete(campo.nombre);
+    errores.value[seccionIndex].delete(campo.clave);
   }
 
-  validarTodo();
+  emit('update:valid', calcularEsValido());
 };
 
-const getInputType = (tipoInput: TipoInput | string): string => {
-  if (!tipoInput) {
-    console.warn('tipoInput es undefined o null');
-    return 'text';
-  }
-
-  const typeMap: Record<string, string> = {
-    'text': 'text',
-    'number': 'number',
-    'email': 'email',
-    'date': 'date',
-    'fecha': 'date',
-    'tel': 'tel',
-    'precio': 'number',
-    'plano': 'number',
-    'ciudad': 'text',
-    'textarea': 'text'
-  };
-
-  const result = typeMap[tipoInput] || 'text';
-  console.log(`getInputType(${tipoInput}) → ${result}`);
-  return result;
-};
-
-const normalizarCampo = (campo: any): any => {
-  // Si el campo dentro de grupo_inputs tiene tipo fecha, number, text, etc.
-  // convertirlo a formato { tipo: 'input', tipoInput: 'fecha' }
-  const tiposInput = ['text', 'number', 'email', 'date', 'fecha', 'tel', 'precio', 'plano', 'ciudad', 'textarea'];
-
-  console.log('normalizarCampo - entrada:', campo.nombre, 'tipo:', campo.tipo, 'obligatorio:', campo.obligatorio);
-
-  if (tiposInput.includes(campo.tipo)) {
-    // Preservar obligatorio/requerido al normalizar
-    const campoNormalizado: any = {
-      ...campo,
-      tipoInput: campo.tipo,
-      tipo: 'input'
-    };
-
-    // Si tiene obligatorio pero no requerido, copiarlo
-    if (Object.prototype.hasOwnProperty.call(campo, 'obligatorio') && !Object.prototype.hasOwnProperty.call(campo, 'requerido')) {
-      campoNormalizado.requerido = campo.obligatorio;
-    }
-
-    console.log('normalizarCampo - salida:', campoNormalizado.nombre, 'tipo:', campoNormalizado.tipo, 'tipoInput:', campoNormalizado.tipoInput, 'requerido:', campoNormalizado.requerido);
-    return campoNormalizado;
-  }
-
-  console.log('normalizarCampo - sin cambios (tipo no reconocido)');
-  return campo;
-};
-
-const inicializarDatosFormulario = () => {
-  if (!camposAdicionalesNormalizados.value?.secciones) return;
-
-  const datos: Record<string, Record<string, any>> = {};
-  const erroresIniciales: Record<string, Set<string>> = {};
-
-  camposAdicionalesNormalizados.value.secciones.forEach(seccion => {
-    datos[seccion.titulo] = {};
-    erroresIniciales[seccion.titulo] = new Set();
-
-    seccion.campos.forEach(campo => {
-      if (campo.tipo === 'input') {
-        // Para inputs de tipo ciudad, inicializar con objeto vacío
-        if (campo.tipoInput === 'ciudad') {
-          datos[seccion.titulo][campo.nombre] = null;
-        } else {
-          datos[seccion.titulo][campo.nombre] = '';
-        }
-      } else if (campo.tipo === 'dropdown') {
-        datos[seccion.titulo][campo.nombre] = '';
-      } else if (campo.tipo === 'multiselect') {
-        datos[seccion.titulo][campo.nombre] = [];
-      } else if (campo.tipo === 'autocomplete') {
-        datos[seccion.titulo][campo.nombre] = null;
-      } else if (campo.tipo === 'edad') {
-        // Se almacena la fecha de nacimiento capturada (string YYYY-MM-DD)
-        datos[seccion.titulo][campo.nombre] = '';
-      } else if (campo.tipo === 'grupo_inputs') {
-        // Los campos ya están normalizados
-        // Inicializar con un registro vacío
-        const entradaVacia: Record<string, any> = {};
-        campo.campos.forEach(subcampo => {
-          entradaVacia[subcampo.nombre] = '';
-        });
-        datos[seccion.titulo][campo.nombre] = [entradaVacia];
-      }
-    });
-  });
-
-  datosFormulario.value = datos;
-  errores.value = erroresIniciales;
-};
-
-const agregarEntrada = (tituloSeccion: string, campo: CampoGrupoInputs) => {
-  // Validar límite máximo de registros
-  const registrosActuales = datosFormulario.value[tituloSeccion][campo.nombre];
-
-  if (campo.cantidad_maxima_registros) {
-    const limite = parseInt(campo.cantidad_maxima_registros.toString());
-    console.log(`agregarEntrada: ${campo.nombre} - Actual: ${registrosActuales.length}, Límite: ${limite}`);
-    if (!isNaN(limite) && registrosActuales.length >= limite) {
-      console.warn(`❌ Límite alcanzado! No se puede agregar más registros a ${campo.nombre}`);
-      return; // No agregar más si se alcanzó el límite
-    }
-  }
-
-  const entradaVacia: Record<string, any> = {};
-  campo.campos.forEach(subcampo => {
-    entradaVacia[subcampo.nombre] = '';
-  });
-
-  datosFormulario.value[tituloSeccion][campo.nombre].push(entradaVacia);
-  console.log(`✅ Registro agregado a ${campo.nombre}. Total: ${datosFormulario.value[tituloSeccion][campo.nombre].length}`);
-  emitirDatos();
-};
-
-const eliminarEntrada = (tituloSeccion: string, nombreCampo: string, index: number) => {
-  datosFormulario.value[tituloSeccion][nombreCampo].splice(index, 1);
-  emitirDatos();
-};
-
-const buscarCiudades = async (event: any) => {
-  const { data } = await CiudadesColombiaService.buscarPorNombre(event.query, 20);
-  // Mapear al formato esperado por AutoComplete (necesita la propiedad 'name')
-  ciudadesBuscadas.value = data.map(ciudad => ({
-    ...ciudad,
-    name: ciudad.nombre
-  }));
-};
-
-const validateField = (tituloSeccion: string, nombreCampo: string, requerido: boolean) => {
-  if (!requerido) {
-    errores.value[tituloSeccion]?.delete(nombreCampo);
-    validarTodo();
-    return;
-  }
-
-  const valor = datosFormulario.value[tituloSeccion][nombreCampo];
-
-  if (!errores.value[tituloSeccion]) {
-    errores.value[tituloSeccion] = new Set();
-  }
-
-  // Validar según el tipo de valor
-  if (Array.isArray(valor)) {
-    if (valor.length === 0) {
-      errores.value[tituloSeccion].add(nombreCampo);
-    } else {
-      errores.value[tituloSeccion].delete(nombreCampo);
-    }
-  } else if (typeof valor === 'object' && valor !== null) {
-    // Para autocomplete y campos de ciudad (objeto)
-    if (!valor.name) {
-      errores.value[tituloSeccion].add(nombreCampo);
-    } else {
-      errores.value[tituloSeccion].delete(nombreCampo);
-    }
-  } else if (valor === null || valor === undefined) {
-    // null o undefined siempre es error si el campo es requerido
-    errores.value[tituloSeccion].add(nombreCampo);
-  } else {
-    // Para strings y números
-    if (valor === '') {
-      errores.value[tituloSeccion].add(nombreCampo);
-    } else {
-      errores.value[tituloSeccion].delete(nombreCampo);
-    }
-  }
-
-  validarTodo();
-};
-
-const hasError = (tituloSeccion: string, nombreCampo: string): boolean => {
-  return errores.value[tituloSeccion]?.has(nombreCampo) || false;
-};
-
-const puedeAgregarMasRegistros = (tituloSeccion: string, campo: any): boolean => {
-  // Si no hay límite, siempre se puede agregar
-  if (!campo.cantidad_maxima_registros || campo.cantidad_maxima_registros === null) {
-    return true;
-  }
-
-  const limite = parseInt(campo.cantidad_maxima_registros);
-  if (isNaN(limite)) return true;
-
-  const registrosActuales = datosFormulario.value[tituloSeccion]?.[campo.nombre];
-  if (!Array.isArray(registrosActuales)) return true;
-
-  const resultado = registrosActuales.length < limite;
-
-  console.log(`puedeAgregarMasRegistros: ${campo.nombre} - ${registrosActuales.length}/${limite} - ${resultado ? 'SÍ' : 'NO'}`);
-
-  return resultado;
-};
-
-const obtenerContadorRegistros = (tituloSeccion: string, campo: any): string => {
-  const registrosActuales = datosFormulario.value[tituloSeccion]?.[campo.nombre];
-  const cantidad = Array.isArray(registrosActuales) ? registrosActuales.length : 0;
-  const limite = campo.cantidad_maxima_registros || 0;
-  return `${cantidad} de ${limite} registros`;
-};
-
+/** Revisa todo el formulario y deja marcados los campos con problema */
 const validarTodo = (): boolean => {
-  if (!camposAdicionalesNormalizados.value?.secciones) return true;
-
   let esValido = true;
 
-  camposAdicionalesNormalizados.value.secciones.forEach(seccion => {
-    if (!errores.value[seccion.titulo]) {
-      errores.value[seccion.titulo] = new Set();
-    }
+  secciones.value.forEach((seccion, seccionIndex) => {
+    if (!errores.value[seccionIndex]) errores.value[seccionIndex] = new Set();
 
-    seccion.campos.forEach(campo => {
-      // La edad valida tanto obligatoriedad como el rango, incluso si no es requerida
-      if (campo.tipo === 'edad') {
-        const valor = datosFormulario.value[seccion.titulo][campo.nombre];
-        if (esRequerido(campo) && (!valor || valor === '')) {
-          esValido = false;
-          errores.value[seccion.titulo].add(campo.nombre);
-        } else if (valor && !edadEnRango(campo, valor)) {
-          esValido = false;
-          errores.value[seccion.titulo].add(campo.nombre);
-        } else {
-          errores.value[seccion.titulo].delete(campo.nombre);
-        }
-        return;
-      }
-
-      if (esRequerido(campo)) {
-        const valor = datosFormulario.value[seccion.titulo][campo.nombre];
-
-        if (campo.tipo === 'grupo_inputs') {
-          // Validar que tenga al menos un elemento
-          if (!Array.isArray(valor) || valor.length === 0) {
-            esValido = false;
-            if (!errores.value[seccion.titulo]) {
-              errores.value[seccion.titulo] = new Set();
-            }
-            errores.value[seccion.titulo].add(campo.nombre);
-          } else {
-            // Validar que cada entrada tenga todos los campos completos
-            const todasEntradasCompletas = valor.every(entrada => {
-              return campo.campos.every(subcampo => {
-                const valorSubcampo = entrada[subcampo.nombre];
-                return !esRequerido(subcampo) || (valorSubcampo !== '' && valorSubcampo !== null && valorSubcampo !== undefined);
-              });
-            });
-
-            if (!todasEntradasCompletas) {
-              esValido = false;
-            }
-          }
-        } else if (Array.isArray(valor)) {
-          if (valor.length === 0) {
-            esValido = false;
-            if (!errores.value[seccion.titulo]) {
-              errores.value[seccion.titulo] = new Set();
-            }
-            errores.value[seccion.titulo].add(campo.nombre);
-          }
-        } else if (typeof valor === 'object' && valor !== null) {
-          // Para autocomplete
-          if (!valor.name) {
-            esValido = false;
-            if (!errores.value[seccion.titulo]) {
-              errores.value[seccion.titulo] = new Set();
-            }
-            errores.value[seccion.titulo].add(campo.nombre);
-          }
-        } else {
-          if (!valor || valor === '') {
-            esValido = false;
-            if (!errores.value[seccion.titulo]) {
-              errores.value[seccion.titulo] = new Set();
-            }
-            errores.value[seccion.titulo].add(campo.nombre);
-          }
-        }
+    seccion.campos.forEach((campo) => {
+      if (campoInvalido(seccionIndex, campo)) {
+        esValido = false;
+        errores.value[seccionIndex].add(campo.clave);
       } else {
-        // Evitar errores residuales cuando un campo ya no es obligatorio
-        errores.value[seccion.titulo].delete(campo.nombre);
+        errores.value[seccionIndex].delete(campo.clave);
       }
     });
   });
@@ -652,29 +641,104 @@ const validarTodo = (): boolean => {
   return esValido;
 };
 
-const emitirDatos = () => {
-  if (!camposAdicionalesNormalizados.value?.secciones) return;
+/** Igual que validarTodo pero sin marcar errores: se usa mientras el cliente escribe */
+const calcularEsValido = (): boolean => {
+  return secciones.value.every((seccion, seccionIndex) =>
+    seccion.campos.every((campo) => !campoInvalido(seccionIndex, campo)),
+  );
+};
 
-  const datosCapturados: CamposAdicionalesCapturados = {
-    secciones: []
-  };
+/* ------------------------------------------------------------------ *
+ * Registros de un grupo
+ * ------------------------------------------------------------------ */
 
-  camposAdicionalesNormalizados.value.secciones.forEach(seccion => {
-    const datosSeccion: DatosSeccionCapturados = {
-      titulo: seccion.titulo,
-      datos: {}
-    };
+const entradaVacia = (campo: CampoGrupoInputs): Record<string, any> => {
+  const entrada: Record<string, any> = {};
+  campo.campos.forEach((subcampo) => {
+    entrada[subcampo.clave] = '';
+  });
+  return entrada;
+};
 
-    seccion.campos.forEach(campo => {
-      const valor = datosFormulario.value[seccion.titulo][campo.nombre];
+const puedeAgregarMasRegistros = (seccionIndex: number, campo: any): boolean => {
+  const limite = Number(campo.cantidad_maxima_registros);
+  if (!campo.cantidad_maxima_registros || isNaN(limite)) return true;
 
-      // Para autocomplete y campos de ciudad, extraer solo el nombre
-      if (campo.tipo === 'autocomplete' && typeof valor === 'object' && valor !== null) {
-        datosSeccion.datos[campo.nombre] = valor.name || valor;
-      } else if (campo.tipo === 'input' && campo.tipoInput === 'ciudad' && typeof valor === 'object' && valor !== null) {
-        datosSeccion.datos[campo.nombre] = valor.name || valor;
+  const registros = datosFormulario.value[seccionIndex]?.[campo.clave];
+  if (!Array.isArray(registros)) return true;
+
+  return registros.length < limite;
+};
+
+const agregarEntrada = (seccionIndex: number, campo: CampoGrupoInputs): void => {
+  if (!puedeAgregarMasRegistros(seccionIndex, campo)) return;
+
+  datosFormulario.value[seccionIndex][campo.clave].push(entradaVacia(campo));
+};
+
+const eliminarEntrada = (seccionIndex: number, clave: string, index: number): void => {
+  datosFormulario.value[seccionIndex][clave].splice(index, 1);
+};
+
+const obtenerContadorRegistros = (seccionIndex: number, campo: any): string => {
+  const registros = datosFormulario.value[seccionIndex]?.[campo.clave];
+  const cantidad = Array.isArray(registros) ? registros.length : 0;
+  return `${cantidad} de ${campo.cantidad_maxima_registros} registros`;
+};
+
+const buscarCiudades = async (event: any): Promise<void> => {
+  const { data } = await CiudadesColombiaService.buscarPorNombre(event.query, 20);
+  // Mapear al formato esperado por AutoComplete (necesita la propiedad 'name')
+  ciudadesBuscadas.value = data.map((ciudad) => ({ ...ciudad, name: ciudad.nombre }));
+};
+
+/* ------------------------------------------------------------------ *
+ * Inicialización
+ * ------------------------------------------------------------------ */
+
+const inicializarDatosFormulario = (): void => {
+  const datos: DatosFormulario = {};
+  const erroresIniciales: Record<number, Set<string>> = {};
+
+  secciones.value.forEach((seccion, seccionIndex) => {
+    datos[seccionIndex] = {};
+    erroresIniciales[seccionIndex] = new Set();
+
+    seccion.campos.forEach((campo) => {
+      if (campo.tipo === 'multiselect') {
+        datos[seccionIndex][campo.clave] = [];
+      } else if (campo.tipo === 'autocomplete' || (campo.tipo === 'input' && campo.tipoInput === 'ciudad')) {
+        datos[seccionIndex][campo.clave] = null;
+      } else if (campo.tipo === 'input' && (campo.tipoInput === 'precio' || campo.tipoInput === 'plano')) {
+        datos[seccionIndex][campo.clave] = null;
+      } else if (campo.tipo === 'grupo_inputs') {
+        datos[seccionIndex][campo.clave] = [entradaVacia(campo)];
+      } else {
+        datos[seccionIndex][campo.clave] = '';
+      }
+    });
+  });
+
+  datosFormulario.value = datos;
+  errores.value = erroresIniciales;
+};
+
+/* ------------------------------------------------------------------ *
+ * Salida: snapshot del formulario y respuestas para cotizar
+ * ------------------------------------------------------------------ */
+
+const emitirDatos = (): void => {
+  const datosCapturados: CamposAdicionalesCapturados = { secciones: [] };
+
+  secciones.value.forEach((seccion, seccionIndex) => {
+    const datosSeccion: DatosSeccionCapturados = { titulo: seccion.titulo, datos: {} };
+
+    seccion.campos.forEach((campo) => {
+      const valor = datosFormulario.value[seccionIndex]?.[campo.clave];
+
+      if (campo.tipo === 'autocomplete' || (campo.tipo === 'input' && campo.tipoInput === 'ciudad')) {
+        datosSeccion.datos[campo.nombre] = nombreCiudad(valor);
       } else if (campo.tipo === 'edad') {
-        // Guardar la fecha de nacimiento capturada y la edad calculada
         datosSeccion.datos[campo.nombre] = valor
           ? { fechaNacimiento: valor, edad: calcularEdad(valor) }
           : { fechaNacimiento: '', edad: null };
@@ -689,61 +753,23 @@ const emitirDatos = () => {
   emit('update:datos', datosCapturados);
 };
 
-// Calcula si el formulario es válido sin modificar el estado de errores visible
-const calcularEsValido = (): boolean => {
-  if (!camposAdicionalesNormalizados.value?.secciones) return true;
+/* ------------------------------------------------------------------ *
+ * Watchers
+ * ------------------------------------------------------------------ */
 
-  for (const seccion of camposAdicionalesNormalizados.value.secciones) {
-    for (const campo of seccion.campos) {
-      // La edad valida obligatoriedad y rango; el rango aplica aunque no sea requerida
-      if (campo.tipo === 'edad') {
-        const valorEdad = datosFormulario.value[seccion.titulo]?.[campo.nombre];
-        if (esRequerido(campo) && (!valorEdad || valorEdad === '')) return false;
-        if (valorEdad && !edadEnRango(campo, valorEdad)) return false;
-        continue;
-      }
-
-      if (!esRequerido(campo)) continue;
-
-      const valor = datosFormulario.value[seccion.titulo]?.[campo.nombre];
-
-      if (campo.tipo === 'grupo_inputs') {
-        if (!Array.isArray(valor) || valor.length === 0) return false;
-
-        const todasEntradasCompletas = valor.every(entrada =>
-          campo.campos.every(subcampo => {
-            const valorSubcampo = entrada[subcampo.nombre];
-            return !esRequerido(subcampo) || (valorSubcampo !== '' && valorSubcampo !== null && valorSubcampo !== undefined);
-          })
-        );
-
-        if (!todasEntradasCompletas) return false;
-      } else if (Array.isArray(valor)) {
-        if (valor.length === 0) return false;
-      } else if (typeof valor === 'object' && valor !== null) {
-        if (!valor.name) return false;
-      } else {
-        if (!valor || valor === '') return false;
-      }
-    }
-  }
-
-  return true;
-};
-
-// Watchers
-watch(() => camposAdicionalesNormalizados.value, () => {
+watch(secciones, () => {
   inicializarDatosFormulario();
 }, { immediate: true, deep: true });
 
 watch(datosFormulario, () => {
   emitirDatos();
+  emit('update:respuestas', construirRespuestas(secciones.value, datosFormulario.value));
   emit('update:valid', calcularEsValido());
 }, { deep: true });
 
 // Exponer método de validación para uso externo
 defineExpose({
-  validarTodo
+  validarTodo,
 });
 </script>
 

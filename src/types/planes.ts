@@ -177,6 +177,8 @@ export interface Version {
 export interface VersionWithDetails extends Version {
   documento: DocumentoAws | null;
   coberturas: CoberturaVersion[];
+  /** Configuración del formulario de campos adicionales de la versión */
+  campos_adicionales?: CamposAdicionalesConfig | null;
 }
 
 export interface PlanBase {
@@ -261,48 +263,110 @@ export interface FindPlanesByProductoParams {
  * Tipos para campos adicionales dinámicos
  */
 
-export type TipoInput = 'text' | 'number' | 'email' | 'date' | 'fecha' | 'tel' | 'precio' | 'plano' | 'ciudad' | 'textarea';
+/**
+ * Opción de un campo de selección (dropdown / multiselect).
+ * Se muestra `etiqueta` al cliente y se envía `clave` al backend.
+ */
+export interface OpcionCampo {
+  clave: string;
+  etiqueta: string;
+}
 
-export interface CampoInput {
+/** Qué hace la regla cuando se cumple su condición */
+export type AccionRegla = 'COBRAR' | 'RECHAZAR';
+
+/** Cómo se interpreta `valor_adicional`: monto fijo o % sobre el precio del plan */
+export type TipoValorRegla = 'FIJO' | 'PORCENTAJE';
+
+/**
+ * Condición configurada sobre un campo que encarece la compra o la impide.
+ * Solo sirve para anticiparle el cargo al cliente: el total siempre lo calcula
+ * el backend en `POST /ventas/cotizar`.
+ */
+export interface ReglaCampo {
+  tipo_regla: 'OPCION' | 'RANGO_MAXIMO' | 'RANGO_MINIMO' | 'REGISTRO_ADICIONAL' | string;
+  accion: AccionRegla;
+  /** Clave de la opción que dispara la regla (tipo_regla: OPCION) */
+  opcion?: string;
+  /** Días de anticipación/antigüedad respecto a hoy (reglas de rango sobre fechas) */
+  dias_relativos?: number;
+  /** Fecha absoluta de una regla de rango sobre fechas (YYYY-MM-DD) */
+  valor_fecha?: string;
+  /**
+   * Límite de una regla de rango sobre edad o número. Es estricto:
+   * RANGO_MAXIMO 75 aplica desde 76, RANGO_MINIMO 5 aplica hasta 4.
+   * En REGISTRO_ADICIONAL es el registro desde el que se cobra.
+   */
+  valor_numero?: number;
+  /**
+   * Regla de subcampo: si se cobra por cada registro que cumple la condición
+   * (true) o una sola vez (false).
+   */
+  por_registro?: boolean;
+  /** Monto o porcentaje a cobrar cuando accion es COBRAR */
+  valor_adicional?: number;
+  tipo_valor?: TipoValorRegla;
+  /** Texto que verá el cliente en el detalle de cobro */
+  concepto?: string;
+  /** Texto que verá el cliente cuando la regla impide la venta */
+  mensaje_rechazo?: string;
+}
+
+/** Tipos de `tipoInput` de un campo `input`. Los últimos son formatos heredados. */
+export type TipoInput =
+  | 'text'
+  | 'textarea'
+  | 'precio'
+  | 'plano'
+  | 'fecha'
+  | 'ciudad'
+  | 'number'
+  | 'email'
+  | 'date'
+  | 'tel';
+
+/** Claves comunes a todos los campos, sin importar su tipo */
+export interface CampoBase {
+  /** Identificador del campo: es lo que viaja en `campo_clave` de las respuestas */
+  clave: string;
+  nombre: string;
+  requerido?: boolean;
+  reglas?: ReglaCampo[];
+}
+
+export interface CampoInput extends CampoBase {
   tipo: 'input';
-  nombre: string;
   tipoInput: TipoInput;
-  requerido?: boolean;
 }
 
-export interface CampoDropdown {
+export interface CampoDropdown extends CampoBase {
   tipo: 'dropdown';
-  nombre: string;
-  opciones: string[];
-  requerido?: boolean;
+  opciones: OpcionCampo[];
 }
 
-export interface CampoMultiselect {
+export interface CampoMultiselect extends CampoBase {
   tipo: 'multiselect';
-  nombre: string;
-  opciones: string[];
-  requerido?: boolean;
+  opciones: OpcionCampo[];
 }
 
-export interface CampoGrupoInputs {
+export interface CampoGrupoInputs extends CampoBase {
   tipo: 'grupo_inputs';
-  nombre: string;
-  campos: (CampoInput | CampoDropdown)[];
-  requerido?: boolean;
+  /**
+   * Subcampos del registro. En el JSON del backend sus tipos son
+   * `text` | `number` | `fecha` | `dropdown` | `edad`; el transformador los
+   * normaliza al vocabulario de nivel 2.
+   */
+  campos: (CampoInput | CampoDropdown | CampoEdad)[];
   cantidad_maxima_registros?: number | null;
 }
 
-export interface CampoAutocomplete {
+export interface CampoAutocomplete extends CampoBase {
   tipo: 'autocomplete';
-  nombre: string;
   fuente: 'ciudades';
-  requerido?: boolean;
 }
 
-export interface CampoEdad {
+export interface CampoEdad extends CampoBase {
   tipo: 'edad';
-  nombre: string;
-  requerido?: boolean;
   edadMinima?: number;
   edadMaxima?: number;
 }
