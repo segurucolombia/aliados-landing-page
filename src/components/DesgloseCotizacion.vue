@@ -23,11 +23,11 @@
       </div>
 
       <!-- Cargos adicionales: uno por cada regla que se cumplió -->
-      <template v-if="cotizacion.adicionales.length > 0">
+      <template v-if="cobros.length > 0">
         <div class="separador"></div>
 
         <div
-          v-for="(adicional, index) in cotizacion.adicionales"
+          v-for="(adicional, index) in cobros"
           :key="`${adicional.campo_clave}-${adicional.numero_registro ?? 0}-${index}`"
           class="linea linea-adicional"
         >
@@ -35,7 +35,7 @@
             {{ adicional.concepto }}
             <span v-if="adicional.numero_registro != null" class="registro">({{ adicional.numero_registro }})</span>
           </span>
-          <span class="monto">{{ formatPriceNoDecimal(adicional.valor) }}</span>
+          <span class="monto">{{ formatPriceNoDecimal(montoAdicional(adicional)) }}</span>
         </div>
 
         <div class="separador"></div>
@@ -60,7 +60,7 @@
       </div>
     </template>
 
-    <p v-else class="desglose-vacio">Completa el formulario para ver el detalle de tu compra.</p>
+    <p v-else class="desglose-vacio">{{ mensajeVacio }}</p>
 
     <p v-if="cotizando" class="desglose-cargando">
       <i class="pi pi-spin pi-spinner"></i> Actualizando el valor…
@@ -69,27 +69,39 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { CotizacionVenta, RechazoVenta } from '../types/cotizacion';
 import { formatPriceNoDecimal } from '../shared/priceFormat';
+import { lineasDeCobro, montoAdicional } from '../utils/adicionalesVenta';
 
 /**
- * Desglose de lo que se le va a cobrar al cliente. Todos los valores vienen de
- * `POST /ventas/cotizar`: acá no se calcula nada, ni siquiera el total.
+ * Desglose de lo que se le va a cobrar al cliente. Todos los valores vienen del
+ * backend (`POST /ventas/cotizar` o el detalle de la venta): acá no se calcula
+ * nada, ni siquiera el total.
  */
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   cotizacion: CotizacionVenta | null;
   planNombre?: string;
   cotizando?: boolean;
   rechazos?: RechazoVenta[];
   mensajeRechazo?: string;
   errorCotizacion?: string;
+  /** Qué decir mientras no hay nada que mostrar */
+  mensajeVacio?: string;
 }>(), {
   planNombre: '',
   cotizando: false,
   rechazos: () => [],
   mensajeRechazo: '',
   errorCotizacion: '',
+  mensajeVacio: 'Completa el formulario para ver el detalle de tu compra.',
 });
+
+/**
+ * Solo las filas que cobraron algo: `adicionales` también trae las respuestas del
+ * cliente que no generaron cargo, y esas no se muestran.
+ */
+const cobros = computed(() => lineasDeCobro(props.cotizacion?.adicionales));
 </script>
 
 <style scoped>

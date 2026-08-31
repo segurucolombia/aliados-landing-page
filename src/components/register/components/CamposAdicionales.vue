@@ -308,7 +308,7 @@ import type {
   OpcionCampo,
   TipoInput,
 } from '../../../types/planes';
-import type { RechazoVenta, RespuestaCampo } from '../../../types/cotizacion';
+import type { RechazoVenta, RespuestaCampo, ValorRespuesta } from '../../../types/cotizacion';
 import { CiudadesColombiaService, type Ciudad } from '../../../services/ciudades-colombia.service';
 import CampoEdadInput from './CampoEdadInput.vue';
 import {
@@ -332,8 +332,15 @@ const props = withDefaults(defineProps<{
   camposAdicionales?: CamposAdicionalesConfig;
   /** Rechazos devueltos por el backend (422): marcan los campos que impiden la venta */
   rechazos?: RechazoVenta[];
+  /**
+   * Respuestas con las que arranca el formulario, en el mismo formato en que se
+   * mandan a cotizar. Se usan al retomar una compra: repintan los controles con lo
+   * que el cliente ya había respondido.
+   */
+  respuestasIniciales?: RespuestaCampo[];
 }>(), {
   rechazos: () => [],
+  respuestasIniciales: () => [],
 });
 
 const emit = defineEmits<{
@@ -719,8 +726,76 @@ const inicializarDatosFormulario = (): void => {
     });
   });
 
+  aplicarRespuestasIniciales(datos);
+
   datosFormulario.value = datos;
   errores.value = erroresIniciales;
+};
+
+/**
+ * Inverso de `valorParaRespuesta`: lleva el valor que viaja al backend al formato
+ * que espera el control del formulario.
+ */
+const valorParaFormulario = (campo: CampoAdicional, valor: ValorRespuesta): any => {
+  if (campo.tipo === 'multiselect') return Array.isArray(valor) ? valor : [String(valor)];
+
+  if (campo.tipo === 'autocomplete' || (campo.tipo === 'input' && campo.tipoInput === 'ciudad')) {
+    const nombre = String(valor ?? '');
+    return nombre === '' ? null : { name: nombre, nombre };
+  }
+
+  if (campo.tipo === 'input' && (campo.tipoInput === 'precio' || campo.tipoInput === 'plano')) {
+    const numero = Number(valor);
+    return isNaN(numero) ? null : numero;
+  }
+
+  // El campo `edad` guarda la fecha de nacimiento tal como se manda (YYYY-MM-DD)
+  return valor;
+};
+
+/**
+ * Repinta el formulario con `respuestasIniciales`. Los subcampos de un grupo se
+ * reparten en registros por su `numero_registro`, que empieza en 1.
+ */
+const aplicarRespuestasIniciales = (datos: DatosFormulario): void => {
+  const iniciales = props.respuestasIniciales ?? [];
+  if (iniciales.length === 0) return;
+
+  secciones.value.forEach((seccion, seccionIndex) => {
+    seccion.campos.forEach((campo) => {
+      if (campo.tipo === 'grupo_inputs') {
+        const grupo = campo as CampoGrupoInputs;
+        const clavesDelGrupo = new Set(grupo.campos.map((subcampo) => subcampo.clave));
+
+        const respuestasDelGrupo = iniciales.filter(
+          (respuesta) => clavesDelGrupo.has(respuesta.campo_clave) && respuesta.numero_registro != null,
+        );
+        if (respuestasDelGrupo.length === 0) return;
+
+        const numeros = [...new Set(respuestasDelGrupo.map((respuesta) => respuesta.numero_registro as number))]
+          .sort((uno, otro) => uno - otro);
+
+        datos[seccionIndex][grupo.clave] = numeros.map((numero) => {
+          const entrada = entradaVacia(grupo);
+
+          grupo.campos.forEach((subcampo) => {
+            const respuesta = respuestasDelGrupo.find(
+              (candidata) => candidata.campo_clave === subcampo.clave && candidata.numero_registro === numero,
+            );
+            if (respuesta) entrada[subcampo.clave] = valorParaFormulario(subcampo, respuesta.valor);
+          });
+
+          return entrada;
+        });
+        return;
+      }
+
+      const respuesta = iniciales.find(
+        (candidata) => candidata.campo_clave === campo.clave && candidata.numero_registro == null,
+      );
+      if (respuesta) datos[seccionIndex][campo.clave] = valorParaFormulario(campo, respuesta.valor);
+    });
+  });
 };
 
 /* ------------------------------------------------------------------ *
@@ -757,7 +832,9 @@ const emitirDatos = (): void => {
  * Watchers
  * ------------------------------------------------------------------ */
 
-watch(secciones, () => {
+// Las respuestas iniciales llegan con la venta, después de la configuración:
+// cuando cambian hay que repintar el formulario desde cero.
+watch([secciones, () => props.respuestasIniciales], () => {
   inicializarDatosFormulario();
 }, { immediate: true, deep: true });
 

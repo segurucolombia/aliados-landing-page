@@ -1,5 +1,6 @@
 import axios from "axios";
 import type {
+  AdicionalCotizacion,
   CotizacionVenta,
   CotizarVentaInput,
   CotizarVentaResponse,
@@ -78,7 +79,22 @@ export interface VentaDetalle {
   aliado_id: string | null;
   cliente_id: string | null;
   codigo_descuento: string | null;
+  /** Precio de la versión al momento de vender */
+  valor_version: number;
+  /** Suma de los cobros por campos adicionales */
+  valores_adicionales: number;
   valor_descuento: number;
+  /** Lo único que se cobra: valor_version + valores_adicionales - valor_descuento */
+  valor_total: number;
+  /**
+   * Lo que respondió el cliente y lo que se le cobró por cada respuesta. Las filas
+   * sin `concepto` no son cobros (ver `src/utils/adicionalesVenta.ts`).
+   */
+  adicionales: AdicionalCotizacion[];
+  /**
+   * Snapshot crudo del formulario, indexado por nombre de campo. Solo sirve para
+   * repintar los inputs: los precios salen de `adicionales` y `valor_total`.
+   */
   datos_adicionales: import('../types/planes').CamposAdicionalesCapturados | null;
   renovacion_automatica: boolean;
   debito_automatico: boolean;
