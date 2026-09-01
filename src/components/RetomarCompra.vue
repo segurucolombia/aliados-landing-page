@@ -102,7 +102,7 @@
           >
             Entiendo el nuevo valor
           </button>
-          <p v-else class="aviso-version-texto">{{ MENSAJE_CAMBIOS_PENDIENTES }}</p>
+          <p v-else class="aviso-version-texto">{{ MENSAJE_VERSION_PENDIENTE }}</p>
         </template>
 
         <p v-else class="aviso-version-texto">
@@ -127,7 +127,7 @@
         </div>
 
         <div v-if="respuestasCambiaron" class="aviso-cambios">
-          <p>Cambiaste los datos de tu compra. {{ MENSAJE_CAMBIOS_PENDIENTES }}</p>
+          <p>Cambiaste los datos de tu compra. {{ mensajeCambios }}</p>
           <button type="button" class="aviso-cambios-btn" @click="deshacerCambios">
             Deshacer cambios
           </button>
@@ -332,7 +332,7 @@ import Swal from 'sweetalert2';
 import LoadingSpinner from '../utils/LoadingSpinner.vue';
 import MercadoPagoCardStep from './MercadoPagoCardStep.vue';
 import DesgloseCotizacion from './DesgloseCotizacion.vue';
-import { VentasService, type VentaDetalle } from '../services/ventas.service';
+import { VentasService, extraerRechazos, type VentaDetalle } from '../services/ventas.service';
 import { TransactionService } from '../services/transactions';
 import { MercadoPagoService } from '../services/mercado-pago.service';
 import { formatPrice } from '../shared/priceFormat';
@@ -370,10 +370,11 @@ const camposAdicionales = computed(() =>
 
 const tieneCamposAdicionales = computed(() => (camposAdicionales.value?.secciones.length ?? 0) > 0);
 
-/** Respuestas con las que se creó la venta, reconstruidas desde `adicionales` */
-const respuestasVenta = computed<RespuestaCampo[]>(() =>
-  respuestasDesdeAdicionales(venta.value?.adicionales),
-);
+/**
+ * Respuestas con las que quedó registrada la venta. Arrancan reconstruidas desde
+ * `adicionales` y se reemplazan cuando el backend guarda una recotización.
+ */
+const respuestasVenta = ref<RespuestaCampo[]>([]);
 
 /** Las que se le pasan al formulario para repintarlo (cambian al deshacer cambios) */
 const respuestasIniciales = ref<RespuestaCampo[]>([]);
@@ -417,6 +418,8 @@ const {
   cotizar,
   cotizarAhora,
   cancelarCotizacion,
+  registrarRechazos,
+  limpiarRechazos,
 } = useCotizacion();
 
 // Cotización paralela con débito automático: se cobra sobre `valor_debito_automatico`
@@ -585,20 +588,41 @@ const quitarCupon = (): void => {
  * Cuándo se puede seguir al pago
  * ------------------------------------------------------------------ */
 
-/**
- * Los cambios (de versión, del formulario o del cupón) todavía no se pueden guardar
- * en la
- * venta: el backend cobra con lo que tiene registrado, así que dejarlo pagar acá
- * le cobraría un valor distinto al que está viendo.
- *
- * TODO(backend): conectar el endpoint que persiste en la venta la versión nueva, las
- * respuestas recotizadas y el cupón agregado (o que `crear-transaccion` acepte el
- * `codigo_descuento`), y recién ahí habilitar el pago con cambios.
- */
-const requiereActualizarVenta = computed(() => usaCotizacion.value);
+/** El cliente cambió algo (cupón o respuestas) y el total ya no es el registrado */
+const hayCambios = computed(() => usaCotizacion.value);
 
-const MENSAJE_CAMBIOS_PENDIENTES =
-  'Para continuar tenemos que actualizar tu compra con estos cambios. Escríbenos y te ayudamos a terminar el pago.';
+/**
+ * Condiciones con las que el backend acepta recotizar la venta
+ * (`PATCH /ventas/:id/cotizacion`). Una venta pagada, renovada, de un cliente ya
+ * creado o con débito automático no se toca.
+ */
+const ventaRecotizable = computed(() => {
+  const actual = venta.value;
+  if (!actual) return false;
+
+  return actual.estado === 'PENDIENTE'
+    && actual.cliente_id === null
+    && actual.venta_renovada === false
+    && (actual.venta_origen_id ?? null) === null
+    && actual.debito_automatico === false;
+});
+
+/**
+ * El endpoint de recotización no cambia la versión del plan: si el plan cambió de
+ * versión, el cambio sigue necesitando que lo resuelva el equipo.
+ */
+const MENSAJE_VERSION_PENDIENTE =
+  'Para continuar tenemos que actualizar tu compra a la nueva versión del plan. Escríbenos y te ayudamos a terminar el pago.';
+
+const MENSAJE_VENTA_NO_RECOTIZABLE =
+  'No podemos aplicar estos cambios sobre esta compra. Escríbenos y te ayudamos a terminar el pago.';
+
+/** Qué le decimos al cliente sobre los cambios que hizo en el formulario */
+const mensajeCambios = computed(() => (
+  ventaRecotizable.value
+    ? 'Al continuar al pago actualizamos tu compra con el nuevo valor.'
+    : MENSAJE_VENTA_NO_RECOTIZABLE
+));
 
 /** Por qué no se puede seguir al pago; vacío cuando sí se puede */
 const motivoBloqueo = computed(() => {
@@ -609,11 +633,103 @@ const motivoBloqueo = computed(() => {
   if (errorCotizacion.value) return errorCotizacion.value;
   // Con la versión cambiada no se sigue al pago sin saber qué cotiza la versión nueva
   if (versionCambio.value && cotizacion.value === null) return 'Estamos actualizando el valor de tu compra…';
-  if (requiereActualizarVenta.value) return MENSAJE_CAMBIOS_PENDIENTES;
+  if (totalCambio.value) return MENSAJE_VERSION_PENDIENTE;
+  if (hayCambios.value && !ventaRecotizable.value) return MENSAJE_VENTA_NO_RECOTIZABLE;
   return '';
 });
 
 const puedeIrAPagar = computed(() => motivoBloqueo.value === '');
+
+/* ------------------------------------------------------------------ *
+ * Guardar los cambios en la venta antes de cobrar
+ * ------------------------------------------------------------------ */
+
+/**
+ * Guarda en la venta el cupón y las respuestas con las que se recotizó
+ * (`PATCH /ventas/:id/cotizacion`) y deja el detalle local igual a lo que quedó
+ * registrado. Devuelve la transacción nueva: la anterior queda inservible, porque su
+ * monto ya viajó al widget de Wompi.
+ */
+const aplicarCambiosEnLaVenta = async (): Promise<string> => {
+  if (!venta.value) throw new Error('No hay una compra cargada.');
+
+  const respuestasEnviadas = [...respuestas.value];
+  const actualizada = await VentasService.actualizarCotizacion(venta.value.id, {
+    codigo_descuento: codigoDescuento.value || null,
+    respuestas: respuestasEnviadas,
+  });
+
+  // La venta pasa a ser lo que el backend acaba de guardar
+  venta.value = {
+    ...venta.value,
+    valor_version: actualizada.valor_version,
+    valores_adicionales: actualizada.valores_adicionales,
+    valor_descuento: actualizada.valor_descuento,
+    valor_total: actualizada.valor_total,
+    codigo_descuento: actualizada.codigo_descuento ?? null,
+    adicionales: actualizada.adicionales ?? venta.value.adicionales,
+    transaccion: {
+      id: actualizada.transaccion_id,
+      estado: 'PENDING',
+      valor: actualizada.valor_total,
+      created_at: new Date().toISOString(),
+      proveedor: 'wompi',
+    },
+  };
+
+  respuestasVenta.value = respuestasEnviadas;
+  cuponAgregado.value = null;
+  errorCupon.value = '';
+  limpiarRechazos();
+
+  return actualizada.transaccion_id;
+};
+
+/** Muestra el error de la recotización donde le corresponde a cada caso */
+const manejarErrorDeActualizacion = async (error: any): Promise<void> => {
+  const estado = error?.response?.status;
+
+  // 422: con esos datos no se puede vender. Se marcan los campos en el detalle
+  if (estado === 422 && extraerRechazos(error).length > 0) {
+    registrarRechazos(error);
+    showPaymentModal.value = false;
+    showCardStep.value = false;
+    modalRetomarCompra.value = true;
+    return;
+  }
+
+  // 400: el cupón no aplica. El campo vive en el modal de pago: ahí se muestra
+  if (estado === 400 && cuponAgregado.value) {
+    cuponAgregado.value = null;
+    errorCupon.value = error?.response?.data?.message
+      || 'No pudimos aplicar el cupón. Intenta con otro código.';
+    // Si el cliente venía del paso de la tarjeta, vuelve al modal para ver el mensaje
+    showCardStep.value = false;
+    showPaymentModal.value = true;
+    return;
+  }
+
+  // 409: la venta ya no se puede modificar (pagada, renovada…): se recarga como está
+  if (estado === 409) {
+    await mostrarError(error, 'Esta compra ya no se puede modificar.');
+    showPaymentModal.value = false;
+    showCardStep.value = false;
+    await cargarVenta();
+    return;
+  }
+
+  await mostrarError(error, 'No pudimos actualizar tu compra. Por favor intenta de nuevo.');
+};
+
+/** Guarda los cambios; devuelve null si algo falló (el error ya quedó mostrado) */
+const guardarCambios = async (): Promise<string | null> => {
+  try {
+    return await aplicarCambiosEnLaVenta();
+  } catch (error: any) {
+    await manejarErrorDeActualizacion(error);
+    return null;
+  }
+};
 
 const confirmarCambioDeVersion = () => {
   cambioVersionConfirmado.value = true;
@@ -657,6 +773,7 @@ const cargarVenta = async () => {
     venta.value = data;
 
     // El formulario arranca con lo que el cliente ya había respondido
+    respuestasVenta.value = respuestasDesdeAdicionales(data.adicionales);
     respuestasIniciales.value = [...respuestasVenta.value];
     respuestas.value = [...respuestasVenta.value];
 
@@ -727,16 +844,30 @@ const handleSelectWompi = async () => {
   const paymentWindow = totalAPagar.value > 0 ? window.open('', '_blank') : null;
 
   try {
-    let transaccionId = transaccionWompiPendiente.value?.id;
+    let transaccionId: string | undefined;
 
-    // Solo creamos una transacción nueva si no hay una pendiente reutilizable
-    if (!transaccionId) {
-      const service = new TransactionService();
-      const { data } = await service.crearTransaccion({ venta_id: venta.value.id });
-      if (!data?.transaccion_id) {
-        throw new Error('No se recibió transaccion_id desde el backend.');
+    if (hayCambios.value) {
+      // El backend recotiza, guarda el cupón y las respuestas, y devuelve la
+      // transacción con la que hay que cobrar: la anterior queda anulada
+      const nueva = await guardarCambios();
+      if (!nueva) {
+        isProcessing.value = false;
+        paymentWindow?.close();
+        return;
       }
-      transaccionId = data.transaccion_id;
+      transaccionId = nueva;
+    } else {
+      transaccionId = transaccionWompiPendiente.value?.id;
+
+      // Solo creamos una transacción nueva si no hay una pendiente reutilizable
+      if (!transaccionId) {
+        const service = new TransactionService();
+        const { data } = await service.crearTransaccion({ venta_id: venta.value.id });
+        if (!data?.transaccion_id) {
+          throw new Error('No se recibió transaccion_id desde el backend.');
+        }
+        transaccionId = data.transaccion_id;
+      }
     }
 
     construirResumen(transaccionId, totalAPagar.value, false);
@@ -817,6 +948,16 @@ const handleCardTokenized = async (cardTokenId: string) => {
   isProcessing.value = true;
 
   try {
+    // Mercado Pago cobra sobre lo que el backend tiene registrado: los cambios se
+    // guardan antes. La transacción Wompi que devuelve la recotización no se usa acá.
+    if (hayCambios.value) {
+      const guardada = await guardarCambios();
+      if (!guardada) {
+        isProcessing.value = false;
+        return;
+      }
+    }
+
     const response = await MercadoPagoService.crearTransaccionDebito({
       venta_id: venta.value.id,
       card_token_id: cardTokenId,

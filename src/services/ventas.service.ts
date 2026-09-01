@@ -99,6 +99,8 @@ export interface VentaDetalle {
   renovacion_automatica: boolean;
   debito_automatico: boolean;
   venta_renovada: boolean;
+  /** Venta de la que salió esta (renovación); null en una venta original */
+  venta_origen_id?: string | null;
   estado: 'PENDIENTE' | 'COMPLETADO';
   created_at: string;
   updated_at: string;
@@ -144,6 +146,24 @@ export interface VentaDetalle {
 }
 
 /**
+ * Body de `PATCH /ventas/:id/cotizacion`. Solo viaja lo que cambia el precio: el
+ * backend recotiza con esto y guarda su propio resultado.
+ */
+export interface ActualizarCotizacionVentaInput {
+  /** null quita el cupón que tuviera la venta */
+  codigo_descuento?: string | null;
+  respuestas?: RespuestaCampo[];
+}
+
+/**
+ * Desglose que quedó guardado en la venta, con la transacción nueva que reemplaza a
+ * la anterior: la vieja queda inservible porque su monto ya viajó al widget de Wompi.
+ */
+export interface CotizacionVentaActualizada extends CotizacionVenta {
+  transaccion_id: string;
+}
+
+/**
  * Extrae los motivos de rechazo de un error de venta (HTTP 422).
  * Devuelve [] si el error es de otro tipo.
  */
@@ -165,6 +185,26 @@ export class VentasService {
     const response = await axios.post<CotizarVentaResponse>(`${baseUrl}/cotizar`, input, {
       headers: { 'Content-Type': 'application/json' },
     });
+    return response.data.data;
+  }
+
+  /**
+   * Guarda en una venta PENDIENTE el cupón y las respuestas con las que se recotizó,
+   * y devuelve el desglose que quedó registrado junto con la transacción nueva.
+   *
+   * El total no se manda: lo recalcula el backend. Un 422 trae los motivos por los
+   * que no se puede vender (`extraerRechazos`), un 400 el cupón que no aplica y un
+   * 409 que la venta ya no se puede modificar (pagada, renovada, con débito…).
+   */
+  static async actualizarCotizacion(
+    id: string,
+    input: ActualizarCotizacionVentaInput,
+  ): Promise<CotizacionVentaActualizada> {
+    const response = await axios.patch<{ success: boolean; data: CotizacionVentaActualizada }>(
+      `${baseUrl}/${id}/cotizacion`,
+      input,
+      { headers: { 'Content-Type': 'application/json' } },
+    );
     return response.data.data;
   }
 
