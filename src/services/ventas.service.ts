@@ -146,6 +146,28 @@ export interface VentaDetalle {
 }
 
 /**
+ * Body de `PUT /ventas/:id/cotizacion`. No lleva `version_id`: la versión del plan
+ * la toma de la venta, y el endpoint no la cambia.
+ */
+export interface ActualizarCotizacionVentaInput {
+  /** null (o ausente) quita el cupón: para conservarlo hay que reenviarlo siempre */
+  codigo_descuento?: string | null;
+  /**
+   * Set COMPLETO de respuestas: reemplaza a las guardadas, no hace merge. Si el
+   * cliente quitó un registro de un grupo, no se manda y los `numero_registro`
+   * que quedan se renumeran desde 1.
+   */
+  respuestas: RespuestaCampo[];
+  /** Snapshot crudo del formulario, para repintarlo al volver a entrar */
+  datos_adicionales?: import('../types/planes').CamposAdicionalesCapturados;
+}
+
+/** Desglose que quedó guardado en la venta: `valor_total` es lo que se va a cobrar */
+export interface CotizacionVentaActualizada extends CotizacionVenta {
+  venta_id: string;
+}
+
+/**
  * Extrae los motivos de rechazo de un error de venta (HTTP 422).
  * Devuelve [] si el error es de otro tipo.
  */
@@ -153,6 +175,22 @@ export function extraerRechazos(error: any): RechazoVenta[] {
   if (error?.response?.status !== 422) return [];
   const rechazos = error?.response?.data?.rechazos;
   return Array.isArray(rechazos) ? rechazos : [];
+}
+
+/** Los tres motivos por los que el backend rechaza recotizar una venta (HTTP 409) */
+export type MotivoConflictoVenta = 'no-pendiente' | 'debito-automatico' | 'pago-en-curso';
+
+/**
+ * Distingue cuál de los tres 409 devolvió `PUT /ventas/:id/cotizacion`. El backend los
+ * separa por el `message`, así que se identifican por texto.
+ */
+export function motivoConflicto(error: any): MotivoConflictoVenta | null {
+  if (error?.response?.status !== 409) return null;
+
+  const mensaje = String(error?.response?.data?.message ?? '');
+  if (/transacci[oó]n de pago en curso|pago en curso/i.test(mensaje)) return 'pago-en-curso';
+  if (/d[eé]bito autom[aá]tico/i.test(mensaje)) return 'debito-automatico';
+  return 'no-pendiente';
 }
 
 export class VentasService {
@@ -167,6 +205,32 @@ export class VentasService {
     const response = await axios.post<CotizarVentaResponse>(`${baseUrl}/cotizar`, input, {
       headers: { 'Content-Type': 'application/json' },
     });
+    return response.data.data;
+  }
+
+  /**
+   * Guarda en la venta el cupón y las respuestas con las que se recotizó, y devuelve
+   * el desglose que quedó registrado. El total no se manda: lo recalcula el backend
+   * contra la versión del plan de la venta.
+   *
+   * Hay que llamarlo SIEMPRE antes de crear la transacción de pago, aunque el cliente
+   * no haya cambiado nada: si ya hay un intento de pago en curso responde 409, y si
+   * el intento está abandonado (más de diez minutos) lo anula y deja cobrar de una.
+   *
+   * @throws Error de axios. 400 = el cupón no aplica (el `message` es para el
+   *         cliente), 422 = las respuestas no permiten vender (`extraerRechazos`),
+   *         409 = la venta no se puede recotizar (ver `motivoConflicto`), 404 = no
+   *         existe.
+   */
+  static async actualizarCotizacion(
+    id: string,
+    input: ActualizarCotizacionVentaInput,
+  ): Promise<CotizacionVentaActualizada> {
+    const response = await axios.put<{ success: boolean; data: CotizacionVentaActualizada }>(
+      `${baseUrl}/${id}/cotizacion`,
+      input,
+      { headers: { 'Content-Type': 'application/json' } },
+    );
     return response.data.data;
   }
 
