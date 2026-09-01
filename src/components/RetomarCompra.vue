@@ -56,83 +56,38 @@
         </div>
       </div>
 
-      <!-- Detalle de lo que va a pagar: plan, cobros por campos adicionales y cupón -->
+      <!-- Lo que quedó registrado en la venta: plan, cobros adicionales y cupón -->
       <div class="mt-4">
         <DesgloseCotizacion
-          :cotizacion="desgloseVigente"
+          :cotizacion="desgloseVenta"
           :plan-nombre="`Plan ${venta.version_plan?.nombre ?? ''}`"
-          :cotizando="cotizando"
-          :rechazos="rechazos"
-          :mensaje-rechazo="mensajeRechazo"
-          :error-cotizacion="errorCotizacion"
-          mensaje-vacio="Estamos actualizando el detalle de tu compra…"
+          mensaje-vacio="Estamos cargando el detalle de tu compra…"
         />
       </div>
 
-      <!-- El plan cambió de versión desde que se creó la venta -->
-      <div v-if="versionCambio && !hayRechazos" class="aviso-version">
-        <p class="aviso-version-titulo">Actualizamos las condiciones de este plan</p>
-
-        <p v-if="cotizando" class="aviso-version-texto">
-          Estamos recalculando el valor de tu compra con la versión vigente…
-        </p>
-
-        <template v-else-if="totalCambio">
-          <p class="aviso-version-texto">
-            El valor de tu compra cambió con la nueva versión del plan. Confírmanos que
-            estás de acuerdo antes de continuar.
-          </p>
-
-          <div class="comparativo">
-            <div class="comparativo-item">
-              <span class="comparativo-etiqueta">Antes</span>
-              <span class="comparativo-valor comparativo-antes">{{ formatPrice(desgloseVenta?.valor_total ?? 0) }}</span>
-            </div>
-            <div class="comparativo-item">
-              <span class="comparativo-etiqueta">Ahora</span>
-              <span class="comparativo-valor">{{ formatPrice(cotizacion?.valor_total ?? 0) }}</span>
-            </div>
-          </div>
-
-          <button
-            v-if="!cambioVersionConfirmado"
-            type="button"
-            class="aviso-version-btn"
-            @click="confirmarCambioDeVersion"
-          >
-            Entiendo el nuevo valor
-          </button>
-          <p v-else class="aviso-version-texto">{{ MENSAJE_VERSION_PENDIENTE }}</p>
-        </template>
-
-        <p v-else class="aviso-version-texto">
-          El valor de tu compra no cambió: puedes continuar con el pago.
-        </p>
-      </div>
-
-      <!-- Datos del plan: se pueden revisar y cambiar, y cada cambio se recotiza -->
-      <div v-if="tieneCamposAdicionales" class="mt-4">
-        <button type="button" class="toggle-formulario" @click="mostrarFormulario = !mostrarFormulario">
-          {{ mostrarFormulario ? 'Ocultar los datos de mi plan' : 'Revisar o cambiar los datos de mi plan' }}
+      <!-- Datos del plan: solo lectura, son los que se cotizaron al crear la venta -->
+      <div v-if="respuestasRegistradas.length > 0" class="mt-4">
+        <button type="button" class="toggle-formulario" @click="mostrarDatos = !mostrarDatos">
+          {{ mostrarDatos ? 'Ocultar los datos de mi plan' : 'Ver los datos de mi plan' }}
         </button>
 
-        <div v-if="mostrarFormulario" class="mt-3">
-          <CamposAdicionales
-            :campos-adicionales="camposAdicionales"
-            :respuestas-iniciales="respuestasIniciales"
-            :rechazos="rechazos"
-            @update:respuestas="handleRespuestasUpdate"
-            @update:valid="handleValidUpdate"
-          />
-        </div>
-
-        <div v-if="respuestasCambiaron" class="aviso-cambios">
-          <p>Cambiaste los datos de tu compra. {{ mensajeCambios }}</p>
-          <button type="button" class="aviso-cambios-btn" @click="deshacerCambios">
-            Deshacer cambios
-          </button>
-        </div>
+        <ul v-if="mostrarDatos" class="datos-registrados">
+          <li v-for="(dato, index) in respuestasRegistradas" :key="`${dato.campo_clave}-${dato.numero_registro ?? 0}-${index}`">
+            <span class="dato-nombre">
+              {{ dato.campo_nombre }}
+              <span v-if="dato.numero_registro != null" class="dato-registro">({{ dato.numero_registro }})</span>
+            </span>
+            <span class="dato-valor">{{ dato.valor_campo }}</span>
+          </li>
+        </ul>
       </div>
+
+      <!-- Los datos y el cupón se fijaron al crear la venta: acá ya no se cambian -->
+      <p class="nota-inmutable">
+        Estos son los datos con los que registramos tu compra y el valor que quedó
+        reservado. Si necesitas cambiar algo o aplicar un cupón, escríbenos y te
+        ayudamos a terminar el pago.
+      </p>
 
       <!-- Descuento aplicado -->
       <div class="p-4 bg-green-200 border rounded-md mt-4" v-if="venta.codigo_descuento && venta.valor_descuento > 0">
@@ -252,7 +207,6 @@
               <span class="payment-option-price payment-option-price-secondary">
                 {{ formatPrice(totalAPagar) }}
                 <span class="payment-option-period">/ {{ vigenciaLabel }}</span>
-                <span v-if="descuentoVigente > 0" class="cupon-applied-badge">Descuento aplicado</span>
               </span>
             </div>
           </div>
@@ -266,45 +220,6 @@
               Procesado por <strong>Wompi</strong>
             </li>
           </ul>
-
-          <!-- Cupón: si la venta ya trae uno se muestra aplicado; si no, se puede agregar -->
-          <div class="modal-cupon-section">
-            <div v-if="cuponDeLaVenta" class="modal-cupon-aplicado">
-              <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-              Cupón {{ cuponDeLaVenta.codigo }} aplicado:
-              <strong>- {{ formatPrice(cuponDeLaVenta.valor) }}</strong>
-            </div>
-
-            <template v-else>
-              <div v-if="cuponAgregado" class="modal-cupon-aplicado">
-                <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                Cupón {{ cuponAgregado }} aplicado:
-                <strong>- {{ formatPrice(descuentoVigente) }}</strong>
-                <button type="button" class="cupon-quitar" @click="quitarCupon">Quitar</button>
-              </div>
-
-              <div v-else class="modal-cupon-input">
-                <input
-                  v-model="codigoCupon"
-                  type="text"
-                  placeholder="¿Tienes un cupón?"
-                  class="modal-cupon-field"
-                  :class="{ 'modal-cupon-field-error': errorCupon }"
-                  @keydown.enter.prevent="aplicarCupon"
-                />
-                <button
-                  type="button"
-                  class="modal-cupon-btn"
-                  :disabled="!puedeAplicarCupon"
-                  @click="aplicarCupon"
-                >
-                  {{ aplicandoCupon ? 'Validando...' : 'Aplicar' }}
-                </button>
-              </div>
-
-              <p v-if="errorCupon" class="modal-cupon-error">{{ errorCupon }}</p>
-            </template>
-          </div>
 
           <button
             type="button"
@@ -326,23 +241,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref, watch } from 'vue';
+/**
+ * Retomar una compra pendiente.
+ *
+ * La venta es inmutable una vez creada: el backend no tiene forma de recotizarla
+ * (no existe endpoint de actualización) y el cobro siempre se arma con el
+ * `valor_total` guardado. Por eso acá la compra se muestra en modo lectura, con los
+ * valores que devuelve `GET /ventas/:id`, y se va directo al pago. Ni el cupón ni los
+ * campos adicionales se pueden cambiar en esta pantalla, y nada se recalcula local-
+ * mente: mostrar un total distinto al guardado significaría cobrarle al cliente algo
+ * distinto de lo que vio.
+ */
+import { computed, ref } from 'vue';
 import { Dialog } from 'primevue';
 import Swal from 'sweetalert2';
 import LoadingSpinner from '../utils/LoadingSpinner.vue';
 import MercadoPagoCardStep from './MercadoPagoCardStep.vue';
 import DesgloseCotizacion from './DesgloseCotizacion.vue';
-import { VentasService, extraerRechazos, type VentaDetalle } from '../services/ventas.service';
+import { VentasService, type VentaDetalle } from '../services/ventas.service';
 import { TransactionService } from '../services/transactions';
 import { MercadoPagoService } from '../services/mercado-pago.service';
 import { formatPrice } from '../shared/priceFormat';
 import { formatVigencia } from '../utils/vigencia';
-import { transformarCamposAdicionalesBackend } from '../utils/transformCamposAdicionales';
-import { cotizacionDeVenta, mismasRespuestas, respuestasDesdeAdicionales } from '../utils/adicionalesVenta';
-import useCotizacion, { DEBOUNCE_COTIZACION_MS } from '../composables/cotizacion';
-import type { CotizarVentaInput, RespuestaCampo } from '../types/cotizacion';
-
-const CamposAdicionales = defineAsyncComponent(() => import('./register/components/CamposAdicionales.vue'));
+import { cotizacionDeVenta } from '../utils/adicionalesVenta';
 
 const props = defineProps<{
   ventaId?: string;
@@ -353,146 +274,28 @@ const modalRetomarCompra = ref(false);
 const showPaymentModal = ref(false);
 const showCardStep = ref(false);
 const isProcessing = ref(false);
+const mostrarDatos = ref(false);
 
 /* ------------------------------------------------------------------ *
- * Lo que la venta ya tiene registrado
+ * Lo que la venta tiene registrado: es lo único que se puede cobrar
  * ------------------------------------------------------------------ */
 
 /**
- * Desglose guardado en la venta: es lo que el cliente aceptó pagar. Sale tal cual
- * del backend (`valor_version`, `adicionales`, `valor_total`), acá no se recalcula.
+ * Desglose guardado en la venta, tal cual lo devuelve el backend
+ * (`valor_version`, `adicionales`, `valor_total`). Acá no se recalcula nada.
  */
 const desgloseVenta = computed(() => (venta.value ? cotizacionDeVenta(venta.value) : null));
 
-const camposAdicionales = computed(() =>
-  transformarCamposAdicionalesBackend(venta.value?.version_plan?.campos_adicionales),
-);
-
-const tieneCamposAdicionales = computed(() => (camposAdicionales.value?.secciones.length ?? 0) > 0);
+/** Lo único que se cobra: el total con el que quedó registrada la venta */
+const totalAPagar = computed(() => desgloseVenta.value?.valor_total ?? 0);
 
 /**
- * Respuestas con las que quedó registrada la venta. Arrancan reconstruidas desde
- * `adicionales` y se reemplazan cuando el backend guarda una recotización.
+ * Lo que respondió el cliente en los campos del plan, para mostrárselo. Las filas
+ * sin `valor_campo` son cobros sintéticos que ya salen en el desglose.
  */
-const respuestasVenta = ref<RespuestaCampo[]>([]);
-
-/** Las que se le pasan al formulario para repintarlo (cambian al deshacer cambios) */
-const respuestasIniciales = ref<RespuestaCampo[]>([]);
-/** Las que tiene el formulario ahora mismo */
-const respuestas = ref<RespuestaCampo[]>([]);
-const formularioValido = ref(true);
-const mostrarFormulario = ref(false);
-
-const respuestasCambiaron = computed(() => !mismasRespuestas(respuestas.value, respuestasVenta.value));
-
-/* ------------------------------------------------------------------ *
- * Versión del plan (TAREA 3)
- * ------------------------------------------------------------------ */
-
-/** Versión vigente del plan hoy, que puede no ser la que compró el cliente */
-const versionVigenteId = computed(() => venta.value?.version_plan?.plan?.version_id ?? null);
-
-/** El plan cambió de versión desde que se creó la venta */
-const versionCambio = computed(
-  () => !!venta.value && !!versionVigenteId.value && versionVigenteId.value !== venta.value.version_plan_id,
+const respuestasRegistradas = computed(() =>
+  (venta.value?.adicionales ?? []).filter((adicional) => adicional.valor_campo != null),
 );
-
-/** Contra qué versión se cotiza: la vigente si el plan cambió, si no la que compró */
-const versionParaCotizar = computed(
-  () => (versionCambio.value ? versionVigenteId.value : venta.value?.version_plan_id) ?? '',
-);
-
-const cambioVersionConfirmado = ref(false);
-
-/* ------------------------------------------------------------------ *
- * Cotización (TAREA 2)
- * ------------------------------------------------------------------ */
-
-const {
-  cotizacion,
-  rechazos,
-  mensajeRechazo,
-  errorCotizacion,
-  cotizando,
-  hayRechazos,
-  cotizar,
-  cotizarAhora,
-  cancelarCotizacion,
-  registrarRechazos,
-  limpiarRechazos,
-} = useCotizacion();
-
-// Cotización paralela con débito automático: se cobra sobre `valor_debito_automatico`
-const cotizacionDebitoState = useCotizacion();
-const cotizacionDebito = cotizacionDebitoState.cotizacion;
-
-/**
- * Cupón que el cliente agrega al retomar la compra. Solo se puede agregar uno
- * cuando la venta no trae ninguno: si ya tiene, el cupón de la venta es el que manda.
- */
-const cuponAgregado = ref<string | null>(null);
-const codigoCupon = ref('');
-const errorCupon = ref('');
-const aplicandoCupon = ref(false);
-
-/** El cupón con el que quedó registrada la venta */
-const cuponDeLaVenta = computed(() => {
-  if (!venta.value?.codigo_descuento) return null;
-  return {
-    codigo: venta.value.codigo_descuento,
-    valor: desgloseVenta.value?.valor_descuento ?? 0,
-  };
-});
-
-/** Código que va en la cotización: el de la venta, o el que agregó el cliente */
-const codigoDescuento = computed(() => venta.value?.codigo_descuento || cuponAgregado.value || '');
-
-const armarInputCotizacion = (debitoAutomatico: boolean): CotizarVentaInput => ({
-  version_id: versionParaCotizar.value,
-  ...(codigoDescuento.value ? { codigo_descuento: codigoDescuento.value } : {}),
-  ...(debitoAutomatico ? { debito_automatico: true } : {}),
-  respuestas: respuestas.value,
-});
-
-/** Hay que volver a preguntarle el precio al backend */
-const requiereCotizar = computed(
-  () => versionCambio.value || respuestasCambiaron.value || cuponAgregado.value !== null,
-);
-
-// Cada cambio del formulario o del cupón recotiza (con debounce). Al cargar una venta
-// cuyo plan cambió de versión, esto dispara la cotización contra la versión vigente.
-watch([respuestas, requiereCotizar, formularioValido], () => {
-  if (!venta.value || !requiereCotizar.value || !formularioValido.value) {
-    cancelarCotizacion();
-    return;
-  }
-
-  cotizar(armarInputCotizacion(false), DEBOUNCE_COTIZACION_MS);
-}, { deep: true });
-
-/** El total cotizado con la versión vigente no es el que aceptó el cliente */
-const totalCambio = computed(
-  () => versionCambio.value
-    && cotizacion.value != null
-    && cotizacion.value.valor_total !== (desgloseVenta.value?.valor_total ?? 0),
-);
-
-/**
- * La cotización reemplaza al desglose guardado cuando el cliente cambió algo o
- * cuando la versión nueva da otro total.
- */
-const usaCotizacion = computed(
-  () => respuestasCambiaron.value || totalCambio.value || cuponAgregado.value !== null,
-);
-
-/** El desglose que se le muestra al cliente */
-const desgloseVigente = computed(() => (usaCotizacion.value ? cotizacion.value : desgloseVenta.value));
-
-/** Lo único que se cobra */
-const totalAPagar = computed(() => desgloseVigente.value?.valor_total ?? 0);
-
-/** Descuento que se está aplicando ahora mismo, venga de la venta o del cupón agregado */
-const descuentoVigente = computed(() => desgloseVigente.value?.valor_descuento ?? 0);
 
 /* ------------------------------------------------------------------ *
  * Medios de pago
@@ -502,11 +305,12 @@ const tieneDebitoAutomatico = computed(() =>
   venta.value?.version_plan?.valor_debito_automatico != null
 );
 
-/** Total con débito automático: el cotizado manda; el valor de la versión es el respaldo */
+/**
+ * Valor de referencia del débito automático. Sale de lo que el backend tiene
+ * guardado (`valor_debito_automatico` de la versión menos el descuento de la venta):
+ * el cobro real lo arma Mercado Pago con lo que el backend calcule.
+ */
 const precioDebito = computed(() => {
-  const cotizado = cotizacionDebito.value?.valor_total;
-  if (cotizado != null) return cotizado;
-
   if (!venta.value) return 0;
   const base = venta.value.version_plan.valor_debito_automatico ?? venta.value.version_plan.precio;
   return Math.max(0, base - (venta.value.valor_descuento || 0));
@@ -518,236 +322,18 @@ const vigenciaLabel = computed(() =>
   formatVigencia(venta.value?.version_plan?.vigencia_numero_meses) || 'período'
 );
 
-/** El débito se cobra sobre otro valor: se cotiza aparte para mostrar cada número */
-const cotizarDebito = (): void => {
-  if (!venta.value || !tieneDebitoAutomatico.value || !formularioValido.value) return;
-  void cotizacionDebitoState.cotizarAhora(armarInputCotizacion(true));
-};
-
-// El modal muestra los dos totales: el de débito se cotiza al abrirlo
-watch(showPaymentModal, (abierto) => {
-  if (!abierto) return;
-  cotizarDebito();
-});
-
-/* ------------------------------------------------------------------ *
- * Cupón de descuento
- * ------------------------------------------------------------------ */
-
-const puedeAplicarCupon = computed(() => codigoCupon.value.trim() !== '' && !aplicandoCupon.value);
-
-/**
- * Aplica el cupón cotizando con él: el backend valida el código y devuelve el
- * descuento. Un 400 (cupón inválido, inactivo o que no aplica al plan) se muestra
- * junto al campo y deja la compra como estaba.
- */
-const aplicarCupon = async (): Promise<void> => {
-  const codigo = codigoCupon.value.trim();
-  errorCupon.value = '';
-
-  if (!venta.value || cuponDeLaVenta.value) return;
-  if (!codigo) {
-    errorCupon.value = 'Ingresa un código de descuento';
-    return;
-  }
-
-  const anterior = cuponAgregado.value;
-  cuponAgregado.value = codigo;
-  aplicandoCupon.value = true;
-
-  try {
-    const resultado = await cotizarAhora(armarInputCotizacion(false));
-
-    // Un 422 no habla del cupón: son los datos del plan, y se muestran en el desglose
-    if (!resultado && !hayRechazos.value) {
-      cuponAgregado.value = anterior;
-      errorCupon.value = errorCotizacion.value || 'No pudimos aplicar el cupón. Intenta de nuevo.';
-      errorCotizacion.value = '';
-      if (requiereCotizar.value) await cotizarAhora(armarInputCotizacion(false));
-      return;
-    }
-
-    codigoCupon.value = codigo;
-  } finally {
-    aplicandoCupon.value = false;
-  }
-
-  cotizarDebito();
-};
-
-/** Quita el cupón que agregó el cliente: la compra vuelve a su valor original */
-const quitarCupon = (): void => {
-  cuponAgregado.value = null;
-  codigoCupon.value = '';
-  errorCupon.value = '';
-  errorCotizacion.value = '';
-  cotizarDebito();
-};
-
 /* ------------------------------------------------------------------ *
  * Cuándo se puede seguir al pago
  * ------------------------------------------------------------------ */
 
-/** El cliente cambió algo (cupón o respuestas) y el total ya no es el registrado */
-const hayCambios = computed(() => usaCotizacion.value);
-
-/**
- * Condiciones con las que el backend acepta recotizar la venta
- * (`PATCH /ventas/:id/cotizacion`). Una venta pagada, renovada, de un cliente ya
- * creado o con débito automático no se toca.
- */
-const ventaRecotizable = computed(() => {
-  const actual = venta.value;
-  if (!actual) return false;
-
-  return actual.estado === 'PENDIENTE'
-    && actual.cliente_id === null
-    && actual.venta_renovada === false
-    && (actual.venta_origen_id ?? null) === null
-    && actual.debito_automatico === false;
-});
-
-/**
- * El endpoint de recotización no cambia la versión del plan: si el plan cambió de
- * versión, el cambio sigue necesitando que lo resuelva el equipo.
- */
-const MENSAJE_VERSION_PENDIENTE =
-  'Para continuar tenemos que actualizar tu compra a la nueva versión del plan. Escríbenos y te ayudamos a terminar el pago.';
-
-const MENSAJE_VENTA_NO_RECOTIZABLE =
-  'No podemos aplicar estos cambios sobre esta compra. Escríbenos y te ayudamos a terminar el pago.';
-
-/** Qué le decimos al cliente sobre los cambios que hizo en el formulario */
-const mensajeCambios = computed(() => (
-  ventaRecotizable.value
-    ? 'Al continuar al pago actualizamos tu compra con el nuevo valor.'
-    : MENSAJE_VENTA_NO_RECOTIZABLE
-));
-
 /** Por qué no se puede seguir al pago; vacío cuando sí se puede */
 const motivoBloqueo = computed(() => {
   if (!venta.value) return 'Estamos cargando tu compra…';
-  if (hayRechazos.value) return 'Con estos datos no podemos emitir la póliza: revisa los mensajes del detalle.';
-  if (!formularioValido.value) return 'Completa los datos obligatorios de tu plan.';
-  if (cotizando.value) return 'Estamos actualizando el valor de tu compra…';
-  if (errorCotizacion.value) return errorCotizacion.value;
-  // Con la versión cambiada no se sigue al pago sin saber qué cotiza la versión nueva
-  if (versionCambio.value && cotizacion.value === null) return 'Estamos actualizando el valor de tu compra…';
-  if (totalCambio.value) return MENSAJE_VERSION_PENDIENTE;
-  if (hayCambios.value && !ventaRecotizable.value) return MENSAJE_VENTA_NO_RECOTIZABLE;
+  if (venta.value.estado !== 'PENDIENTE') return 'Esta compra ya no está pendiente de pago.';
   return '';
 });
 
 const puedeIrAPagar = computed(() => motivoBloqueo.value === '');
-
-/* ------------------------------------------------------------------ *
- * Guardar los cambios en la venta antes de cobrar
- * ------------------------------------------------------------------ */
-
-/**
- * Guarda en la venta el cupón y las respuestas con las que se recotizó
- * (`PATCH /ventas/:id/cotizacion`) y deja el detalle local igual a lo que quedó
- * registrado. Devuelve la transacción nueva: la anterior queda inservible, porque su
- * monto ya viajó al widget de Wompi.
- */
-const aplicarCambiosEnLaVenta = async (): Promise<string> => {
-  if (!venta.value) throw new Error('No hay una compra cargada.');
-
-  const respuestasEnviadas = [...respuestas.value];
-  const actualizada = await VentasService.actualizarCotizacion(venta.value.id, {
-    codigo_descuento: codigoDescuento.value || null,
-    respuestas: respuestasEnviadas,
-  });
-
-  // La venta pasa a ser lo que el backend acaba de guardar
-  venta.value = {
-    ...venta.value,
-    valor_version: actualizada.valor_version,
-    valores_adicionales: actualizada.valores_adicionales,
-    valor_descuento: actualizada.valor_descuento,
-    valor_total: actualizada.valor_total,
-    codigo_descuento: actualizada.codigo_descuento ?? null,
-    adicionales: actualizada.adicionales ?? venta.value.adicionales,
-    transaccion: {
-      id: actualizada.transaccion_id,
-      estado: 'PENDING',
-      valor: actualizada.valor_total,
-      created_at: new Date().toISOString(),
-      proveedor: 'wompi',
-    },
-  };
-
-  respuestasVenta.value = respuestasEnviadas;
-  cuponAgregado.value = null;
-  errorCupon.value = '';
-  limpiarRechazos();
-
-  return actualizada.transaccion_id;
-};
-
-/** Muestra el error de la recotización donde le corresponde a cada caso */
-const manejarErrorDeActualizacion = async (error: any): Promise<void> => {
-  const estado = error?.response?.status;
-
-  // 422: con esos datos no se puede vender. Se marcan los campos en el detalle
-  if (estado === 422 && extraerRechazos(error).length > 0) {
-    registrarRechazos(error);
-    showPaymentModal.value = false;
-    showCardStep.value = false;
-    modalRetomarCompra.value = true;
-    return;
-  }
-
-  // 400: el cupón no aplica. El campo vive en el modal de pago: ahí se muestra
-  if (estado === 400 && cuponAgregado.value) {
-    cuponAgregado.value = null;
-    errorCupon.value = error?.response?.data?.message
-      || 'No pudimos aplicar el cupón. Intenta con otro código.';
-    // Si el cliente venía del paso de la tarjeta, vuelve al modal para ver el mensaje
-    showCardStep.value = false;
-    showPaymentModal.value = true;
-    return;
-  }
-
-  // 409: la venta ya no se puede modificar (pagada, renovada…): se recarga como está
-  if (estado === 409) {
-    await mostrarError(error, 'Esta compra ya no se puede modificar.');
-    showPaymentModal.value = false;
-    showCardStep.value = false;
-    await cargarVenta();
-    return;
-  }
-
-  await mostrarError(error, 'No pudimos actualizar tu compra. Por favor intenta de nuevo.');
-};
-
-/** Guarda los cambios; devuelve null si algo falló (el error ya quedó mostrado) */
-const guardarCambios = async (): Promise<string | null> => {
-  try {
-    return await aplicarCambiosEnLaVenta();
-  } catch (error: any) {
-    await manejarErrorDeActualizacion(error);
-    return null;
-  }
-};
-
-const confirmarCambioDeVersion = () => {
-  cambioVersionConfirmado.value = true;
-};
-
-/** Vuelve a las respuestas con las que se creó la venta */
-const deshacerCambios = () => {
-  respuestasIniciales.value = [...respuestasVenta.value];
-  respuestas.value = [...respuestasVenta.value];
-};
-
-const handleRespuestasUpdate = (nuevas: RespuestaCampo[]) => {
-  respuestas.value = nuevas;
-};
-
-const handleValidUpdate = (valido: boolean) => {
-  formularioValido.value = valido;
-};
 
 /* ------------------------------------------------------------------ *
  * Carga de la venta
@@ -769,14 +355,7 @@ const cargarVenta = async () => {
 
   isProcessing.value = true;
   try {
-    const data = await VentasService.obtenerDetalle(ventaId);
-    venta.value = data;
-
-    // El formulario arranca con lo que el cliente ya había respondido
-    respuestasVenta.value = respuestasDesdeAdicionales(data.adicionales);
-    respuestasIniciales.value = [...respuestasVenta.value];
-    respuestas.value = [...respuestasVenta.value];
-
+    venta.value = await VentasService.obtenerDetalle(ventaId);
     modalRetomarCompra.value = true;
   } catch (error: any) {
     console.error('Error al cargar la venta:', error);
@@ -826,15 +405,48 @@ const mostrarError = async (error: any, fallback: string) => {
 
 /* ----------------------------- Wompi ----------------------------- */
 
+const MENSAJE_TRANSACCION_PENDIENTE =
+  'Ya tienes un pago en curso para esta compra. Si no alcanzaste a terminarlo, espera unos '
+  + 'minutos y vuelve a intentarlo.';
+
 /**
- * Si la venta ya tiene una transacción Wompi pendiente, la reutilizamos en vez
- * de crear otra (el backend rechaza con 400 crear una nueva si ya existe una).
+ * El backend rechaza crear una transacción si la venta ya tiene una PENDING de menos
+ * de diez minutos (pasado ese tiempo la marca DECLINED y crea otra). No es un error
+ * para reintentar en bucle: o se paga la que ya existe, o se espera.
  */
+const esErrorTransaccionPendiente = (error: any): boolean =>
+  error?.response?.status === 400
+  && /transacci[oó]n\s+pendiente/i.test(String(error?.response?.data?.message ?? ''));
+
+/** La transacción Wompi que la venta ya tiene abierta, si es que la tiene */
 const transaccionWompiPendiente = computed(() => {
   const tx = venta.value?.transaccion;
   if (!tx || tx.proveedor !== 'wompi') return null;
   return ['PENDING', 'PENDIENTE'].includes(String(tx.estado).toUpperCase()) ? tx : null;
 });
+
+/**
+ * Transacción con la que se cobra. La decide el backend: solo si rechaza por haber
+ * una pendiente se reutiliza esa, releyendo la venta por si el detalle local quedó
+ * viejo.
+ */
+const obtenerTransaccionId = async (ventaId: string): Promise<string> => {
+  const service = new TransactionService();
+
+  try {
+    const { data } = await service.crearTransaccion({ venta_id: ventaId });
+    if (!data?.transaccion_id) throw new Error('No se recibió transaccion_id desde el backend.');
+    return data.transaccion_id;
+  } catch (error: any) {
+    if (!esErrorTransaccionPendiente(error)) throw error;
+
+    if (!transaccionWompiPendiente.value) await cargarVenta();
+    const pendiente = transaccionWompiPendiente.value;
+    if (!pendiente) throw new Error(MENSAJE_TRANSACCION_PENDIENTE);
+
+    return pendiente.id;
+  }
+};
 
 const handleSelectWompi = async () => {
   if (!venta.value || !puedeIrAPagar.value) return;
@@ -844,31 +456,7 @@ const handleSelectWompi = async () => {
   const paymentWindow = totalAPagar.value > 0 ? window.open('', '_blank') : null;
 
   try {
-    let transaccionId: string | undefined;
-
-    if (hayCambios.value) {
-      // El backend recotiza, guarda el cupón y las respuestas, y devuelve la
-      // transacción con la que hay que cobrar: la anterior queda anulada
-      const nueva = await guardarCambios();
-      if (!nueva) {
-        isProcessing.value = false;
-        paymentWindow?.close();
-        return;
-      }
-      transaccionId = nueva;
-    } else {
-      transaccionId = transaccionWompiPendiente.value?.id;
-
-      // Solo creamos una transacción nueva si no hay una pendiente reutilizable
-      if (!transaccionId) {
-        const service = new TransactionService();
-        const { data } = await service.crearTransaccion({ venta_id: venta.value.id });
-        if (!data?.transaccion_id) {
-          throw new Error('No se recibió transaccion_id desde el backend.');
-        }
-        transaccionId = data.transaccion_id;
-      }
-    }
+    const transaccionId = await obtenerTransaccionId(venta.value.id);
 
     construirResumen(transaccionId, totalAPagar.value, false);
 
@@ -948,16 +536,7 @@ const handleCardTokenized = async (cardTokenId: string) => {
   isProcessing.value = true;
 
   try {
-    // Mercado Pago cobra sobre lo que el backend tiene registrado: los cambios se
-    // guardan antes. La transacción Wompi que devuelve la recotización no se usa acá.
-    if (hayCambios.value) {
-      const guardada = await guardarCambios();
-      if (!guardada) {
-        isProcessing.value = false;
-        return;
-      }
-    }
-
+    // Mercado Pago cobra sobre lo que el backend tiene registrado en la venta
     const response = await MercadoPagoService.crearTransaccionDebito({
       venta_id: venta.value.id,
       card_token_id: cardTokenId,
@@ -985,131 +564,60 @@ cargarVenta();
 </script>
 
 <style scoped>
-/* Aviso de cambio de versión del plan */
-.aviso-version {
-  margin-top: 1rem;
-  border: 1px solid #fde68a;
-  background: #fffbeb;
-  border-radius: 12px;
-  padding: 1rem 1.1rem;
-}
-
-.aviso-version-titulo {
-  font-weight: 700;
-  color: #92400e;
-  margin: 0 0 0.35rem;
-  font-size: 0.95rem;
-}
-
-.aviso-version-texto {
-  color: #78350f;
-  font-size: 0.875rem;
-  margin: 0;
-  line-height: 1.45;
-}
-
-.comparativo {
-  display: flex;
-  gap: 1rem;
-  margin: 0.85rem 0 0.25rem;
-}
-
-.comparativo-item {
-  flex: 1;
-  background: white;
-  border: 1px solid #fde68a;
-  border-radius: 8px;
-  padding: 0.6rem 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.comparativo-etiqueta {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #92400e;
-  font-weight: 700;
-}
-
-.comparativo-valor {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #1f2937;
-  font-variant-numeric: tabular-nums;
-}
-
-.comparativo-antes {
-  color: #6b7280;
-  text-decoration: line-through;
-}
-
-.aviso-version-btn {
-  margin-top: 0.75rem;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 8px;
-  background: #d97706;
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.aviso-version-btn:hover {
-  background: #b45309;
-}
-
-/* Formulario de campos adicionales */
 .toggle-formulario {
   background: none;
   border: none;
-  padding: 0;
-  color: #2563eb;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
-  font-family: inherit;
-}
-
-.aviso-cambios {
-  margin-top: 0.75rem;
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  border-radius: 8px;
-  padding: 0.75rem 0.9rem;
-  font-size: 0.85rem;
-  color: #1e40af;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.aviso-cambios p {
-  margin: 0;
-  flex: 1;
-  min-width: 14rem;
-}
-
-.aviso-cambios-btn {
-  background: white;
-  border: 1px solid #93c5fd;
-  border-radius: 6px;
-  padding: 0.35rem 0.75rem;
   color: #1d4ed8;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  font-family: inherit;
+  padding: 0;
+  text-decoration: underline;
 }
 
-.aviso-cambios-btn:hover {
-  background: #dbeafe;
+.datos-registrados {
+  margin-top: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+.datos-registrados li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.datos-registrados li:last-child {
+  border-bottom: none;
+}
+
+.dato-nombre {
+  color: #4b5563;
+}
+
+.dato-registro {
+  color: #9ca3af;
+}
+
+.dato-valor {
+  color: #111827;
+  font-weight: 600;
+  text-align: right;
+}
+
+.nota-inmutable {
+  margin-top: 1rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.82rem;
+  color: #4b5563;
+  line-height: 1.45;
 }
 
 .motivo-bloqueo {
@@ -1324,94 +832,6 @@ cargarVenta();
 .payment-option-wompi {
   cursor: default;
 }
-
-.modal-cupon-section {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 0.75rem;
-}
-
-.modal-cupon-aplicado {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  font-size: 0.82rem;
-  color: #166534;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 8px;
-  padding: 0.5rem 0.65rem;
-}
-
-.cupon-quitar {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-decoration: underline;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.cupon-quitar:hover {
-  color: #374151;
-}
-
-.modal-cupon-input {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.modal-cupon-field {
-  flex: 1;
-  min-width: 0;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 0.5rem 0.7rem;
-  font-size: 0.85rem;
-  font-family: inherit;
-  color: #1f2937;
-}
-
-.modal-cupon-field:focus {
-  outline: none;
-  border-color: #2563eb;
-}
-
-.modal-cupon-field-error {
-  border-color: #fca5a5;
-}
-
-.modal-cupon-btn {
-  border: 1px solid #d1d5db;
-  background: white;
-  border-radius: 8px;
-  padding: 0.5rem 0.9rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #374151;
-  cursor: pointer;
-  font-family: inherit;
-  white-space: nowrap;
-}
-
-.modal-cupon-btn:hover:not(:disabled) {
-  background: #f9fafb;
-}
-
-.modal-cupon-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.modal-cupon-error {
-  margin: 0.4rem 0 0;
-  font-size: 0.78rem;
-  color: #b91c1c;
-}
-
 .motivo-bloqueo-modal {
   margin: 1rem 0 0;
   font-size: 0.8rem;
@@ -1424,18 +844,6 @@ cargarVenta();
   opacity: 0.5;
   cursor: not-allowed;
 }
-
-.cupon-applied-badge {
-  font-size: 0.68rem;
-  background: #dcfce7;
-  color: #16a34a;
-  font-weight: 700;
-  padding: 0.15rem 0.45rem;
-  border-radius: 20px;
-  margin-left: 0.3rem;
-  vertical-align: middle;
-}
-
 .wompi-continue-btn {
   display: flex;
   align-items: center;
