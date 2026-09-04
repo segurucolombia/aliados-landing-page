@@ -179,6 +179,11 @@ export interface VersionWithDetails extends Version {
   coberturas: CoberturaVersion[];
   /** Configuración del formulario de campos adicionales de la versión */
   campos_adicionales?: CamposAdicionalesConfig | null;
+  /**
+   * Qué datos le pide al titular esta versión del plan, ordenados por `orden`.
+   * Es la única fuente del formulario del titular: no hay campos fijos.
+   */
+  campos_titular?: CampoTitular[];
 }
 
 export interface PlanBase {
@@ -408,3 +413,103 @@ export interface DatosSeccionCapturados {
 export interface CamposAdicionalesCapturados {
   secciones: DatosSeccionCapturados[];
 }
+
+/**
+ * Tipos para los campos del titular
+ *
+ * Cada versión de plan define qué datos le pide a su titular: la landing no tiene
+ * ningún campo fijo, el formulario se arma recorriendo `version.campos_titular`.
+ */
+
+/**
+ * Tipos que el backend puede mandar en un campo del titular. Son los únicos: el
+ * titular es una persona con un valor por campo, así que no hay multiselect, ni
+ * grupos repetibles, ni precio.
+ *
+ * `EDAD` se captura igual que `FECHA` (la fecha de nacimiento, en `YYYY-MM-DD`): la
+ * diferencia es solo cómo evalúa el backend sus reglas, contra años cumplidos en vez
+ * de contra fechas.
+ */
+export type TipoCampoTitular =
+  | 'TEXTO'
+  | 'TEXTAREA'
+  | 'NUMERO'
+  | 'FECHA'
+  | 'EDAD'
+  | 'CIUDAD'
+  | 'DROPDOWN';
+
+/**
+ * Campos que el sistema conoce. Son los únicos que hoy tienen dónde ir en el POST
+ * de venta (ver `adaptarTitularAPayloadVenta`); un campo sin `clave_sistema` es
+ * libre de este plan y todavía no se envía.
+ */
+export type ClaveSistemaTitular =
+  | 'EMAIL'
+  | 'TIPO_DOCUMENTO'
+  | 'NUMERO_DOCUMENTO'
+  | 'NOMBRES'
+  | 'APELLIDOS'
+  | 'TELEFONO'
+  | 'TIPO_PERSONA'
+  | 'NIT'
+  | 'EMPRESA_NOMBRE'
+  | 'FECHA_NACIMIENTO';
+
+/**
+ * Opción de un campo de selección. Se muestra `etiqueta` y se envía `clave`. Vienen
+ * en el GET tanto en los dropdowns libres como en los de sistema (`TIPO_PERSONA`,
+ * `TIPO_DOCUMENTO`), cuyas claves son los valores que ya acepta el POST de venta.
+ */
+export interface OpcionCampoTitular {
+  id?: string;
+  clave: string;
+  etiqueta: string;
+  orden?: number;
+}
+
+/** Un campo del formulario del titular, tal como lo configura la versión del plan */
+export interface CampoTitular {
+  id: string;
+  /** Identidad estable del campo: es la llave del estado del formulario */
+  clave: string;
+  /** null = campo libre de este plan */
+  clave_sistema: ClaveSistemaTitular | string | null;
+  /** La etiqueta que se pinta */
+  nombre: string;
+  /**
+   * Se deja tal como llegó: un tipo que la landing no conozca no se pinta como texto
+   * libre, se bloquea (ver `controlDeCampo` en `src/utils/camposTitular.ts`).
+   */
+  tipo: TipoCampoTitular | string;
+  requerido: boolean;
+  orden: number;
+  /** El valor no se puede repetir entre ventas. Lo valida el backend. */
+  restriccion_repetidos?: boolean;
+  ambito_unicidad?: string | null;
+  /** Opciones de un campo de selección, libre o de sistema */
+  opciones?: OpcionCampoTitular[];
+  /**
+   * Cobros y rechazos que configuró el admin sobre este campo. **No se interpretan**:
+   * el precio y los bloqueos los resuelve `POST /ventas/cotizar`. Lo único que
+   * significan para la landing es que un cambio en este campo puede mover el precio,
+   * así que hay que recotizar.
+   */
+  reglas?: ReglaCampo[];
+}
+
+/**
+ * Estado del formulario del titular, indexado por la `clave` del campo. Guarda lo que
+ * el control necesita (la ciudad, por ejemplo, es el objeto del autocomplete).
+ */
+export type DatosTitular = Record<string, any>;
+
+/**
+ * El titular tal como lo recibe el backend: indexado por la misma `clave` que vino en
+ * `version.campos_titular`, con un valor por campo y sin los campos sin responder.
+ *
+ * Es el objeto que viaja en `POST /ventas/cotizar` y el que va a recibir `POST /ventas`
+ * cuando salga la fase que vuelve dinámico el envío de la venta: se arma una sola vez
+ * (`titularParaEnvio`) y se usa en los dos.
+ */
+export type TitularEnvio = Record<string, string>;

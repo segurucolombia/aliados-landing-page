@@ -5,6 +5,8 @@
  * las manda a cotizar y pinta el desglose que devuelve el backend.
  */
 
+import type { TitularEnvio } from './planes';
+
 /** Valor de un campo respondido. Los multiselect mandan un arreglo de claves. */
 export type ValorRespuesta = string | number | string[];
 
@@ -22,7 +24,14 @@ export interface CotizarVentaInput {
   version_id: string;
   codigo_descuento?: string;
   debito_automatico?: boolean;
+  /** Las respuestas de los campos adicionales */
   respuestas: RespuestaCampo[];
+  /**
+   * Los datos del titular, indexados por `clave`. Solo se manda **completo**: el
+   * backend rechaza con 422 cualquier campo requerido sin responder, así que mientras
+   * el bloque esté a medias se omite y el backend cotiza como antes.
+   */
+  titular?: TitularEnvio;
 }
 
 /**

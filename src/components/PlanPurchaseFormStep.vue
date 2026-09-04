@@ -19,158 +19,19 @@
 
     <div class="purchase-form-container">
       <form @submit.prevent="handleSubmit" class="purchase-form">
-        <!-- Grid de dos columnas -->
-        <div class="form-grid">
-          <!-- Tipo de Documento -->
-          <div class="field">
-            <label for="documentType">Tipo de Documento <span class="required">*</span></label>
-            <Dropdown
-              id="documentType"
-              v-model="formData.documentType"
-              :options="DOCUMENT_TYPES"
-              optionLabel="nombre"
-              optionValue="tipo"
-              placeholder="Seleccione un tipo"
-              :class="{ 'p-invalid': errors.documentType }"
-              @blur="validateField('documentType')"
-            />
-            <small v-if="errors.documentType" class="p-error">{{ errors.documentType }}</small>
-          </div>
+        <!-- Datos del titular: los pide la versión del plan, no la landing -->
+        <CamposTitular
+          v-if="camposTitular.length > 0"
+          ref="formularioTitular"
+          :campos="camposTitular"
+          :rechazos="rechazosDeCampos"
+          v-model="titular"
+          @update:valid="titularValido = $event"
+        />
 
-          <!-- Tipo de Documento Representante Legal (solo si es NIT) -->
-          <div v-if="isNIT" class="field">
-            <label for="legalRepDocumentType">Tipo de Documento Representante Legal <span class="required">*</span></label>
-            <Dropdown
-              id="legalRepDocumentType"
-              v-model="formData.legalRepDocumentType"
-              :options="LEGAL_REP_DOCUMENT_TYPES"
-              optionLabel="nombre"
-              optionValue="tipo"
-              placeholder="Seleccione un tipo"
-              :class="{ 'p-invalid': errors.legalRepDocumentType }"
-              @blur="validateField('legalRepDocumentType')"
-            />
-            <small v-if="errors.legalRepDocumentType" class="p-error">{{ errors.legalRepDocumentType }}</small>
-          </div>
-
-          <!-- Número de Documento / Documento Representante Legal -->
-          <div class="field">
-            <label for="documentNumber">
-              {{ isNIT ? 'Número Documento Representante Legal' : 'Número de Documento' }} <span class="required">*</span>
-            </label>
-            <InputText
-              id="documentNumber"
-              v-model="formData.documentNumber"
-              :placeholder="isNIT ? 'Ej: 1234567890' : 'Ej: 1234567890'"
-              :maxlength="20"
-              :class="{ 'p-invalid': errors.documentNumber }"
-              @blur="validateField('documentNumber')"
-              @input="sanitizeDocumentNumber"
-            />
-            <small v-if="errors.documentNumber" class="p-error">{{ errors.documentNumber }}</small>
-          </div>
-
-          <!-- NIT (solo si tipo documento es NIT) -->
-          <div v-if="isNIT" class="field">
-            <label for="nit">NIT <span class="required">*</span></label>
-            <InputText
-              id="nit"
-              v-model="formData.nit"
-              placeholder="Ej: 900123456-1"
-              :maxlength="15"
-              :class="{ 'p-invalid': errors.nit }"
-              @blur="validateField('nit')"
-              @input="sanitizeNit"
-            />
-            <small v-if="errors.nit" class="p-error">{{ errors.nit }}</small>
-          </div>
-
-          <!-- Nombre de Empresa (solo si tipo documento es NIT) -->
-          <div v-if="isNIT" class="field">
-            <label for="companyName">Nombre de Empresa <span class="required">*</span></label>
-            <InputText
-              id="companyName"
-              v-model="formData.companyName"
-              placeholder="Ej: Mi Empresa S.A.S."
-              :class="{ 'p-invalid': errors.companyName }"
-              @blur="validateField('companyName')"
-            />
-            <small v-if="errors.companyName" class="p-error">{{ errors.companyName }}</small>
-          </div>
-
-          <!-- Nombres / Nombres Representante Legal -->
-          <div class="field">
-            <label for="fullName">
-              {{ isNIT ? 'Nombres Representante Legal' : 'Nombres' }} <span class="required">*</span>
-            </label>
-            <InputText
-              id="fullName"
-              v-model="formData.fullName"
-              placeholder="Ej: Juan Carlos"
-              :class="{ 'p-invalid': errors.fullName }"
-              @blur="validateField('fullName')"
-            />
-            <small v-if="errors.fullName" class="p-error">{{ errors.fullName }}</small>
-          </div>
-
-          <!-- Apellidos / Apellidos Representante Legal -->
-          <div class="field">
-            <label for="lastName">
-              {{ isNIT ? 'Apellidos Representante Legal' : 'Apellidos' }} <span class="required">*</span>
-            </label>
-            <InputText
-              id="lastName"
-              v-model="formData.lastName"
-              placeholder="Ej: Pérez García"
-              :class="{ 'p-invalid': errors.lastName }"
-              @blur="validateField('lastName')"
-            />
-            <small v-if="errors.lastName" class="p-error">{{ errors.lastName }}</small>
-          </div>
-
-          <!-- Email -->
-          <div class="field">
-            <label for="email">Correo Electrónico <span class="required">*</span></label>
-            <InputText
-              id="email"
-              v-model="formData.email"
-              type="email"
-              placeholder="ejemplo@correo.com"
-              :class="{ 'p-invalid': errors.email }"
-              @blur="validateField('email')"
-            />
-            <small v-if="errors.email" class="p-error">{{ errors.email }}</small>
-          </div>
-
-          <!-- Teléfono -->
-          <div class="field">
-            <label for="phone">Teléfono <span class="required">*</span></label>
-            <InputText
-              id="phone"
-              v-model="formData.phone"
-              type="tel"
-              placeholder="Ej: 3001234567"
-              :maxlength="10"
-              :class="{ 'p-invalid': errors.phone }"
-              @blur="validateField('phone')"
-            />
-            <small v-if="errors.phone" class="p-error">{{ errors.phone }}</small>
-          </div>
-
-          <!-- Fecha de Nacimiento -->
-          <div class="field">
-            <label for="dob">Fecha de Nacimiento</label>
-            <input
-              id="dob"
-              v-model="formData.dob"
-              type="date"
-              class="p-inputtext p-component"
-              :class="{ 'p-invalid': errors.dob }"
-              @blur="validateField('dob')"
-            />
-            <small v-if="errors.dob" class="p-error">{{ errors.dob }}</small>
-          </div>
-
+        <div v-else class="sin-campos">
+          Este plan todavía no tiene configurados los datos del titular. Comunícate con
+          nosotros para completar tu compra.
         </div>
 
         <!-- Código de Descuento (solo si no hay débito automático disponible) -->
@@ -224,25 +85,26 @@
             </div>
           </div>
 
-          <!-- Resumen de precios -->
-          <div v-if="cuponValidado" class="price-summary">
-            <div class="price-row">
-              <span>Precio del plan:</span>
-              <span>{{ formatCurrency(planPrecio) }}</span>
-            </div>
-            <div class="price-row discount-row">
-              <span>Descuento:</span>
-              <span>- {{ formatCurrency(valorDescuento) }}</span>
-            </div>
-            <div class="price-row total-row">
-              <span class="total-label">{{ hasNextStep ? 'Subtotal:' : 'Total a pagar:' }}</span>
-              <span class="total-value">{{ formatCurrency(totalAPagar) }}</span>
-            </div>
-            <!-- Los datos del plan pueden agregar cargos: el total sale de la cotización -->
-            <p v-if="hasNextStep" class="price-note">
-              El valor final se calcula con la información adicional del siguiente paso.
-            </p>
-          </div>
+          <!-- Sin cotización todavía no hay ningún total que mostrar: lo dice el backend -->
+          <p v-if="cuponValidado && !cotizacion && hasNextStep" class="price-note">
+            El valor final se calcula con la información del siguiente paso.
+          </p>
+        </div>
+
+        <!--
+          Detalle de la compra. Los datos del titular también pueden agregar cargos o
+          impedir la venta, así que el desglose y los motivos de rechazo se muestran
+          acá, con los valores que devolvió la última cotización.
+        -->
+        <div v-if="mostrarDesglose" class="desglose-wrapper">
+          <DesgloseCotizacion
+            :cotizacion="cotizacionVisible"
+            :plan-nombre="planNombre"
+            :cotizando="cotizando"
+            :rechazos="rechazos"
+            :mensaje-rechazo="mensajeRechazo"
+            :error-cotizacion="errorCotizacion"
+          />
         </div>
 
         <!-- Botones de Acción -->
@@ -275,43 +137,65 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, onMounted } from 'vue';
-import { DOCUMENT_TYPES } from '../utils/documentTypes';
-import Dropdown from 'primevue/dropdown';
+import { computed, onMounted, ref, watch } from 'vue';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
+import CamposTitular from './CamposTitular.vue';
+import DesgloseCotizacion from './DesgloseCotizacion.vue';
 import useCupon from '../composables/cupon';
+import type { CampoTitular, DatosTitular } from '../types/planes';
+import type { CotizacionVenta, RechazoVenta } from '../types/cotizacion';
+import { claveDeAccesoTitular } from '../utils/titularVenta';
 
-// Tipos de documento para representante legal (sin NIT)
-const LEGAL_REP_DOCUMENT_TYPES = DOCUMENT_TYPES.filter(doc => doc.tipo !== 'NIT');
-
-export interface PurchaseFormData {
-  documentType: string;
-  documentNumber: string;
-  fullName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  dob: string;
-  password: string;
-  nit?: string;
-  companyName?: string;
-  legalRepDocumentType?: string;
+/**
+ * Datos del titular capturados en este paso. El titular va indexado por la `clave`
+ * del campo y viaja junto a la configuración con la que se armó: la traducción al
+ * payload de venta la hace `adaptarTitularAPayloadVenta`.
+ */
+export interface DatosTitularFormulario {
+  titular: DatosTitular;
+  campos: CampoTitular[];
+  /** Contraseña con la que el cliente entra después de comprar */
+  clave: string;
   discountCode?: string;
 }
 
 const props = withDefaults(defineProps<{
-  planPrecio: number;
   planId: string;
+  /** Qué datos le pide al titular la versión del plan que se está comprando */
+  camposTitular?: CampoTitular[];
+  planNombre?: string;
+  /** Cotización vigente del backend: es la única fuente del total */
+  cotizacion?: CotizacionVenta | null;
+  cotizando?: boolean;
+  /** Todos los motivos por los que no se puede vender: se le muestran al cliente */
+  rechazos?: RechazoVenta[];
+  /** Los que caen en campos del titular: son los que se marcan en este formulario */
+  rechazosDeCampos?: RechazoVenta[];
+  mensajeRechazo?: string;
+  errorCotizacion?: string;
+  /** El backend cotizó sin rechazos, o el total se termina de calcular más adelante */
+  puedeContinuar?: boolean;
   valorDebitoAutomatico?: number | null;
   hasNextStep?: boolean;
 }>(), {
+  camposTitular: () => [],
+  planNombre: '',
+  cotizacion: null,
+  cotizando: false,
+  rechazos: () => [],
+  rechazosDeCampos: () => [],
+  mensajeRechazo: '',
+  errorCotizacion: '',
+  puedeContinuar: true,
   hasNextStep: false,
   valorDebitoAutomatico: null,
 });
 
 const emit = defineEmits<{
-  (e: 'submit', data: PurchaseFormData): void;
+  (e: 'submit', data: DatosTitularFormulario): void;
+  /** Cada cambio del titular: el backend puede cobrar distinto por estos datos */
+  (e: 'update:titular', titular: DatosTitular): void;
   (e: 'back'): void;
   (e: 'cancel'): void;
 }>();
@@ -324,197 +208,33 @@ const {
   valorDescuento,
   cuponValidado,
   puedeAplicar,
-  totalConDescuento,
   aplicarCupon,
   quitarCupon,
   sincronizarConPlan,
   codigoParaVenta,
 } = useCupon();
 
-const formData = reactive<PurchaseFormData>({
-  documentType: '',
-  documentNumber: '',
-  fullName: '',
-  lastName: '',
-  email: '',
-  phone: '',
-  dob: '',
-  password: '',
-  nit: '',
-  companyName: '',
-  legalRepDocumentType: '',
-  discountCode: '',
-});
+/** Respuestas del titular, indexadas por la `clave` de cada campo configurado */
+const titular = ref<DatosTitular>({});
+const titularValido = ref(false);
+const formularioTitular = ref<InstanceType<typeof CamposTitular> | null>(null);
 
-const errors = reactive<Record<string, string>>({
-  documentType: '',
-  documentNumber: '',
-  fullName: '',
-  lastName: '',
-  email: '',
-  phone: '',
-  dob: '',
-  nit: '',
-  companyName: '',
-  legalRepDocumentType: '',
-});
+const isFormValid = computed(
+  () => props.camposTitular.length > 0 && titularValido.value && props.puedeContinuar,
+);
 
-const isNIT = computed(() => formData.documentType === 'NIT');
+// Cada cambio del titular se avisa hacia arriba para volver a cotizar
+watch(titular, () => emit('update:titular', { ...titular.value }), { deep: true });
 
-const sanitizeDocumentNumber = () => {
-  // Remover espacios y caracteres especiales, permitir solo letras y números
-  formData.documentNumber = formData.documentNumber.replace(/[^a-zA-Z0-9]/g, '');
-};
+/** Con débito automático los totales se comparan en el modal de medio de pago */
+const cotizacionVisible = computed(() => (props.valorDebitoAutomatico == null ? props.cotizacion : null));
 
-const sanitizeNit = () => {
-  // Remover espacios, permitir solo números y guión
-  if (formData.nit) {
-    formData.nit = formData.nit.replace(/[^0-9-]/g, '');
-  }
-};
-
-const validateField = (field: string) => {
-  errors[field] = '';
-
-  switch (field) {
-    case 'documentType':
-      if (!formData.documentType) {
-        errors.documentType = 'El tipo de documento es requerido';
-      }
-      break;
-
-    case 'documentNumber':
-      if (!formData.documentNumber) {
-        errors.documentNumber = 'El número de documento es requerido';
-      } else if (formData.documentNumber.length < 5) {
-        errors.documentNumber = 'El número de documento debe tener al menos 5 caracteres';
-      } else if (!/^[a-zA-Z0-9]+$/.test(formData.documentNumber)) {
-        errors.documentNumber = 'El número de documento solo puede contener letras y números';
-      }
-      break;
-
-    case 'fullName':
-      if (!formData.fullName) {
-        errors.fullName = 'El nombre es requerido';
-      } else if (formData.fullName.trim().length < 2) {
-        errors.fullName = 'El nombre debe tener al menos 2 caracteres';
-      }
-      break;
-
-    case 'lastName':
-      if (!formData.lastName) {
-        errors.lastName = 'El apellido es requerido';
-      } else if (formData.lastName.trim().length < 2) {
-        errors.lastName = 'El apellido debe tener al menos 2 caracteres';
-      }
-      break;
-
-    case 'nit':
-      if (isNIT.value) {
-        if (!formData.nit) {
-          errors.nit = 'El NIT es requerido';
-        } else if (formData.nit.length < 9) {
-          errors.nit = 'El NIT debe tener al menos 9 caracteres';
-        } else if (!/^[0-9-]+$/.test(formData.nit)) {
-          errors.nit = 'El NIT solo puede contener números y guión';
-        }
-      }
-      break;
-
-    case 'companyName':
-      if (isNIT.value) {
-        if (!formData.companyName) {
-          errors.companyName = 'El nombre de empresa es requerido';
-        } else if (formData.companyName.trim().length < 3) {
-          errors.companyName = 'El nombre de empresa debe tener al menos 3 caracteres';
-        }
-      }
-      break;
-
-    case 'legalRepDocumentType':
-      if (isNIT.value) {
-        if (!formData.legalRepDocumentType) {
-          errors.legalRepDocumentType = 'El tipo de documento del representante legal es requerido';
-        }
-      }
-      break;
-
-    case 'email':
-      if (!formData.email) {
-        errors.email = 'El correo electrónico es requerido';
-      } else {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.email)) {
-          errors.email = 'El correo electrónico no es válido';
-        }
-      }
-      break;
-
-    case 'phone':
-      if (!formData.phone) {
-        errors.phone = 'El teléfono es requerido';
-      } else if (formData.phone.length < 7) {
-        errors.phone = 'El teléfono debe tener al menos 7 dígitos';
-      } else if (formData.phone.length > 10) {
-        errors.phone = 'El teléfono no debe exceder 10 dígitos';
-      }
-      break;
-
-    case 'dob':
-      if (formData.dob && formData.dob.length > 20) {
-        errors.dob = 'La fecha de nacimiento no debe exceder 20 caracteres';
-      }
-      break;
-
-  }
-};
-
-const validateAllFields = (): boolean => {
-  let isValid = true;
-
-  // Validar campos básicos siempre
-  const fieldsToValidate = ['documentType', 'documentNumber', 'fullName', 'lastName', 'email', 'phone'];
-
-  // Agregar validación de NIT y empresa si el tipo de documento es NIT
-  if (isNIT.value) {
-    fieldsToValidate.push('nit', 'companyName', 'legalRepDocumentType');
-  }
-
-  fieldsToValidate.forEach(field => {
-    validateField(field);
-    if (errors[field]) {
-      isValid = false;
-    }
-  });
-
-  return isValid;
-};
-
-const isFormValid = computed(() => {
-  const basicFieldsValid =
-    formData.documentType !== '' &&
-    formData.documentNumber !== '' &&
-    formData.fullName !== '' &&
-    formData.lastName !== '' &&
-    formData.email !== '' &&
-    formData.phone !== '';
-
-  const nitFieldsValid = !isNIT.value || (
-    formData.nit !== '' &&
-    formData.companyName !== '' &&
-    formData.legalRepDocumentType !== ''
-  );
-
-  const noErrors = Object.values(errors).every(error => error === '');
-
-  return basicFieldsValid && nitFieldsValid && noErrors;
-});
+const mostrarDesglose = computed(
+  () => props.rechazos.length > 0 || !!props.errorCotizacion || cotizacionVisible.value !== null,
+);
 
 // Valida el cupón contra el plan que se está comprando
 const handleAplicarCupon = () => aplicarCupon(props.planId);
-
-// Calcular total a pagar
-const totalAPagar = computed(() => totalConDescuento(props.planPrecio));
 
 // Formatear moneda
 const formatCurrency = (value: number): string => {
@@ -535,13 +255,17 @@ onMounted(() => {
 });
 
 const handleSubmit = () => {
-  if (validateAllFields()) {
-    formData.password = formData.documentNumber;
+  if (props.camposTitular.length === 0) return;
+  if (!formularioTitular.value?.validarTodo()) return;
+
+  emit('submit', {
+    titular: { ...titular.value },
+    campos: props.camposTitular,
+    // La landing no pide contraseña: se deriva de los datos del titular
+    clave: claveDeAccesoTitular(titular.value, props.camposTitular),
     // Solo viaja el código si el cupón quedó validado contra este plan
-    formData.discountCode = codigoParaVenta(props.planId);
-    // El medio de pago se elige al final del flujo, no aquí
-    emit('submit', { ...formData });
-  }
+    discountCode: codigoParaVenta(props.planId),
+  });
 };
 
 const handleCancel = () => {
@@ -618,28 +342,17 @@ const handleCancel = () => {
   padding: 2rem;
 }
 
-/* Grid de dos columnas */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
+/* Formulario del titular (los campos los pinta CamposTitular) */
+.campos-titular {
   margin-bottom: 2rem;
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.field label {
-  font-weight: 600;
-  color: #374151;
-  font-size: 0.95rem;
-}
-
-.required {
-  color: #dc2626;
+.sin-campos {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  border-radius: 8px;
+  padding: 1rem;
 }
 
 /* Sección de código de descuento */
@@ -705,54 +418,15 @@ const handleCancel = () => {
   flex-wrap: wrap;
 }
 
-/* Resumen de precios */
-.price-summary {
-  margin-top: 1.5rem;
-  background: white;
-  border: 2px solid #86efac;
-  border-radius: 8px;
-  padding: 1.25rem;
-}
-
-.price-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
-  color: #374151;
-}
-
-.price-row:not(:last-child) {
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.discount-row {
-  color: #16a34a;
-  font-weight: 600;
-}
-
-.total-row {
-  padding-top: 1rem;
-  margin-top: 0.5rem;
-  border-top: 2px solid #22c55e !important;
-}
-
-.total-label {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #166534;
-}
-
 .price-note {
   font-size: 0.75rem;
   color: #6b7280;
   margin: 0.5rem 0 0 0;
 }
 
-.total-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #166534;
+/* Detalle de la compra */
+.desglose-wrapper {
+  margin-bottom: 2rem;
 }
 
 /* Botones de acción */
@@ -766,11 +440,6 @@ const handleCancel = () => {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
   .purchase-form-container {
     padding: 1rem;
   }

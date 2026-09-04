@@ -1,5 +1,12 @@
-import type { CampoAdicional, ReglaCampo } from '../types/planes';
+import type { CampoAdicional, CampoTitular, ReglaCampo } from '../types/planes';
 import { formatPriceNoDecimal } from '../shared/priceFormat';
+
+/**
+ * Un campo con reglas configuradas. Son las mismas para los dos formularios: los
+ * campos adicionales (el riesgo) y los del titular, que también pueden tener
+ * recargos y rechazos.
+ */
+export type CampoConReglas = CampoAdicional | CampoTitular;
 
 /**
  * Lectura de las `reglas` de un campo para anticiparle al cliente lo que va a costar
@@ -24,7 +31,7 @@ export function formatearRecargo(regla: ReglaCampo): string {
 }
 
 /** Recargo que agrega elegir una opción concreta de un dropdown/multiselect */
-export function recargoDeOpcion(campo: CampoAdicional, claveOpcion: string): string {
+export function recargoDeOpcion(campo: CampoConReglas, claveOpcion: string): string {
   const regla = reglasDe(campo).find(
     (r) => r.tipo_regla === 'OPCION' && r.opcion === claveOpcion && esCobro(r),
   );
@@ -32,7 +39,7 @@ export function recargoDeOpcion(campo: CampoAdicional, claveOpcion: string): str
 }
 
 /** Mensaje de la regla que impide vender cuando se elige esa opción */
-export function rechazoDeOpcion(campo: CampoAdicional, claveOpcion: string): string {
+export function rechazoDeOpcion(campo: CampoConReglas, claveOpcion: string): string {
   const regla = reglasDe(campo).find(
     (r) => r.tipo_regla === 'OPCION' && r.opcion === claveOpcion && esRechazo(r),
   );
@@ -40,10 +47,22 @@ export function rechazoDeOpcion(campo: CampoAdicional, claveOpcion: string): str
 }
 
 /**
+ * Aviso del recargo que ya disparó la opción elegida, con el concepto que configuró
+ * el aliado: "Recargo persona jurídica: + 10% del plan". Va debajo del control, igual
+ * que el de la fecha de nacimiento; el de `recargoDeOpcion` va dentro de la lista.
+ */
+export function avisoDeOpcionElegida(campo: CampoConReglas, claveOpcion: string): string {
+  const regla = reglasDe(campo).find(
+    (r) => r.tipo_regla === 'OPCION' && r.opcion === claveOpcion && esCobro(r),
+  );
+  return regla ? textoDeRecargo(regla) : '';
+}
+
+/**
  * Aviso para el botón de agregar de un grupo:
  * "Desde el 2º vehículo: + $15.000 c/u"
  */
-export function recargoRegistroAdicional(campo: CampoAdicional, nombreRegistro?: string): string {
+export function recargoRegistroAdicional(campo: CampoConReglas, nombreRegistro?: string): string {
   const regla = reglasDe(campo).find((r) => r.tipo_regla === 'REGISTRO_ADICIONAL' && esCobro(r));
   if (!regla) return '';
 
@@ -56,7 +75,7 @@ export function recargoRegistroAdicional(campo: CampoAdicional, nombreRegistro?:
  * Recargos del campo que no dependen de una opción puntual (rangos de fecha, de valor…).
  * Se muestran como nota debajo del control, con el concepto que configuró el aliado.
  */
-export function avisosDeRecargo(campo: CampoAdicional): string[] {
+export function avisosDeRecargo(campo: CampoConReglas): string[] {
   return reglasDe(campo)
     .filter((r) => esCobro(r) && r.tipo_regla !== 'OPCION' && r.tipo_regla !== 'REGISTRO_ADICIONAL')
     .map((r) => textoDeRecargo(r))
@@ -67,7 +86,7 @@ export function avisosDeRecargo(campo: CampoAdicional): string[] {
  * Condiciones del campo que impiden la venta y no dependen de una opción puntual.
  * Se avisan de entrada; el rechazo real lo decide el backend.
  */
-export function avisosDeRechazo(campo: CampoAdicional): string[] {
+export function avisosDeRechazo(campo: CampoConReglas): string[] {
   return reglasDe(campo)
     .filter((r) => esRechazo(r) && r.tipo_regla !== 'OPCION')
     .map((r) => r.mensaje_rechazo || '')
@@ -75,7 +94,7 @@ export function avisosDeRechazo(campo: CampoAdicional): string[] {
 }
 
 /** ¿El campo tiene algo configurado que valga la pena avisar junto al control? */
-export function tieneReglas(campo: CampoAdicional): boolean {
+export function tieneReglas(campo: CampoConReglas): boolean {
   return reglasDe(campo).length > 0;
 }
 
@@ -153,7 +172,7 @@ function limiteEdad(campo: any, tipo: 'RANGO_MINIMO' | 'RANGO_MAXIMO'): LimiteEd
  * la fecha se permite y el recargo se muestra junto al campo.
  */
 export function limitesFechaNacimiento(
-  campo: CampoAdicional,
+  campo: CampoConReglas,
   hoy: Date = new Date(),
 ): { min?: string; max?: string } {
   const limites: { min?: string; max?: string } = {};
@@ -184,7 +203,7 @@ export function limitesFechaNacimiento(
  * motivos por los que no se podría vender. El cobro real lo decide el backend.
  */
 export function evaluarReglasEdad(
-  campo: CampoAdicional,
+  campo: CampoConReglas,
   fechaNacimiento: string,
   hoy: Date = new Date(),
 ): { recargos: string[]; rechazos: string[] } {

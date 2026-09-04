@@ -5,6 +5,7 @@
   <!-- Wizard de Compra -->
   <PlanPurchaseWizard
     v-if="showPurchaseWizard && selectedPlanId && selectedPlan"
+    ref="purchaseWizard"
     :plan-id="selectedPlanId"
     :plan-precio="selectedPlan.precio"
     @purchase="handleCompra"
@@ -243,11 +244,27 @@ import PlanesTable from './PlanesTable.vue';
 import PlanPurchaseWizard from './PlanPurchaseWizard.vue';
 import LoadingSpinner from '../utils/LoadingSpinner.vue';
 import { PlanesService } from '../services/planes.service';
-import { VentasService, extraerRechazos } from '../services/ventas.service';
+import {
+  VentasService,
+  extraerRechazos,
+  extraerProblemasTitular,
+  esTitularNoEnviado,
+  mensajeValorRepetido,
+} from '../services/ventas.service';
 import { ProductosService } from '../services/productos.service';
 import useCupon from '../composables/cupon';
-import type { ProductoPlanes, Plan, Cobertura, CoberturaPlan, PlanConCoberturas, EstilosAseguradora } from '../types/planes';
-import type { PurchaseFormData } from './PlanPurchaseFormStep.vue';
+import type {
+  ProductoPlanes,
+  Plan,
+  Cobertura,
+  CoberturaPlan,
+  PlanConCoberturas,
+  EstilosAseguradora,
+  CampoTitular,
+  DatosTitular,
+} from '../types/planes';
+import { adaptarTitularAPayloadVenta, titularParaEnvio, type TitularPayloadVenta } from '../utils/titularVenta';
+import { rechazosDesdeProblemas } from '../utils/rechazosCampos';
 
 // Props
 interface Props {
@@ -260,6 +277,7 @@ const props = defineProps<Props>();
 const loading = ref(true);
 const error = ref<string | null>(null);
 const showPurchaseWizard = ref(false);
+const purchaseWizard = ref<InstanceType<typeof PlanPurchaseWizard> | null>(null);
 const selectedPlanId = ref<string | null>(null);
 const isProcessingPurchase = ref(false);
 const aseguradoraEstilos = ref<EstilosAseguradora | null>(null);
@@ -443,34 +461,83 @@ const selectedPlan = computed(() => {
  * Obtiene el mensaje de error de una venta fallida. Si el backend rechazó el cupón
  * al revalidarlo (400 con { success: false, message }), lo quita del resumen.
  */
-const resolverErrorVenta = (error: any, codigoCupon?: string): string => {
+const listaDeMotivos = (mensaje: string, motivos: string[]): string =>
+  `${mensaje}\n\n${motivos.map(motivo => `• ${motivo}`).join('\n')}`;
+
+/**
+ * Obtiene el mensaje de error de una venta fallida y marca en su campo lo que el
+ * backend rechazó, devolviendo al cliente al formulario que lo tiene que corregir.
+ *
+ * Si el backend rechazó el cupón al revalidarlo (400 con { success: false, message }),
+ * lo quita del resumen.
+ */
+const resolverErrorVenta = (
+  error: any,
+  codigoCupon?: string,
+  camposTitular: CampoTitular[] = [],
+): string => {
+  const mensajeGeneral = error?.response?.data?.message
+    || error?.message
+    || 'Ocurrió un error al procesar la compra. Por favor intenta de nuevo.';
+
   // 422: el backend recotizó y la venta ya no se puede hacer. Vienen todos los motivos,
   // escritos para que los lea el cliente.
   const rechazos = extraerRechazos(error);
   if (rechazos.length > 0) {
-    const motivos = rechazos.map(rechazo => `• ${rechazo.mensaje}`).join('\n');
-    return `${error?.response?.data?.message || 'La venta no se puede realizar con los datos ingresados'}\n\n${motivos}`;
+    purchaseWizard.value?.mostrarRechazosDeVenta(rechazos);
+    return listaDeMotivos(
+      error?.response?.data?.message || 'La venta no se puede realizar con los datos ingresados',
+      rechazos.map(rechazo => rechazo.mensaje),
+    );
   }
 
-  const mensaje = error?.response?.data?.message
-    || error?.message
-    || 'Ocurrió un error al procesar la compra. Por favor intenta de nuevo.';
+  // 422 con `problemas`: los datos del titular no pasaron la validación del backend.
+  // Cada problema nombra su campo, así que se marca ahí.
+  const problemas = extraerProblemasTitular(error);
+  if (problemas.length > 0) {
+    const ubicados = rechazosDesdeProblemas(problemas, camposTitular, null);
+    purchaseWizard.value?.mostrarRechazosDeVenta(ubicados.rechazos);
+    return listaDeMotivos(error?.response?.data?.message || 'Los datos del titular no son válidos', problemas);
+  }
+
+  // 422 sin detalle: la versión cobra por los datos del titular y la venta salió sin
+  // ellos. Es un error de la landing, no algo que el cliente pueda corregir.
+  if (esTitularNoEnviado(error)) {
+    console.error('La venta se envió sin los datos del titular que exige la versión del plan.', error);
+    return 'No pudimos procesar tu compra. Por favor intenta de nuevo o comunícate con nosotros.';
+  }
+
+  // 409: un campo marcado como no repetible ya tiene ese valor en otra venta. Puede ser
+  // cualquiera de los campos, no solo el documento.
+  const repetido = mensajeValorRepetido(error);
+  if (repetido) {
+    const ubicados = rechazosDesdeProblemas([repetido], camposTitular, null);
+    purchaseWizard.value?.mostrarRechazosDeVenta(ubicados.rechazos);
+    return repetido;
+  }
 
   const cuponRechazado = !!codigoCupon
     && error?.response?.status === 400
     && error?.response?.data?.success === false;
 
   if (cuponRechazado) {
-    rechazarCuponDesdeVenta(mensaje);
+    rechazarCuponDesdeVenta(mensajeGeneral);
   }
 
-  return mensaje;
+  return mensajeGeneral;
 };
 
 /** Lo que emite el wizard al confirmar la compra */
 interface DatosCompraWizard {
   planId: string;
-  formData: PurchaseFormData;
+  /** Versión del plan con cuya configuración se llenaron los formularios */
+  versionId: string;
+  /** Respuestas del titular, indexadas por la `clave` del campo */
+  titular: DatosTitular;
+  /** Configuración del titular de la versión que se está comprando */
+  camposTitular: CampoTitular[];
+  /** Contraseña con la que el cliente entra después de comprar */
+  clave: string;
   camposAdicionales?: import('../types/planes').CamposAdicionalesCapturados;
   /** Las mismas respuestas que se cotizaron */
   respuestas: import('../types/cotizacion').RespuestaCampo[];
@@ -506,11 +573,16 @@ const handleCompra = async (data: DatosCompraWizard) => {
       throw new Error('No se pudo obtener la versión del plan');
     }
 
-    // Determinar tipo de persona y preparar datos para crear venta
-    const tipoPersona = data.formData.documentType === 'NIT' ? 'Juridica' : 'Natural';
-    const tipoDocumento = data.formData.documentType === 'NIT'
-      ? data.formData.legalRepDocumentType || ''
-      : data.formData.documentType;
+    // Cada versión pide sus propios datos del titular: si cambió mientras el cliente
+    // llenaba el formulario, lo capturado ya no corresponde a lo que se está vendiendo
+    if (data.versionId && data.versionId !== versionId) {
+      throw new Error('El plan se actualizó mientras completabas la compra. Recarga la página para continuar con la versión vigente.');
+    }
+
+    // Los dos payloads del titular salen del mismo estado: el objeto indexado por
+    // `clave` (el mismo que se cotizó) y los campos fijos que el backend todavía lee
+    const titular = titularParaEnvio(data.titular, data.camposTitular);
+    const titularVenta = adaptarTitularAPayloadVenta(data.titular, data.camposTitular);
 
     // Obtener datos del localStorage
     const aliadoIdLocalStorage = localStorage.getItem('aliado_id');
@@ -519,17 +591,9 @@ const handleCompra = async (data: DatosCompraWizard) => {
     const ventaData = {
       producto_id: productoPlanes.value.productoId,
       version_id: versionId,
-      email: data.formData.email,
-      clave: data.formData.password,
-      tipo_documento: tipoDocumento,
-      numero_documento: data.formData.documentNumber,
-      nombres: data.formData.fullName,
-      apellidos: data.formData.lastName,
-      telefono: data.formData.phone,
-      ...(data.formData.dob && { dob: data.formData.dob }),
-      ...(data.formData.nit && { nit: data.formData.nit }),
-      ...(data.formData.companyName && { empresa_nombre: data.formData.companyName }),
-      tipo_persona: tipoPersona,
+      ...titularVenta,
+      ...(Object.keys(titular).length > 0 && { titular }),
+      clave: data.clave,
       ...(codigoCupon && { codigo_descuento: codigoCupon }),
       ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
       ...(data.respuestas.length > 0 && { respuestas: data.respuestas }),
@@ -554,17 +618,17 @@ const handleCompra = async (data: DatosCompraWizard) => {
       plan_nombre: planSeleccionado.nombre,
       precio: precioFinal,
       vigencia_numero_meses: planSeleccionado.vigencia_numero_meses,
-      comprador_nombre: data.formData.fullName,
-      comprador_apellido: data.formData.lastName,
-      comprador_email: data.formData.email,
-      comprador_documento_tipo: data.formData.documentType,
-      comprador_documento: data.formData.documentNumber,
-      comprador_telefono: data.formData.phone,
+      comprador_nombre: titularVenta.nombres ?? '',
+      comprador_apellido: titularVenta.apellidos ?? '',
+      comprador_email: titularVenta.email ?? '',
+      comprador_documento_tipo: titularVenta.tipo_documento ?? '',
+      comprador_documento: titularVenta.numero_documento ?? '',
+      comprador_telefono: titularVenta.telefono ?? '',
       fecha_compra: new Date().toISOString(),
     };
     localStorage.setItem('compra_resumen', JSON.stringify(compraResumen));
 
-    await sendWompi(transaccionId, precioFinal, data.formData, paymentWindow);
+    await sendWompi(transaccionId, precioFinal, titularVenta, paymentWindow);
     window.location.href = '/procesando-pago';
 
     closePurchaseWizard();
@@ -574,7 +638,7 @@ const handleCompra = async (data: DatosCompraWizard) => {
     // Cerrar la ventana de pago si se abrió pero ocurrió un error
     paymentWindow?.close();
 
-    const errorMessage = resolverErrorVenta(error, codigoCupon);
+    const errorMessage = resolverErrorVenta(error, codigoCupon, data.camposTitular);
 
     const Swal = (await import('sweetalert2')).default;
     Swal.fire({
@@ -605,10 +669,14 @@ const handleCompraDebito = async (data: DatosCompraWizard & { cardTokenId: strin
       throw new Error('No se pudo obtener la versión del plan');
     }
 
-    const tipoPersona = data.formData.documentType === 'NIT' ? 'Juridica' : 'Natural';
-    const tipoDocumento = data.formData.documentType === 'NIT'
-      ? data.formData.legalRepDocumentType || ''
-      : data.formData.documentType;
+    // Cada versión pide sus propios datos del titular: si cambió mientras el cliente
+    // llenaba el formulario, lo capturado ya no corresponde a lo que se está vendiendo
+    if (data.versionId && data.versionId !== versionId) {
+      throw new Error('El plan se actualizó mientras completabas la compra. Recarga la página para continuar con la versión vigente.');
+    }
+
+    const titular = titularParaEnvio(data.titular, data.camposTitular);
+    const titularVenta = adaptarTitularAPayloadVenta(data.titular, data.camposTitular);
 
     const aliadoIdLocalStorage = localStorage.getItem('aliado_id');
 
@@ -617,17 +685,9 @@ const handleCompraDebito = async (data: DatosCompraWizard & { cardTokenId: strin
     const ventaData = {
       producto_id: productoPlanes.value.productoId,
       version_id: versionId,
-      email: data.formData.email,
-      clave: data.formData.password,
-      tipo_documento: tipoDocumento,
-      numero_documento: data.formData.documentNumber,
-      nombres: data.formData.fullName,
-      apellidos: data.formData.lastName,
-      telefono: data.formData.phone,
-      ...(data.formData.dob && { dob: data.formData.dob }),
-      ...(data.formData.nit && { nit: data.formData.nit }),
-      ...(data.formData.companyName && { empresa_nombre: data.formData.companyName }),
-      tipo_persona: tipoPersona,
+      ...titularVenta,
+      ...(Object.keys(titular).length > 0 && { titular }),
+      clave: data.clave,
       ...(codigoCupon && { codigo_descuento: codigoCupon }),
       ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
       ...(data.respuestas.length > 0 && { respuestas: data.respuestas }),
@@ -657,12 +717,12 @@ const handleCompraDebito = async (data: DatosCompraWizard & { cardTokenId: strin
       plan_nombre: planSeleccionado?.nombre || '',
       precio: precioFinal,
       vigencia_numero_meses: planSeleccionado?.vigencia_numero_meses,
-      comprador_nombre: data.formData.fullName,
-      comprador_apellido: data.formData.lastName,
-      comprador_email: data.formData.email,
-      comprador_documento_tipo: data.formData.documentType,
-      comprador_documento: data.formData.documentNumber,
-      comprador_telefono: data.formData.phone,
+      comprador_nombre: titularVenta.nombres ?? '',
+      comprador_apellido: titularVenta.apellidos ?? '',
+      comprador_email: titularVenta.email ?? '',
+      comprador_documento_tipo: titularVenta.tipo_documento ?? '',
+      comprador_documento: titularVenta.numero_documento ?? '',
+      comprador_telefono: titularVenta.telefono ?? '',
       fecha_compra: new Date().toISOString(),
       debito_automatico: true,
     };
@@ -676,7 +736,7 @@ const handleCompraDebito = async (data: DatosCompraWizard & { cardTokenId: strin
     console.error('Error al procesar débito automático:', error);
     isProcessingPurchase.value = false;
 
-    const errorMessage = resolverErrorVenta(error, codigoCupon);
+    const errorMessage = resolverErrorVenta(error, codigoCupon, data.camposTitular);
 
     const Swal = (await import('sweetalert2')).default;
     Swal.fire({
@@ -707,7 +767,7 @@ const sha256 = async (text: string): Promise<string> => {
 const sendWompi = async (
   transaccionId: string,
   precio: number,
-  formData: PurchaseFormData,
+  titular: TitularPayloadVenta,
   paymentWindow: Window | null
 ) => {
   if (precio === 0) return;
@@ -737,17 +797,14 @@ const sendWompi = async (
   params.set('redirect-url', redirectUrl);
 
   // Datos del cliente
-  const fullName = `${formData.fullName} ${formData.lastName}`;
-  params.set('customer-data:email', formData.email);
+  const fullName = `${titular.nombres ?? ''} ${titular.apellidos ?? ''}`.trim();
+  params.set('customer-data:email', titular.email ?? '');
   params.set('customer-data:full-name', fullName);
-  params.set('customer-data:phone-number', formData.phone);
+  params.set('customer-data:phone-number', titular.telefono ?? '');
 
   // Tipo de documento y número
-  const tipoDocumento = formData.documentType === 'NIT'
-    ? formData.legalRepDocumentType || 'CC'
-    : formData.documentType;
-  params.set('customer-data:legal-id-type', tipoDocumento);
-  params.set('customer-data:legal-id', formData.documentNumber);
+  params.set('customer-data:legal-id-type', titular.tipo_documento ?? 'CC');
+  params.set('customer-data:legal-id', titular.numero_documento ?? '');
 
   const wompiUrl = `${import.meta.env.PUBLIC_CHECKOUT_URL_WOMPI}?${params.toString()}`;
 

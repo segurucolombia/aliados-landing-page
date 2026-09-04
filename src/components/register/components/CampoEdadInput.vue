@@ -36,21 +36,29 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { CampoAdicional } from '../../../types/planes';
-import { calcularEdad, evaluarReglasEdad, limitesFechaNacimiento } from '../../../utils/reglasCampos';
+import {
+  calcularEdad,
+  evaluarReglasEdad,
+  limitesFechaNacimiento,
+  type CampoConReglas,
+} from '../../../utils/reglasCampos';
 
 const props = withDefaults(defineProps<{
-  campo: CampoAdicional;
+  /** Un campo `edad` de los adicionales o un `EDAD` del titular: mismas reglas */
+  campo: CampoConReglas;
   modelValue: string;
   id?: string;
   invalido?: boolean;
   /** Dentro de un grupo de registros el control va más compacto */
   compacto?: boolean;
+  /** Clases del input, para que se vea como el resto del formulario que lo usa */
+  claseControl?: string;
 }>(), {
   modelValue: '',
   id: undefined,
   invalido: false,
   compacto: false,
+  claseControl: undefined,
 });
 
 defineEmits<{
@@ -58,9 +66,10 @@ defineEmits<{
   (e: 'change'): void;
 }>();
 
-const claseInput = computed(() =>
-  props.compacto ? 'p-2 border rounded-md w-full text-sm' : 'p-2 border rounded-md w-full',
-);
+const claseInput = computed(() => {
+  if (props.claseControl) return props.claseControl;
+  return props.compacto ? 'p-2 border rounded-md w-full text-sm' : 'p-2 border rounded-md w-full';
+});
 
 /**
  * `edadMinima` / `edadMaxima` no son topes duros: solo se bloquea el rango cuyo

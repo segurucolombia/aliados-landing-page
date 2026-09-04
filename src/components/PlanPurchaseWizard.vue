@@ -39,10 +39,19 @@
       <!-- Paso 2: Formulario de Compra (Información del Titular) -->
       <div v-show="currentStep === 2" class="step-content">
         <PlanPurchaseFormStep
-          :plan-precio="planPrecio"
           :plan-id="planId"
+          :campos-titular="camposTitular"
+          :plan-nombre="planData?.producto?.nombre"
+          :cotizacion="cotizacion"
+          :cotizando="cotizando"
+          :rechazos="todosLosRechazos"
+          :rechazos-de-campos="rechazosTitular"
+          :mensaje-rechazo="mensajeRechazo"
+          :error-cotizacion="errorCotizacion"
+          :puede-continuar="puedeContinuarDesdeTitular"
           :valor-debito-automatico="planData?.version?.valor_debito_automatico ?? null"
           :has-next-step="hasCamposAdicionales || tieneModalDePago"
+          @update:titular="handleTitularUpdate"
           @submit="handlePurchaseFormSubmit"
           @back="goToStep(1)"
           @cancel="handleCancel"
@@ -56,11 +65,12 @@
           :campos-adicionales="planData.version.campos_adicionales"
           :plan-nombre="planData.producto.nombre"
           :cotizacion="cotizacion"
-          :rechazos="rechazos"
+          :rechazos="todosLosRechazos"
+          :rechazos-de-campos="rechazosAdicionales"
           :mensaje-rechazo="mensajeRechazo"
           :error-cotizacion="errorCotizacion"
           :cotizando="cotizando"
-          :puede-pagar="puedePagar"
+          :puede-pagar="puedePagar && rechazosVenta.length === 0"
           @update:respuestas="handleRespuestasUpdate"
           @update:valid="handleFormularioValido"
           @next="handleCamposAdicionalesNext"
@@ -72,8 +82,8 @@
       <!-- Paso 4: tarjeta MP (solo si es débito automático) -->
       <div v-if="isDebitoAutomatico" v-show="currentStep === CARD_STEP" class="step-content">
         <MercadoPagoCardStep
-          :initial-doc-type="purchaseFormData?.documentType"
-          :initial-doc-number="purchaseFormData?.documentNumber"
+          :initial-doc-type="documentoTitular.tipo"
+          :initial-doc-number="documentoTitular.numero"
           @card-tokenized="handleCardTokenized"
           @back="volverAlPago"
           @cancel="handleCancel"
@@ -104,9 +114,18 @@ import PlanPurchaseFormStep from './PlanPurchaseFormStep.vue';
 import PlanCamposAdicionalesStep from './PlanCamposAdicionalesStep.vue';
 import MercadoPagoCardStep from './MercadoPagoCardStep.vue';
 import PaymentMethodModal from './PaymentMethodModal.vue';
-import type { PurchaseFormData } from './PlanPurchaseFormStep.vue';
-import type { PlanWithDetails, CamposAdicionalesCapturados } from '../types/planes';
-import type { CotizarVentaInput, RespuestaCampo } from '../types/cotizacion';
+import type { DatosTitularFormulario } from './PlanPurchaseFormStep.vue';
+import type {
+  CampoTitular,
+  CamposAdicionalesCapturados,
+  DatosTitular,
+  PlanWithDetails,
+  TitularEnvio,
+} from '../types/planes';
+import { validarTitular, valorPorClaveSistema } from '../utils/camposTitular';
+import { titularParaEnvio } from '../utils/titularVenta';
+import { separarRechazos } from '../utils/rechazosCampos';
+import type { CotizarVentaInput, RechazoVenta, RespuestaCampo } from '../types/cotizacion';
 import type { CondicionVentaInput } from '../services/ventas.service';
 import useCotizacion, { DEBOUNCE_COTIZACION_MS } from '../composables/cotizacion';
 import useCupon from '../composables/cupon';
@@ -119,7 +138,14 @@ const props = defineProps<{
 /** Datos comunes de una compra: incluyen las respuestas que se cotizaron */
 interface DatosCompra {
   planId: string;
-  formData: PurchaseFormData;
+  /** Versión del plan con cuya configuración se armaron los formularios */
+  versionId: string;
+  /** Respuestas del titular, indexadas por la `clave` del campo */
+  titular: DatosTitular;
+  /** Configuración con la que se armó el formulario del titular */
+  camposTitular: CampoTitular[];
+  /** Contraseña con la que el cliente entra después de comprar */
+  clave: string;
   camposAdicionales?: CamposAdicionalesCapturados;
   /** Las mismas respuestas que se mandaron a cotizar */
   respuestas: RespuestaCampo[];
@@ -136,12 +162,34 @@ const emit = defineEmits<{
 
 const currentStep = ref(1);
 const planData = ref<PlanWithDetails | null>(null);
-const purchaseFormData = ref<PurchaseFormData | null>(null);
+const datosTitular = ref<DatosTitularFormulario | null>(null);
+/**
+ * Lo que el cliente lleva escrito en el formulario del titular. Sus datos también
+ * pueden tener reglas de cobro o de rechazo, así que cada cambio vuelve a cotizar.
+ */
+const titularEnEdicion = ref<DatosTitular>({});
 const camposAdicionalesDatos = ref<CamposAdicionalesCapturados | null>(null);
 const condicionesDatos = ref<CondicionVentaInput[]>([]);
 const isDebitoAutomatico = ref(false);
 const cardTokenId = ref('');
 const showPaymentModal = ref(false);
+
+/**
+ * Qué datos le pide al titular la versión que se está comprando. La configuración es
+ * por versión: si cambia la versión, el formulario del titular se rehace.
+ */
+const camposTitular = computed<CampoTitular[]>(() => planData.value?.version?.campos_titular ?? []);
+
+/** Tipo y número de documento del titular, para precargar la tarjeta de MP */
+const documentoTitular = computed(() => {
+  const datos = datosTitular.value;
+  if (!datos) return { tipo: undefined, numero: undefined };
+
+  return {
+    tipo: valorPorClaveSistema(datos.titular, datos.campos, 'TIPO_DOCUMENTO') || undefined,
+    numero: valorPorClaveSistema(datos.titular, datos.campos, 'NUMERO_DOCUMENTO') || undefined,
+  };
+});
 
 // Computed property to check if plan has campos_adicionales
 const hasCamposAdicionales = computed(() => {
@@ -184,11 +232,39 @@ const formularioCompleto = ref(false);
 const versionId = computed(() => planData.value?.version?.id ?? '');
 const codigoCupon = computed(() => codigoParaVenta(props.planId));
 
+/**
+ * El bloque del titular está completo: todos sus requeridos respondidos y con formato
+ * válido. `cotizar` rechaza con 422 un requerido sin responder, así que hasta que no
+ * lo esté, el titular no viaja y el backend cotiza como antes.
+ */
+const titularCompleto = computed(
+  () => camposTitular.value.length > 0
+    && Object.keys(validarTitular(camposTitular.value, titularEnEdicion.value)).length === 0,
+);
+
+/**
+ * El titular tal como lo recibe el backend, indexado por `clave`. Es el mismo objeto
+ * que va a recibir el POST de venta cuando salga la fase que vuelve dinámico el envío.
+ */
+const titularParaCotizar = computed<TitularEnvio | undefined>(
+  () => (titularCompleto.value ? titularParaEnvio(titularEnEdicion.value, camposTitular.value) : undefined),
+);
+
+/** Cualquier cambio en lo que se va a enviar del titular obliga a recotizar */
+const huellaTitular = computed(() => JSON.stringify(titularParaCotizar.value ?? null));
+
+/**
+ * Input de la cotización. El titular puede mover el precio (recargo por edad, por tipo
+ * de persona…), así que viaja junto a las respuestas de los campos adicionales, pero
+ * solo cuando está completo: a medias, el backend responde 422 por los requeridos que
+ * falten.
+ */
 const armarInputCotizacion = (debitoAutomatico: boolean): CotizarVentaInput => ({
   version_id: versionId.value,
   ...(codigoCupon.value ? { codigo_descuento: codigoCupon.value } : {}),
   ...(debitoAutomatico ? { debito_automatico: true } : {}),
   respuestas: respuestas.value,
+  ...(titularParaCotizar.value ? { titular: titularParaCotizar.value } : {}),
 });
 
 /** Solo se cotiza con la versión cargada y el formulario completo */
@@ -204,9 +280,61 @@ const handleFormularioValido = (valido: boolean) => {
   formularioCompleto.value = valido;
 };
 
-// Cada cambio del formulario (o del cupón) recotiza, con debounce
+const handleTitularUpdate = (titular: DatosTitular) => {
+  titularEnEdicion.value = titular;
+};
+
+/**
+ * Motivos por los que no se puede vender que devolvió el POST de venta: los rechazos
+ * de un 422, los `problemas` de los datos del titular y el 409 de un valor repetido.
+ * Viven acá hasta que el cliente cambie el dato que los causó.
+ */
+const rechazosVenta = ref<RechazoVenta[]>([]);
+
+/** Todo lo que hoy impide vender: lo que dijo cotizar y lo que dijo crear la venta */
+const todosLosRechazos = computed(() => [...rechazos.value, ...rechazosVenta.value]);
+
+/** Los rechazos del backend se marcan en el formulario dueño de cada `campo_clave` */
+const rechazosPorFormulario = computed(() =>
+  separarRechazos(todosLosRechazos.value, camposTitular.value, planData.value?.version?.campos_adicionales),
+);
+
+const rechazosTitular = computed(() => rechazosPorFormulario.value.titular);
+const rechazosAdicionales = computed(() => rechazosPorFormulario.value.adicionales);
+
+/**
+ * Del paso del titular no se sale con la venta rechazada. Si el plan pide campos
+ * adicionales el total se termina de calcular en el paso siguiente; si no, este es el
+ * último paso con datos y hace falta una cotización vigente del backend.
+ */
+const puedeContinuarDesdeTitular = computed(() => {
+  if (todosLosRechazos.value.length > 0) return false;
+  return hasCamposAdicionales.value || puedePagar.value;
+});
+
+/**
+ * Marca en su campo los motivos por los que el backend no dejó crear la venta y lleva
+ * al cliente al formulario que los tiene que corregir.
+ */
+const mostrarRechazosDeVenta = (nuevos: RechazoVenta[]): void => {
+  rechazosVenta.value = nuevos;
+  if (nuevos.length === 0) return;
+
+  const { titular } = separarRechazos(nuevos, camposTitular.value, planData.value?.version?.campos_adicionales);
+  goToStep(titular.length > 0 || !hasCamposAdicionales.value ? 2 : 3);
+};
+
+// Al cambiar lo que se envía, lo que dijo el backend de la venta anterior ya no aplica
+watch([huellaTitular, respuestas], () => {
+  rechazosVenta.value = [];
+});
+
+defineExpose({ mostrarRechazosDeVenta });
+
+// Cada cambio del formulario, del cupón o de los datos del titular recotiza, con
+// debounce: los tres cambian lo que se le manda al backend, y con eso el precio
 watch(
-  [respuestas, codigoCupon, listoParaCotizar],
+  [respuestas, codigoCupon, listoParaCotizar, huellaTitular],
   () => {
     if (!listoParaCotizar.value) {
       cancelarCotizacion();
@@ -228,7 +356,14 @@ const handleCondicionesAceptadas = (condiciones: CondicionVentaInput[]) => {
 };
 
 const handlePlanLoaded = (plan: PlanWithDetails) => {
+  const versionAnterior = planData.value?.version?.id;
   planData.value = plan;
+
+  // Otra versión pide otros datos del titular: lo capturado con la anterior no sirve
+  if (versionAnterior && versionAnterior !== plan.version?.id) {
+    datosTitular.value = null;
+    titularEnEdicion.value = {};
+  }
 
   // Sin campos adicionales no hay nada que esperar: se cotiza de una para tener
   // el total del backend listo cuando el cliente llegue al pago
@@ -243,9 +378,8 @@ const goToStep = (step: number) => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-const handlePurchaseFormSubmit = (formData: PurchaseFormData) => {
-  purchaseFormData.value = formData;
-  console.log('Purchase form data captured:', formData);
+const handlePurchaseFormSubmit = (datos: DatosTitularFormulario) => {
+  datosTitular.value = datos;
 
   // Primero los campos adicionales (si el plan los pide); el pago siempre va al final
   if (hasCamposAdicionales.value) {
@@ -289,8 +423,8 @@ const volverAlPago = () => {
 };
 
 const finalizarCompra = () => {
-  if (!purchaseFormData.value) {
-    console.error('No purchase form data available');
+  if (!datosTitular.value) {
+    console.error('No hay datos del titular');
     return;
   }
 
@@ -305,7 +439,11 @@ const finalizarCompra = () => {
 
   emit('purchase', {
     planId: props.planId,
-    formData: purchaseFormData.value,
+    versionId: versionId.value,
+    // El mismo estado con el que se cotizó: los dos payloads salen de acá
+    titular: titularEnEdicion.value,
+    camposTitular: camposTitular.value,
+    clave: datosTitular.value.clave,
     camposAdicionales: camposAdicionalesData,
     respuestas: respuestas.value,
     valorTotal: cotizacion.value?.valor_total ?? null,
@@ -319,7 +457,7 @@ const handleCardTokenized = (tokenId: string) => {
 };
 
 const finalizarCompraDebito = () => {
-  if (!purchaseFormData.value) return;
+  if (!datosTitular.value) return;
 
   const camposAdicionalesData = camposAdicionalesDatos.value && hasCamposAdicionales.value
     ? camposAdicionalesDatos.value
@@ -327,7 +465,11 @@ const finalizarCompraDebito = () => {
 
   emit('purchase-debito', {
     planId: props.planId,
-    formData: purchaseFormData.value,
+    versionId: versionId.value,
+    // El mismo estado con el que se cotizó: los dos payloads salen de acá
+    titular: titularEnEdicion.value,
+    camposTitular: camposTitular.value,
+    clave: datosTitular.value.clave,
     camposAdicionales: camposAdicionalesData,
     respuestas: respuestas.value,
     valorTotal: cotizacionDebito.value?.valor_total ?? null,

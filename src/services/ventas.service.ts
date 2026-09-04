@@ -16,20 +16,40 @@ export interface CondicionVentaInput {
   created_at: string;
 }
 
+/**
+ * Body de `POST /ventas`.
+ *
+ * Los datos del titular van dos veces: en `titular` (indexado por `clave`, el mismo
+ * objeto que se mandó a cotizar) y en los campos fijos de siempre, que todavía leen
+ * otras partes del sistema. Cuando llega `titular`, el backend deriva de ahí los
+ * campos fijos y sobrescribe lo que reciba en ellos: por eso los dos se arman del
+ * mismo estado (`src/utils/titularVenta.ts`) y no pueden divergir.
+ *
+ * Una versión con reglas de cobro sobre el titular **exige** `titular`: sin él la
+ * venta se rechaza con 422.
+ */
 export interface CreateVentaDto {
   producto_id: string;
   version_id: string;
-  email: string;
+  email?: string;
   clave: string;
-  tipo_documento: string;
-  numero_documento: string;
-  nombres: string;
-  apellidos: string;
-  telefono: string;
+  tipo_documento?: string;
+  numero_documento?: string;
+  nombres?: string;
+  apellidos?: string;
+  telefono?: string;
+  /** Fecha de nacimiento (`FECHA_NACIMIENTO` en la configuración del titular) */
   dob?: string;
   nit?: string;
   empresa_nombre?: string;
   tipo_persona?: string;
+  /**
+   * Los datos del titular indexados por la `clave` de `version.campos_titular`. Es el
+   * mismo objeto que se manda a `POST /ventas/cotizar`: si difieren, el cliente ve un
+   * precio y paga otro. Ojo: acá la fecha de nacimiento va con su `clave`
+   * (`fecha_nacimiento`), mientras que el campo fijo se sigue llamando `dob`.
+   */
+  titular?: import('../types/planes').TitularEnvio;
   aliado_id?: string;
   codigo_descuento?: string;
   /** Las mismas respuestas que se cotizaron. El backend recotiza con ellas. */
@@ -177,6 +197,44 @@ export function extraerRechazos(error: any): RechazoVenta[] {
   return Array.isArray(rechazos) ? rechazos : [];
 }
 
+/**
+ * Problemas de los datos del titular al crear la venta (HTTP 422 con `problemas`):
+ * un obligatorio sin responder, un campo que la versión no pide, una opción inválida.
+ * Son textos escritos para el cliente. Devuelve [] si el error es de otro tipo.
+ */
+export function extraerProblemasTitular(error: any): string[] {
+  if (error?.response?.status !== 422) return [];
+
+  const problemas = error?.response?.data?.problemas;
+  return Array.isArray(problemas) ? problemas.filter((p: any) => typeof p === 'string') : [];
+}
+
+/**
+ * La versión cobra por los datos del titular y la venta llegó sin ellos (HTTP 422 sin
+ * `problemas` ni `rechazos`). Es un error de la landing, no del cliente: se envía
+ * `titular` siempre que la versión configure campos del titular.
+ */
+export function esTitularNoEnviado(error: any): boolean {
+  if (error?.response?.status !== 422) return false;
+  if (extraerProblemasTitular(error).length > 0 || extraerRechazos(error).length > 0) return false;
+
+  return /titular/i.test(String(error?.response?.data?.message ?? ''));
+}
+
+/**
+ * Un campo marcado como no repetible ya tiene ese valor en otra venta (HTTP 409 de
+ * `POST /ventas`). Puede ser cualquier campo que el admin haya marcado así, no solo el
+ * documento, y el mensaje del backend es el que se le muestra al cliente.
+ */
+export function mensajeValorRepetido(error: any): string {
+  if (error?.response?.status !== 409) return '';
+
+  return String(
+    error?.response?.data?.message
+      ?? 'Ya existe una venta registrada con estos datos.',
+  );
+}
+
 /** Los tres motivos por los que el backend rechaza recotizar una venta (HTTP 409) */
 export type MotivoConflictoVenta = 'no-pendiente' | 'debito-automatico' | 'pago-en-curso';
 
@@ -250,8 +308,8 @@ export class VentasService {
    * @returns ID de transacción generado
    */
   static async crear_venta(data: CreateVentaDto): Promise<CreateVentaResponse> {
-    if (!data.dob) throw new Error('La fecha de nacimiento (dob) es requerida para personas naturales.');
-    console.log('data creando venta', data)
+    // Qué datos del titular son obligatorios lo decide la configuración de la versión
+    // (`campos_titular`), no este servicio.
     try {
       const response = await axios.post<CreateVentaResponse>(
         `${baseUrl}`,

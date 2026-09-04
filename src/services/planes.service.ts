@@ -1,7 +1,24 @@
 import axios from "axios"
 import type { TFiltersCotizarPlan, TPlanCotizar, GetPlanesByProductoInput, PaginatedPlanes, PlanWithDetails } from "../types/planes"
 import { transformarCamposAdicionalesBackend } from "../utils/transformCamposAdicionales"
+import { normalizarCamposTitular } from "../utils/camposTitular"
 const baseUrl = import.meta.env.PUBLIC_BASE_URL + '/api-aliados/planes'
+
+/**
+ * Deja la versión del plan lista para el formulario: normaliza los campos adicionales
+ * y los campos del titular, que son la configuración de qué se le pide a cada uno.
+ */
+const normalizarVersion = (version: any): any => {
+    if (!version) return version;
+
+    return {
+        ...version,
+        ...(version.campos_adicionales
+            ? { campos_adicionales: transformarCamposAdicionalesBackend(version.campos_adicionales) }
+            : {}),
+        campos_titular: normalizarCamposTitular(version.campos_titular),
+    };
+}
 
 export class PlanesService {
     async cotizar(body:{filters: TFiltersCotizarPlan[]}):Promise<{data:TPlanCotizar[]}> {
@@ -53,18 +70,10 @@ export class PlanesService {
                 },
             });
 
-            // Transformar campos adicionales en cada plan
+            // Normalizar la configuración de formularios de cada plan
             const planesTransformados = response.data.data.map(plan => {
-                if (plan.version && (plan.version as any).campos_adicionales) {
-                    return {
-                        ...plan,
-                        version: {
-                            ...plan.version,
-                            campos_adicionales: transformarCamposAdicionalesBackend((plan.version as any).campos_adicionales)
-                        }
-                    };
-                }
-                return plan;
+                if (!plan.version) return plan;
+                return { ...plan, version: normalizarVersion(plan.version) };
             });
 
             return {
@@ -90,19 +99,15 @@ export class PlanesService {
                 },
             });
 
-            // Transformar campos adicionales si existen
-            if (response.data.version && (response.data.version as any).campos_adicionales) {
-                const planTransformado = {
-                    ...response.data,
-                    version: {
-                        ...response.data.version,
-                        campos_adicionales: transformarCamposAdicionalesBackend((response.data.version as any).campos_adicionales)
-                    }
-                };
-                return { data: planTransformado as any };
-            }
+            if (!response.data.version) return response;
 
-            return response;
+            // Normalizar la configuración de formularios (campos adicionales y titular)
+            const planTransformado = {
+                ...response.data,
+                version: normalizarVersion(response.data.version),
+            };
+
+            return { data: planTransformado as any };
         } catch (error) {
             console.error('Error al obtener detalle del plan:', error);
             throw error;

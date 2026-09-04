@@ -21,7 +21,7 @@
       <div class="campos-adicionales-content">
         <CamposAdicionales
           :campos-adicionales="camposAdicionales"
-          :rechazos="rechazos"
+          :rechazos="rechazosDeCampos"
           @update:datos="handleDatosUpdate"
           @update:respuestas="handleRespuestasUpdate"
           @update:valid="handleValidUpdate"
@@ -84,7 +84,14 @@ const props = withDefaults(defineProps<{
   planNombre?: string;
   /** Cotización vigente calculada por el backend con las respuestas actuales */
   cotizacion?: CotizacionVenta | null;
+  /** Todos los motivos por los que no se puede vender: se le muestran al cliente */
   rechazos?: RechazoVenta[];
+  /**
+   * Los que caen en campos adicionales: son los que se marcan en este formulario. Un
+   * rechazo originado en un dato del titular se muestra igual en el desglose, pero se
+   * marca en el paso del titular.
+   */
+  rechazosDeCampos?: RechazoVenta[];
   mensajeRechazo?: string;
   errorCotizacion?: string;
   cotizando?: boolean;
@@ -94,6 +101,7 @@ const props = withDefaults(defineProps<{
   planNombre: '',
   cotizacion: null,
   rechazos: () => [],
+  rechazosDeCampos: () => [],
   mensajeRechazo: '',
   errorCotizacion: '',
   cotizando: false,
