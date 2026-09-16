@@ -146,6 +146,40 @@
               <p class="text-gray-400 text-xs mt-1">Se genera automáticamente a partir del número de documento</p>
             </div>
 
+            <!-- Código único (auto-generado, editable) -->
+            <div>
+              <label class="block text-sm text-gray-700 mb-1">
+                Código único
+                <span class="text-gray-400 font-normal">(Opcional)</span>
+              </label>
+              <div class="relative">
+                <input
+                  :value="codigoUnico"
+                  @input="onCodigoUnicoInput"
+                  @blur="verificarCodigo"
+                  type="text"
+                  maxlength="20"
+                  autocomplete="off"
+                  placeholder="Se genera automáticamente"
+                  class="w-full border rounded-lg px-3 py-2.5 text-sm outline-none transition-colors font-mono tracking-wider"
+                  :class="[
+                    codigoDisponible === true  ? 'border-green-400 bg-green-50 focus:border-green-500' :
+                    codigoDisponible === false ? 'border-red-300 bg-red-50 focus:border-red-400' :
+                    'border-gray-300 focus:border-primary-500'
+                  ]"
+                />
+                <div v-if="verificandoCodigo" class="absolute right-3 top-1/2 -translate-y-1/2">
+                  <svg class="w-4 h-4 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                </div>
+              </div>
+
+              <p v-if="codigoMensaje" class="text-xs mt-1" :class="codigoDisponible === true ? 'text-green-600' : 'text-red-500'">{{ codigoMensaje }}</p>
+              <p v-else class="text-gray-400 text-xs mt-1">Se genera a partir del nombre y el documento. Solo mayúsculas y números, sin espacios</p>
+            </div>
+
             <!-- Contraseña -->
             <div>
               <label class="block text-sm text-gray-700 mb-1">Contraseña <span class="text-red-500">*</span></label>
@@ -308,7 +342,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import Swal from 'sweetalert2';
 import { AliadosService, type Aliado, type CondicionVentaInput } from '../services/aliados.service';
 import { CiudadesColombiaService, type Ciudad } from '../services/ciudades-colombia.service';
@@ -363,6 +397,115 @@ async function onAceptaTerminosChange(e: Event) {
 const usuarioGenerado = computed(() =>
   form.value.numero_identificacion.trim().toLowerCase().replace(/\s+/g, '_') || ''
 );
+
+// ── Código único (auto-generado a partir de nombre + documento) ──────────────
+const codigoUnico = ref('');
+const codigoEditadoManual = ref(false);
+const verificandoCodigo = ref(false);
+const codigoDisponible = ref<boolean | null>(null);
+const codigoMensaje = ref('');
+
+const quitarAcentos = (texto: string) =>
+  texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+// Misma lógica que el panel de administración: 6 primeros caracteres del
+// nombre (sin acentos, solo A-Z0-9) + últimos 2 caracteres del documento.
+function generarCodigoBase(nombre: string, numeroDocumento: string): string {
+  const nombreLimpio = quitarAcentos(nombre || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  const parteNombre = nombreLimpio.slice(0, 6);
+
+  const docLimpio = (numeroDocumento || '').replace(/[^0-9A-Za-z]/g, '');
+  const ultimosDigitos = docLimpio.slice(-2).toUpperCase();
+
+  return `${parteNombre}${ultimosDigitos}`;
+}
+
+function limpiarEstadoCodigo() {
+  codigoDisponible.value = null;
+  codigoMensaje.value = '';
+}
+
+// Recalcular el código mientras el usuario no lo haya editado a mano
+watch(
+  () => [form.value.persona.nombre, form.value.numero_identificacion] as const,
+  ([nombre, doc]) => {
+    if (codigoEditadoManual.value) return;
+    codigoUnico.value = generarCodigoBase(nombre, doc);
+    limpiarEstadoCodigo();
+  }
+);
+
+function onCodigoUnicoInput(e: Event) {
+  const raw = (e.target as HTMLInputElement).value;
+  const sanitized = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  codigoUnico.value = sanitized;
+  (e.target as HTMLInputElement).value = sanitized;
+  codigoEditadoManual.value = true;
+  limpiarEstadoCodigo();
+}
+
+/** true si ya hay un aliado con ese código (404 → disponible; 422/otros → lanza Error con el mensaje del backend) */
+async function codigoExiste(codigo: string): Promise<boolean> {
+  const aliado = await AliadosService.encontrarAliado({ codigo_unico: codigo });
+  return aliado !== null;
+}
+
+/** Si el código base está tomado, agrega un sufijo incremental hasta encontrar uno libre (máx. 20 intentos) */
+async function generarCodigoDisponible(nombre: string, doc: string): Promise<string> {
+  const base = generarCodigoBase(nombre, doc);
+  if (!base) return '';
+  let candidato = base;
+  let intento = 0;
+  while ((await codigoExiste(candidato)) && intento < 20) {
+    intento++;
+    candidato = `${base}${intento}`;
+  }
+  return candidato;
+}
+
+/**
+ * Verifica disponibilidad del código (blur y submit).
+ * @returns false solo cuando el código editado a mano ya está en uso; el campo es opcional.
+ */
+async function verificarCodigo(): Promise<boolean> {
+  const codigo = codigoUnico.value;
+  if (!codigo) {
+    limpiarEstadoCodigo();
+    return true;
+  }
+
+  verificandoCodigo.value = true;
+  limpiarEstadoCodigo();
+  try {
+    const existe = await codigoExiste(codigo);
+
+    if (!existe) {
+      codigoDisponible.value = true;
+      codigoMensaje.value = 'Código disponible';
+      return true;
+    }
+
+    if (codigoEditadoManual.value) {
+      codigoDisponible.value = false;
+      codigoMensaje.value = 'Este código ya está en uso, elige otro';
+      return false;
+    }
+
+    // Generado automáticamente y en uso → resolver colisión con sufijo
+    codigoUnico.value = await generarCodigoDisponible(form.value.persona.nombre, form.value.numero_identificacion);
+    codigoDisponible.value = true;
+    codigoMensaje.value = 'Código disponible';
+    return true;
+  } catch (err) {
+    codigoDisponible.value = null;
+    codigoMensaje.value = err instanceof Error && err.message ? err.message : 'No se pudo verificar el código';
+    return true;
+  } finally {
+    verificandoCodigo.value = false;
+  }
+}
 
 // ── Código aliado padre ──────────────────────────────────────────────────────
 const codigoPadre = ref('');
@@ -468,12 +611,45 @@ function validate(): boolean {
   return Object.keys(errors.value).length === 0;
 }
 
+// ── Reset ─────────────────────────────────────────────────────────────────────
+function resetForm() {
+  form.value = {
+    tipo_identificacion: '',
+    numero_identificacion: '',
+    direccion: '',
+    ciudad_id: undefined,
+    usuario: { clave: '' },
+    persona: { nombre: '', email: '', telefono: '' },
+  };
+  errors.value = {};
+  errorGlobal.value = '';
+  showPassword.value = false;
+  aceptaTerminos.value = false;
+  condicionAceptada.value = null;
+  ciudadSearch.value = '';
+  ciudadesFiltradas.value = [];
+  codigoPadre.value = '';
+  codigoPadrePrellenado.value = false;
+  aliadoPadreId.value = '';
+  aliadoPadreNombre.value = '';
+  aliadoPadreError.value = '';
+  codigoUnico.value = '';
+  codigoEditadoManual.value = false;
+  limpiarEstadoCodigo();
+}
+
 // ── Submit ────────────────────────────────────────────────────────────────────
 async function handleSubmit() {
   errorGlobal.value = '';
   if (!validate()) return;
 
   isSubmitting.value = true;
+
+  // Verificar disponibilidad del código único (resuelve colisiones si fue autogenerado)
+  if (!(await verificarCodigo())) {
+    isSubmitting.value = false;
+    return;
+  }
 
   // Resolver padre_id: revalidar si el usuario ingresó un código
   let padreIdFinal: string | undefined;
@@ -526,6 +702,7 @@ async function handleSubmit() {
     const dto = {
       tipo_identificacion: form.value.tipo_identificacion,
       numero_identificacion: form.value.numero_identificacion,
+      ...(codigoUnico.value && { codigo_unico: codigoUnico.value }),
       ...(form.value.direccion && { direccion: form.value.direccion }),
       ...(form.value.ciudad_id && { ciudad_id: form.value.ciudad_id }),
       ...(padreIdFinal && { padre_id: padreIdFinal }),
@@ -553,6 +730,7 @@ async function handleSubmit() {
       confirmButtonColor: '#2563eb',
     });
 
+    resetForm();
     emit('created', aliado);
   } catch (err) {
     errorGlobal.value = err instanceof Error ? err.message : 'Ocurrió un error al crear el aliado';

@@ -63,6 +63,7 @@ export interface CondicionVentaInput {
 export interface CreateAliadoDto {
   tipo_identificacion: string;
   numero_identificacion: string;
+  codigo_unico?: string;
   direccion?: string;
   ciudad_id?: number;
   padre_id?: string;
