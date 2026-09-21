@@ -16,18 +16,18 @@
   <div v-else class="min-h-screen bg-gray-50 border-0">
     <!-- Hero Section -->
     <section class="relative overflow-hidden text-white pb-12 lg:pb-40 pt-12" :style="heroBgStyle">
-      <!-- Imagen de familia (misma del inicio) con sombreado hacia la derecha -->
+      <!-- Imagen del producto a la derecha; el resto queda cubierto por el color con degradé -->
       <div class="absolute inset-0">
         <img
-          src="/img/imagen-familia.png"
-          alt="Familia protegida"
-          class="absolute inset-0 w-full h-full object-cover object-right"
+          :src="heroImagenUrl"
+          :alt="productoPlanes.productoNombre"
+          class="absolute inset-y-0 right-0 h-full w-full lg:w-[55%] object-cover object-center"
         />
         <div class="absolute inset-0" :style="heroOverlayStyle"></div>
       </div>
 
       <div class="relative z-10 container mx-auto px-4">
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-3xl">
           <!-- Breadcrumb -->
           <nav class="mb-6">
             <ol class="flex items-center gap-2 text-sm text-blue-200">
@@ -39,23 +39,22 @@
             </ol>
           </nav>
 
-          <div class="text-center">
-            <div class="flex items-center justify-center gap-3 mb-">
-              <div class="w-12 h-1 bg-blue-300"></div>
-              <span class="text-blue-200 font-semibold">Planes Disponibles</span>
-              <div class="w-12 h-1 bg-blue-300"></div>
+          <div class="text-left">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-12 h-1 bg-white/70"></div>
+              <span class="text-white/90 font-semibold">Planes Disponibles</span>
             </div>
 
             <h1 class="text-4xl md:text-5xl font-bold mb-6">
               {{ productoPlanes.productoNombre }}
             </h1>
 
-            <p v-if="productoPlanes.productoDescripcion" class="text-xl text-blue-100 max-w-3xl mx-auto hidden md:block">
+            <p v-if="productoPlanes.productoDescripcion" class="text-xl text-blue-50 max-w-2xl hidden md:block">
               {{ productoPlanes.productoDescripcion }}
             </p>
 
             <!-- Stats -->
-            <div class="grid-cols-1 md:grid-cols-3 gap-4 mt-10 max-w-3xl mx-auto hidden lg:grid">
+            <div class="grid-cols-1 md:grid-cols-3 gap-4 mt-10 max-w-3xl hidden lg:grid">
               <div :style="statsBgStyle" class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/30 hover:bg-white/20 transition-all">
                 <div class="flex items-center justify-center gap-3 mb-2">
                   <svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,6 +291,11 @@ const selectedPlanId = ref<string | null>(null);
 const isProcessingPurchase = ref(false);
 const aseguradoraEstilos = ref<EstilosAseguradora | null>(null);
 const logoAseguradoraUrl = ref<string | null>(null);
+const productoImagenUrl = ref<string | null>(null);
+
+// Imagen de fondo del hero: la del producto; si no tiene, la de familia del inicio
+const HERO_IMAGEN_DEFAULT = '/img/imagen-familia.png';
+const heroImagenUrl = computed(() => productoImagenUrl.value || HERO_IMAGEN_DEFAULT);
 
 // Color base del hero de inicio (Hero.vue); se usa cuando la aseguradora no tiene color configurado
 const HERO_COLOR_DEFAULT = '#1a3fa8';
@@ -307,12 +311,15 @@ const heroColor = computed(
 
 const heroBgStyle = computed(() => ({ backgroundColor: heroColor.value }));
 
-// Degradé sobre la imagen: sólido a la izquierda y se va abriendo hacia la derecha
+// Degradé sobre la imagen: sólido a la izquierda y se va abriendo hacia la derecha.
+// La caída es lenta y con paradas cercanas para que el borde de la foto (que
+// arranca al 45% del ancho) no se note como un corte, y el centro queda más
+// sombreado que el extremo derecho.
 const heroOverlayStyle = computed(() => {
   const c = heroColor.value;
   const mezcla = (pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
   return {
-    background: `linear-gradient(to right, ${c} 0%, ${c} 30%, ${mezcla(94)} 42%, ${mezcla(80)} 54%, ${mezcla(58)} 66%, ${mezcla(34)} 80%, ${mezcla(18)} 100%)`
+    background: `linear-gradient(to right, ${c} 0%, ${c} 40%, ${mezcla(96)} 46%, ${mezcla(88)} 52%, ${mezcla(78)} 58%, ${mezcla(66)} 65%, ${mezcla(54)} 72%, ${mezcla(42)} 80%, ${mezcla(32)} 88%, ${mezcla(24)} 100%)`
   };
 });
 
@@ -453,6 +460,7 @@ const loadPlanes = async () => {
 
     aseguradoraEstilos.value = producto.aseguradora?.estilos ?? null;
     logoAseguradoraUrl.value = producto.aseguradora?.estilos?.logo_imagen?.url ?? null;
+    productoImagenUrl.value = producto.imagen?.url ?? null;
 
     transformarDatos(response.data);
   } catch (err) {
