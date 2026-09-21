@@ -15,8 +15,18 @@
 
   <div v-else class="min-h-screen bg-gray-50 border-0">
     <!-- Hero Section -->
-    <section class="relative bg-gradient-to-br from-primary-700 to-primary-900 text-white pb-12 lg:pb-40 pt-12" :style="heroBgStyle">
-      <div class="container mx-auto px-4">
+    <section class="relative overflow-hidden text-white pb-12 lg:pb-40 pt-12" :style="heroBgStyle">
+      <!-- Imagen de familia (misma del inicio) con sombreado hacia la derecha -->
+      <div class="absolute inset-0">
+        <img
+          src="/img/imagen-familia.png"
+          alt="Familia protegida"
+          class="absolute inset-0 w-full h-full object-cover object-right"
+        />
+        <div class="absolute inset-0" :style="heroOverlayStyle"></div>
+      </div>
+
+      <div class="relative z-10 container mx-auto px-4">
         <div class="max-w-4xl mx-auto">
           <!-- Breadcrumb -->
           <nav class="mb-6">
@@ -46,7 +56,7 @@
 
             <!-- Stats -->
             <div class="grid-cols-1 md:grid-cols-3 gap-4 mt-10 max-w-3xl mx-auto hidden lg:grid">
-              <div :style="statsBgStyle" class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition-all">
+              <div :style="statsBgStyle" class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/30 hover:bg-white/20 transition-all">
                 <div class="flex items-center justify-center gap-3 mb-2">
                   <svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -55,7 +65,7 @@
                 </div>
                 <p class="text-sm text-blue-100 font-medium">Planes disponibles</p>
               </div>
-              <div :style="statsBgStyle" class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition-all">
+              <div :style="statsBgStyle" class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/30 hover:bg-white/20 transition-all">
                 <div class="flex items-center justify-center gap-3 mb-2">
                   <svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
@@ -64,7 +74,7 @@
                 </div>
                 <p class="text-sm text-blue-100 font-medium">Coberturas incluidas</p>
               </div>
-              <div :style="statsBgStyle" class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition-all">
+              <div :style="statsBgStyle" class="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/30 hover:bg-white/20 transition-all">
                 <div class="flex items-center justify-center gap-3 mb-2">
                   <svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -79,7 +89,7 @@
       </div>
 
       <!-- Wave decoration -->
-      <div class="absolute bottom-0 left-0 right-0">
+      <div class="absolute bottom-0 left-0 right-0 z-10">
         <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full">
           <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="#F9FAFB"/>
         </svg>
@@ -283,20 +293,34 @@ const isProcessingPurchase = ref(false);
 const aseguradoraEstilos = ref<EstilosAseguradora | null>(null);
 const logoAseguradoraUrl = ref<string | null>(null);
 
-const heroBgStyle = computed(() => {
-  if (!aseguradoraEstilos.value) return {};
+// Color base del hero de inicio (Hero.vue); se usa cuando la aseguradora no tiene color configurado
+const HERO_COLOR_DEFAULT = '#1a3fa8';
+
+const colorConfigurado = (color?: string | null): string | null => {
+  const valor = color?.trim();
+  return valor ? valor : null;
+};
+
+const heroColor = computed(
+  () => colorConfigurado(aseguradoraEstilos.value?.color_secundario) ?? HERO_COLOR_DEFAULT
+);
+
+const heroBgStyle = computed(() => ({ backgroundColor: heroColor.value }));
+
+// Degradé sobre la imagen: sólido a la izquierda y se va abriendo hacia la derecha
+const heroOverlayStyle = computed(() => {
+  const c = heroColor.value;
+  const mezcla = (pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
   return {
-    // background: `linear-gradient(to bottom right, ${aseguradoraEstilos.value.color_primario}, ${aseguradoraEstilos.value.color_secundario})`
-    background: `${aseguradoraEstilos.value.color_secundario}`
+    background: `linear-gradient(to right, ${c} 0%, ${c} 30%, ${mezcla(94)} 42%, ${mezcla(80)} 54%, ${mezcla(58)} 66%, ${mezcla(34)} 80%, ${mezcla(18)} 100%)`
   };
 });
 
+// Tarjetas de stats: color primario si está configurado; si no, translúcidas con borde blanco (clases del template)
 const statsBgStyle = computed(() => {
-  if (!aseguradoraEstilos.value) return {};
-  return {
-    // background: `linear-gradient(to bottom right, ${aseguradoraEstilos.value.color_primario}, ${aseguradoraEstilos.value.color_secundario})`
-    background: `${aseguradoraEstilos.value.color_primario}`
-  };
+  const color = colorConfigurado(aseguradoraEstilos.value?.color_primario);
+  if (!color) return {};
+  return { background: color };
 });
 
 const ctaBgStyle = computed(() => {
