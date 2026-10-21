@@ -2,7 +2,13 @@ version: '3.3'
 services:
   compras-reservas-segurucolombia-landing:
     build: .
+    restart: unless-stopped
     ports: 
       - "${PORT}:${PORT}"
     env_file:
       - .env
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -31,7 +31,7 @@
           optionValue="clave"
           placeholder="Seleccione una opción"
           :class="{ 'p-invalid': !!mensajeError(campo) }"
-          @change="validarCampo(campo)"
+          @change="terminarCampo(campo)"
         >
           <!-- Lo que agrega elegir esa opción, igual que en los campos adicionales -->
           <template #option="{ option }">
@@ -95,7 +95,7 @@
           :inputmode="control(campo) === 'numero' ? 'numeric' : undefined"
           :maxlength="maxLengthDeCampo(campo)"
           :class="{ 'p-invalid': !!mensajeError(campo) }"
-          @blur="validarCampo(campo)"
+          @blur="terminarCampo(campo)"
         />
 
         <!--
@@ -185,6 +185,11 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', titular: DatosTitular): void;
   (e: 'update:valid', valid: boolean): void;
+  /**
+   * El cliente terminó de responder un campo de texto o de selección (blur / cambio).
+   * Va con el estado de ese momento: el `update:modelValue` todavía no ha salido.
+   */
+  (e: 'terminado', campo: CampoTitular, titular: DatosTitular): void;
 }>();
 
 /** Respuestas del titular, indexadas por `clave` */
@@ -256,6 +261,11 @@ const validarCampo = (campo: CampoTitular): void => {
   } else {
     delete errores.value[campo.clave];
   }
+};
+
+const terminarCampo = (campo: CampoTitular): void => {
+  validarCampo(campo);
+  emit('terminado', campo, { ...datos.value });
 };
 
 /** Marca todos los errores. Devuelve si el formulario se puede enviar. */

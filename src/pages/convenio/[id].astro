@@ -1,0 +1,18 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.vue';
+import Footer from '../../components/Footer.vue';
+import GestionarVentaConvenio from '../../components/GestionarVentaConvenio.vue';
+
+const { id } = Astro.params;
+
+if (!id) {
+	return Astro.redirect('/');
+}
+---
+
+<Layout title="Venta de convenio - Seguru">
+	<Navbar client:load/>
+	<GestionarVentaConvenio client:only="vue" ventaId={id}/>
+	<Footer client:only="vue"/>
+</Layout>

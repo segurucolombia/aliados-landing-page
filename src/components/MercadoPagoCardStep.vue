@@ -1,7 +1,7 @@
 <template>
-  <div class="card-step-wrapper">
-    <!-- Hero -->
-    <section class="card-hero">
+  <div class="card-step-wrapper" :class="{ embebido }">
+    <!-- Hero (no va cuando el formulario está dentro de otra vista) -->
+    <section v-if="!embebido" class="card-hero">
       <div class="hero-content">
         <div class="hero-title-section">
           <div class="title-icon">
@@ -152,14 +152,14 @@
 
         <!-- Acciones -->
         <div class="form-actions">
-          <button type="button" @click="$emit('back')" class="btn btn-secondary" :disabled="tokenizing">
+          <button v-if="!embebido" type="button" @click="$emit('back')" class="btn btn-secondary" :disabled="tokenizing">
             Atrás
           </button>
-          <button type="submit" class="btn btn-primary" :disabled="tokenizing">
+          <button type="submit" class="btn btn-primary" :disabled="tokenizing || bloqueado">
             <svg v-if="tokenizing" class="spinner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
-            {{ tokenizing ? 'Procesando...' : 'Activar débito automático' }}
+            {{ tokenizing ? 'Procesando...' : textoBoton }}
           </button>
         </div>
       </form>
@@ -179,10 +179,19 @@ declare global {
   }
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   initialDocType?: string;
   initialDocNumber?: string;
-}>();
+  /** Dentro de otra vista: sin encabezado propio ni botón "Atrás" */
+  embebido?: boolean;
+  textoBoton?: string;
+  /** Desactiva el envío mientras la vista que lo usa procesa el pago */
+  bloqueado?: boolean;
+}>(), {
+  embebido: false,
+  textoBoton: 'Activar débito automático',
+  bloqueado: false,
+});
 
 const emit = defineEmits<{
   (e: 'card-tokenized', tokenId: string): void;
@@ -274,6 +283,7 @@ const validate = (): boolean => {
 };
 
 const handleSubmit = async () => {
+  if (tokenizing.value || props.bloqueado) return;
   if (!validate()) return;
 
   tokenizing.value = true;
@@ -319,6 +329,16 @@ const handleSubmit = async () => {
 .card-step-wrapper {
   min-height: 100vh;
   background: #f9fafb;
+}
+
+.card-step-wrapper.embebido {
+  min-height: 0;
+  background: transparent;
+}
+
+.embebido .card-form-container {
+  max-width: none;
+  padding: 0;
 }
 
 /* Hero */

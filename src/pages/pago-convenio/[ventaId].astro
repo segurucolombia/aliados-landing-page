@@ -1,0 +1,14 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PagoConvenioView from '../../components/PagoConvenioView.vue';
+
+const { ventaId } = Astro.params;
+
+if (!ventaId) {
+	return Astro.redirect('/');
+}
+---
+
+<Layout title="Paga tu plan - Seguru">
+	<PagoConvenioView client:only="vue" ventaId={ventaId}/>
+</Layout>

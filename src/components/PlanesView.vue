@@ -259,6 +259,9 @@ import {
   extraerProblemasTitular,
   esTitularNoEnviado,
   mensajeValorRepetido,
+  esDocumentoDeCliente,
+  esClienteInexistente,
+  esClienteSinVentasPrevias,
 } from '../services/ventas.service';
 import { ProductosService } from '../services/productos.service';
 import useCupon from '../composables/cupon';
@@ -507,10 +510,31 @@ const resolverErrorVenta = (
   error: any,
   codigoCupon?: string,
   camposTitular: CampoTitular[] = [],
+  compraComoCliente = false,
 ): string => {
   const mensajeGeneral = error?.response?.data?.message
     || error?.message
     || 'Ocurrió un error al procesar la compra. Por favor intenta de nuevo.';
+
+  // Compra con `cliente_id`: si el backend no puede tomar sus datos de una compra
+  // anterior, el titular vuelve al formulario completo y compra como cliente nuevo
+  if (compraComoCliente) {
+    if (esClienteInexistente(error)) {
+      purchaseWizard.value?.comprarComoClienteNuevo('inexistente');
+      return 'No encontramos tus datos registrados. Completa el formulario para continuar con la compra.';
+    }
+
+    if (esClienteSinVentasPrevias(error)) {
+      purchaseWizard.value?.comprarComoClienteNuevo('sin-ventas-previas');
+      return 'Necesitamos algunos datos tuyos para esta compra. Completa el formulario para continuar.';
+    }
+
+    // 422 sin rechazos: faltan las condiciones, que se aceptan en el detalle del plan
+    if (error?.response?.status === 422 && extraerRechazos(error).length === 0) {
+      purchaseWizard.value?.volverACondiciones();
+      return 'Debes aceptar las condiciones del plan para continuar con la compra.';
+    }
+  }
 
   // 422: el backend recotizó y la venta ya no se puede hacer. Vienen todos los motivos,
   // escritos para que los lea el cliente.
@@ -559,6 +583,31 @@ const resolverErrorVenta = (
   return mensajeGeneral;
 };
 
+/**
+ * Muestra por qué falló la venta. Si el documento ya es de un cliente (dijo "no soy
+ * yo"), se avisa y se le vuelve a preguntar si es él.
+ */
+const mostrarErrorVenta = async (error: any, codigoCupon: string | undefined, data: DatosCompraWizard) => {
+  const Swal = (await import('sweetalert2')).default;
+
+  if (esDocumentoDeCliente(error)) {
+    await Swal.fire({
+      text: 'Este documento ya está registrado. Si eres tú, confirma tus datos para continuar',
+      icon: 'info',
+      confirmButtonColor: '#1e40af'
+    });
+    purchaseWizard.value?.preguntarSiEsCliente();
+    return;
+  }
+
+  Swal.fire({
+    title: 'Error',
+    text: resolverErrorVenta(error, codigoCupon, data.camposTitular, !!data.clienteId),
+    icon: 'error',
+    confirmButtonColor: '#1e40af'
+  });
+};
+
 /** Lo que emite el wizard al confirmar la compra */
 interface DatosCompraWizard {
   planId: string;
@@ -576,6 +625,8 @@ interface DatosCompraWizard {
   /** Total cotizado por el backend; null si no se alcanzó a cotizar */
   valorTotal: number | null;
   condiciones: import('../services/ventas.service').CondicionVentaInput[];
+  /** El titular ya es cliente: se compra con `comprar-plan-cliente` */
+  clienteId?: string;
 }
 
 const handleCompra = async (data: DatosCompraWizard) => {
@@ -619,21 +670,30 @@ const handleCompra = async (data: DatosCompraWizard) => {
     // Obtener datos del localStorage
     const aliadoIdLocalStorage = localStorage.getItem('aliado_id');
 
-    // Crear la venta
-    const ventaData = {
-      producto_id: productoPlanes.value.productoId,
-      version_id: versionId,
-      ...titularVenta,
-      ...(Object.keys(titular).length > 0 && { titular }),
-      clave: data.clave,
-      ...(codigoCupon && { codigo_descuento: codigoCupon }),
-      ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
-      ...(data.respuestas.length > 0 && { respuestas: data.respuestas }),
-      ...(data.camposAdicionales && { datos_adicionales: data.camposAdicionales }),
-      condiciones: data.condiciones,
-    };
-
-    const response = await VentasService.crear_venta(ventaData);
+    // Ya es cliente: el backend toma su identidad (y el aliado) de su última compra,
+    // así que no viajan sus datos, ni la clave, ni el aliado
+    const response = data.clienteId
+      ? await VentasService.comprarPlanCliente({
+        cliente_id: data.clienteId,
+        producto_id: productoPlanes.value.productoId,
+        version_id: versionId,
+        ...(codigoCupon && { codigo_descuento: codigoCupon }),
+        ...(data.respuestas.length > 0 && { respuestas: data.respuestas }),
+        ...(data.camposAdicionales && { datos_adicionales: data.camposAdicionales }),
+        condiciones: data.condiciones,
+      })
+      : await VentasService.crear_venta({
+        producto_id: productoPlanes.value.productoId,
+        version_id: versionId,
+        ...titularVenta,
+        ...(Object.keys(titular).length > 0 && { titular }),
+        clave: data.clave,
+        ...(codigoCupon && { codigo_descuento: codigoCupon }),
+        ...(aliadoIdLocalStorage && { aliado_id: aliadoIdLocalStorage }),
+        ...(data.respuestas.length > 0 && { respuestas: data.respuestas }),
+        ...(data.camposAdicionales && { datos_adicionales: data.camposAdicionales }),
+        condiciones: data.condiciones,
+      });
 
     if (!response.transaccion_id) {
       throw new Error('No se recibió transaccion_id desde el backend.');
@@ -670,15 +730,7 @@ const handleCompra = async (data: DatosCompraWizard) => {
     // Cerrar la ventana de pago si se abrió pero ocurrió un error
     paymentWindow?.close();
 
-    const errorMessage = resolverErrorVenta(error, codigoCupon, data.camposTitular);
-
-    const Swal = (await import('sweetalert2')).default;
-    Swal.fire({
-      title: 'Error',
-      text: errorMessage,
-      icon: 'error',
-      confirmButtonColor: '#1e40af'
-    });
+    await mostrarErrorVenta(error, codigoCupon, data);
   } finally {
     // El loading se desactivará después de que Wompi redirija
     // Si no hay precio (plan gratuito), desactivar aquí
@@ -768,15 +820,7 @@ const handleCompraDebito = async (data: DatosCompraWizard & { cardTokenId: strin
     console.error('Error al procesar débito automático:', error);
     isProcessingPurchase.value = false;
 
-    const errorMessage = resolverErrorVenta(error, codigoCupon, data.camposTitular);
-
-    const Swal = (await import('sweetalert2')).default;
-    Swal.fire({
-      title: 'Error',
-      text: errorMessage,
-      icon: 'error',
-      confirmButtonColor: '#1e40af'
-    });
+    await mostrarErrorVenta(error, codigoCupon, data);
   }
 };
 
@@ -828,11 +872,12 @@ const sendWompi = async (
   const redirectUrl = import.meta.env.PUBLIC_WOMPI_REDIRECT_PAYMENT_COMPLETE || window.location.origin + '/gracias';
   params.set('redirect-url', redirectUrl);
 
-  // Datos del cliente
+  // Datos del cliente. Un cliente existente compra sin ellos (los toma el backend de
+  // su última compra): los vacíos no se mandan y Wompi se los pide.
   const fullName = `${titular.nombres ?? ''} ${titular.apellidos ?? ''}`.trim();
-  params.set('customer-data:email', titular.email ?? '');
-  params.set('customer-data:full-name', fullName);
-  params.set('customer-data:phone-number', titular.telefono ?? '');
+  if (titular.email) params.set('customer-data:email', titular.email);
+  if (fullName) params.set('customer-data:full-name', fullName);
+  if (titular.telefono) params.set('customer-data:phone-number', titular.telefono);
 
   // Tipo de documento y número
   params.set('customer-data:legal-id-type', titular.tipo_documento ?? 'CC');

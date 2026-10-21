@@ -27,7 +27,20 @@
           :rechazos="rechazosDeCampos"
           v-model="titular"
           @update:valid="titularValido = $event"
+          @terminado="handleCampoTerminado"
         />
+
+        <!-- Ya es cliente: sus datos personales salen de su última compra -->
+        <div v-if="clienteExistente" class="cliente-existente">
+          <p class="cliente-existente-titulo">Compras con los datos que ya tenemos registrados</p>
+          <DatosClienteExistente :cliente="clienteExistente" />
+          <Button
+            label="No soy yo"
+            class="p-button-text p-button-sm"
+            type="button"
+            @click="$emit('no-soy-yo')"
+          />
+        </div>
 
         <div v-else class="sin-campos">
           Este plan todavía no tiene configurados los datos del titular. Comunícate con
@@ -142,6 +155,8 @@ import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import CamposTitular from './CamposTitular.vue';
 import DesgloseCotizacion from './DesgloseCotizacion.vue';
+import DatosClienteExistente from './DatosClienteExistente.vue';
+import type { ClientePorDocumento } from '../services/clientes.service';
 import useCupon from '../composables/cupon';
 import type { CampoTitular, DatosTitular } from '../types/planes';
 import type { CotizacionVenta, RechazoVenta } from '../types/cotizacion';
@@ -178,6 +193,11 @@ const props = withDefaults(defineProps<{
   puedeContinuar?: boolean;
   valorDebitoAutomatico?: number | null;
   hasNextStep?: boolean;
+  /**
+   * Cliente que confirmó que es él (datos enmascarados). Mientras esté, el formulario
+   * solo trae el documento: lo demás lo toma el backend de su última compra.
+   */
+  clienteExistente?: ClientePorDocumento | null;
 }>(), {
   camposTitular: () => [],
   planNombre: '',
@@ -190,12 +210,16 @@ const props = withDefaults(defineProps<{
   puedeContinuar: true,
   hasNextStep: false,
   valorDebitoAutomatico: null,
+  clienteExistente: null,
 });
 
 const emit = defineEmits<{
   (e: 'submit', data: DatosTitularFormulario): void;
   /** Cada cambio del titular: el backend puede cobrar distinto por estos datos */
   (e: 'update:titular', titular: DatosTitular): void;
+  /** El cliente terminó de llenar el tipo o el número de documento: se busca si ya es cliente */
+  (e: 'documento-listo', titular: DatosTitular): void;
+  (e: 'no-soy-yo'): void;
   (e: 'back'): void;
   (e: 'cancel'): void;
 }>();
@@ -225,6 +249,14 @@ const isFormValid = computed(
 
 // Cada cambio del titular se avisa hacia arriba para volver a cotizar
 watch(titular, () => emit('update:titular', { ...titular.value }), { deep: true });
+
+const CLAVES_DOCUMENTO = ['TIPO_DOCUMENTO', 'NUMERO_DOCUMENTO'];
+
+const handleCampoTerminado = (campo: CampoTitular, datos: DatosTitular) => {
+  if (campo.clave_sistema && CLAVES_DOCUMENTO.includes(campo.clave_sistema)) {
+    emit('documento-listo', datos);
+  }
+};
 
 /** Con débito automático los totales se comparan en el modal de medio de pago */
 const cotizacionVisible = computed(() => (props.valorDebitoAutomatico == null ? props.cotizacion : null));
@@ -353,6 +385,26 @@ const handleCancel = () => {
   color: #92400e;
   border-radius: 8px;
   padding: 1rem;
+}
+
+/* Cliente que ya existe */
+.cliente-existente {
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.cliente-existente > :deep(.datos-cliente) {
+  align-self: stretch;
+}
+
+.cliente-existente-titulo {
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
 }
 
 /* Sección de código de descuento */

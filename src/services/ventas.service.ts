@@ -79,6 +79,31 @@ export interface CreateVentaResponse {
 }
 
 /**
+ * Body de `POST /ventas/comprar-plan-cliente`: compra de alguien que ya es cliente.
+ *
+ * No lleva datos del titular, email, clave, aliado ni débito automático: el backend
+ * toma la identidad (y el aliado) de la última compra del cliente. El pago va por Wompi.
+ */
+export interface ComprarPlanClienteDto {
+  cliente_id: string;
+  producto_id: string;
+  version_id: string;
+  codigo_descuento?: string;
+  respuestas?: RespuestaCampo[];
+  datos_adicionales?: import('../types/planes').CamposAdicionalesCapturados;
+  /** Por defecto true en el backend */
+  renovacion_automatica?: boolean;
+  /** Obligatorio, mínimo una: sin ellas responde 422 */
+  condiciones: CondicionVentaInput[];
+}
+
+export interface ComprarPlanClienteResponse {
+  venta_id: string;
+  suscripcion_id: string;
+  transaccion_id: string;
+}
+
+/**
  * Detalle completo de una venta (GET /ventas/:id).
  */
 export interface VentaDetalle {
@@ -235,6 +260,32 @@ export function mensajeValorRepetido(error: any): string {
   );
 }
 
+const mensajeDeError = (error: any): string => String(error?.response?.data?.message ?? '');
+
+/**
+ * `POST /ventas` con un documento que ya es de un cliente (HTTP 409). Pasa cuando la
+ * persona dijo "no soy yo" al encontrar sus datos: hay que volver a preguntarle.
+ */
+export function esDocumentoDeCliente(error: any): boolean {
+  return error?.response?.status === 409
+    && mensajeDeError(error).startsWith('Ya existe un cliente con el número de documento');
+}
+
+/** `POST /ventas/comprar-plan-cliente` con un `cliente_id` que ya no existe (HTTP 404) */
+export function esClienteInexistente(error: any): boolean {
+  return error?.response?.status === 404
+    && mensajeDeError(error).startsWith('No se encontró el cliente con ID');
+}
+
+/**
+ * El cliente solo tiene compras de convenios (HTTP 409 de `comprar-plan-cliente`): no
+ * hay una venta de la cual tomar sus datos, así que compra con el formulario completo.
+ */
+export function esClienteSinVentasPrevias(error: any): boolean {
+  return error?.response?.status === 409
+    && /no tiene ventas previas/i.test(mensajeDeError(error));
+}
+
 /** Los tres motivos por los que el backend rechaza recotizar una venta (HTTP 409) */
 export type MotivoConflictoVenta = 'no-pendiente' | 'debito-automatico' | 'pago-en-curso';
 
@@ -326,5 +377,23 @@ export class VentasService {
       console.error('Error al crear venta:', error);
       throw error;
     }
+  }
+
+  /**
+   * Compra un plan para alguien que ya es cliente. La identidad y el aliado salen de su
+   * última compra; con el `transaccion_id` se sigue al pago con Wompi.
+   *
+   * @throws Error de axios, con `{ success: false, message }`: 400 = body inválido,
+   *         404 = cliente (`esClienteInexistente`), producto o versión no encontrados,
+   *         409 = el cliente no tiene ventas previas (`esClienteSinVentasPrevias`),
+   *         422 = faltan las condiciones.
+   */
+  static async comprarPlanCliente(data: ComprarPlanClienteDto): Promise<ComprarPlanClienteResponse> {
+    const response = await axios.post<ComprarPlanClienteResponse>(
+      `${baseUrl}/comprar-plan-cliente`,
+      data,
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+    return response.data;
   }
 }

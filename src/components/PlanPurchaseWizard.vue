@@ -40,7 +40,7 @@
       <div v-show="currentStep === 2" class="step-content">
         <PlanPurchaseFormStep
           :plan-id="planId"
-          :campos-titular="camposTitular"
+          :campos-titular="camposTitularFormulario"
           :plan-nombre="planData?.producto?.nombre"
           :cotizacion="cotizacion"
           :cotizando="cotizando"
@@ -49,9 +49,12 @@
           :mensaje-rechazo="mensajeRechazo"
           :error-cotizacion="errorCotizacion"
           :puede-continuar="puedeContinuarDesdeTitular"
-          :valor-debito-automatico="planData?.version?.valor_debito_automatico ?? null"
+          :valor-debito-automatico="tieneModalDePago ? planData?.version?.valor_debito_automatico ?? null : null"
           :has-next-step="hasCamposAdicionales || tieneModalDePago"
+          :cliente-existente="clienteConfirmado"
           @update:titular="handleTitularUpdate"
+          @documento-listo="handleDocumentoListo"
+          @no-soy-yo="descartar"
           @submit="handlePurchaseFormSubmit"
           @back="goToStep(1)"
           @cancel="handleCancel"
@@ -104,6 +107,13 @@
       @select-debito="handleSelectDebito"
       @close="showPaymentModal = false"
     />
+
+    <ClienteExistenteModal
+      :cliente="clienteEncontrado"
+      aviso="Usaremos los datos que ya tenemos registrados para esta compra."
+      @confirmar="confirmar"
+      @descartar="descartar"
+    />
   </div>
 </template>
 
@@ -114,6 +124,7 @@ import PlanPurchaseFormStep from './PlanPurchaseFormStep.vue';
 import PlanCamposAdicionalesStep from './PlanCamposAdicionalesStep.vue';
 import MercadoPagoCardStep from './MercadoPagoCardStep.vue';
 import PaymentMethodModal from './PaymentMethodModal.vue';
+import ClienteExistenteModal from './ClienteExistenteModal.vue';
 import type { DatosTitularFormulario } from './PlanPurchaseFormStep.vue';
 import type {
   CampoTitular,
@@ -122,13 +133,14 @@ import type {
   PlanWithDetails,
   TitularEnvio,
 } from '../types/planes';
-import { validarTitular, valorPorClaveSistema } from '../utils/camposTitular';
+import { validarCampoTitular, validarTitular, valorPorClaveSistema } from '../utils/camposTitular';
 import { titularParaEnvio } from '../utils/titularVenta';
 import { separarRechazos } from '../utils/rechazosCampos';
 import type { CotizarVentaInput, RechazoVenta, RespuestaCampo } from '../types/cotizacion';
 import type { CondicionVentaInput } from '../services/ventas.service';
 import useCotizacion, { DEBOUNCE_COTIZACION_MS } from '../composables/cotizacion';
 import useCupon from '../composables/cupon';
+import useClienteExistente from '../composables/clienteExistente';
 
 const props = defineProps<{
   planId: string;
@@ -152,6 +164,11 @@ interface DatosCompra {
   /** Total que cotizó el backend; null si no hay cotización vigente */
   valorTotal: number | null;
   condiciones: CondicionVentaInput[];
+  /**
+   * El titular ya es cliente y confirmó que es él: la venta se crea con
+   * `POST /ventas/comprar-plan-cliente` y sus datos salen de su última compra.
+   */
+  clienteId?: string;
 }
 
 const emit = defineEmits<{
@@ -196,8 +213,66 @@ const hasCamposAdicionales = computed(() => {
   return !!(planData.value?.version?.campos_adicionales?.secciones?.length);
 });
 
-// Solo hay selección de medio de pago cuando el plan ofrece débito automático
-const tieneModalDePago = computed(() => planData.value?.version?.valor_debito_automatico != null);
+/* ------------------------------------------------------------------ *
+ * Cliente existente: con el tipo y número de documento se busca si el titular ya es
+ * cliente. Si confirma que es él, la compra va con su `cliente_id` y el formulario
+ * solo le pide el documento: el backend toma lo demás de su última compra.
+ * ------------------------------------------------------------------ */
+
+const {
+  encontrado: clienteEncontrado,
+  confirmado: clienteConfirmado,
+  programarBusqueda,
+  buscarDeNuevo,
+  confirmar,
+  descartar,
+  documentoCambio,
+} = useClienteExistente();
+
+const CLAVES_DOCUMENTO = ['TIPO_DOCUMENTO', 'NUMERO_DOCUMENTO'];
+
+/** Con un cliente confirmado solo se pide el documento: lo personal ya lo tenemos */
+const camposTitularFormulario = computed<CampoTitular[]>(() =>
+  clienteConfirmado.value
+    ? camposTitular.value.filter((campo) => CLAVES_DOCUMENTO.includes(campo.clave_sistema ?? ''))
+    : camposTitular.value,
+);
+
+/** Tipo y número de documento de un estado del titular, si los dos tienen formato válido */
+const documentoDe = (titular: DatosTitular): { tipo: string; numero: string } | null => {
+  const campos = camposTitular.value;
+  const validos = CLAVES_DOCUMENTO.every((claveSistema) => {
+    const campo = campos.find((c) => c.clave_sistema === claveSistema);
+    return !!campo && validarCampoTitular(campo, titular, campos) === '';
+  });
+  if (!validos) return null;
+
+  return {
+    tipo: valorPorClaveSistema(titular, campos, 'TIPO_DOCUMENTO'),
+    numero: valorPorClaveSistema(titular, campos, 'NUMERO_DOCUMENTO'),
+  };
+};
+
+/** Documentos de clientes que solo tienen compras de convenios: compran como nuevos */
+const documentosSinVentasPrevias = new Set<string>();
+const claveDocumento = (tipo: string, numero: string) => `${tipo}|${numero}`;
+
+/** Al terminar de llenar el tipo o el número de documento se busca el cliente */
+const handleDocumentoListo = (titular: DatosTitular) => {
+  const tipo = valorPorClaveSistema(titular, camposTitular.value, 'TIPO_DOCUMENTO');
+  const numero = valorPorClaveSistema(titular, camposTitular.value, 'NUMERO_DOCUMENTO');
+  documentoCambio(tipo, numero);
+
+  const documento = documentoDe(titular);
+  if (!documento || documentosSinVentasPrevias.has(claveDocumento(documento.tipo, documento.numero))) return;
+  programarBusqueda(documento.tipo, documento.numero);
+};
+
+// Solo hay selección de medio de pago cuando el plan ofrece débito automático. Un
+// cliente existente paga por Wompi: con él no se ofrece el débito.
+const tieneModalDePago = computed(
+  () => planData.value?.version?.valor_debito_automatico != null && !clienteConfirmado.value,
+);
 
 // El formulario de tarjeta MP es siempre el último paso: va después de elegir el medio de pago
 const CARD_STEP = 4;
@@ -282,6 +357,12 @@ const handleFormularioValido = (valido: boolean) => {
 
 const handleTitularUpdate = (titular: DatosTitular) => {
   titularEnEdicion.value = titular;
+
+  // Otro documento: el cliente encontrado (o confirmado) con el anterior ya no aplica
+  documentoCambio(
+    valorPorClaveSistema(titular, camposTitular.value, 'TIPO_DOCUMENTO'),
+    valorPorClaveSistema(titular, camposTitular.value, 'NUMERO_DOCUMENTO'),
+  );
 };
 
 /**
@@ -329,7 +410,32 @@ watch([huellaTitular, respuestas], () => {
   rechazosVenta.value = [];
 });
 
-defineExpose({ mostrarRechazosDeVenta });
+/**
+ * El backend no pudo comprar con el `cliente_id` (el cliente ya no existe o solo tiene
+ * compras de convenios): se olvida y el titular llena el formulario completo.
+ */
+const comprarComoClienteNuevo = (motivo: 'inexistente' | 'sin-ventas-previas'): void => {
+  const documento = clienteConfirmado.value?.documento;
+  if (motivo === 'sin-ventas-previas' && documento) documentosSinVentasPrevias.add(documento);
+  descartar();
+  goToStep(2);
+};
+
+/**
+ * `POST /ventas` dijo que el documento ya es de un cliente (dijo "no soy yo"): se
+ * vuelve a buscar para preguntarle otra vez.
+ */
+const preguntarSiEsCliente = (): void => {
+  goToStep(2);
+  const documento = documentoDe(titularEnEdicion.value);
+  if (!documento || documentosSinVentasPrevias.has(claveDocumento(documento.tipo, documento.numero))) return;
+  buscarDeNuevo(documento.tipo, documento.numero);
+};
+
+/** Faltan las condiciones: se aceptan en el detalle del plan */
+const volverACondiciones = (): void => goToStep(1);
+
+defineExpose({ mostrarRechazosDeVenta, comprarComoClienteNuevo, preguntarSiEsCliente, volverACondiciones });
 
 // Cada cambio del formulario, del cupón o de los datos del titular recotiza, con
 // debounce: los tres cambian lo que se le manda al backend, y con eso el precio
@@ -448,6 +554,7 @@ const finalizarCompra = () => {
     respuestas: respuestas.value,
     valorTotal: cotizacion.value?.valor_total ?? null,
     condiciones: condicionesDatos.value,
+    ...(clienteConfirmado.value ? { clienteId: clienteConfirmado.value.cliente_id } : {}),
   });
 };
 
