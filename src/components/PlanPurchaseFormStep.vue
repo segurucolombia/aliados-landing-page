@@ -42,7 +42,7 @@
           />
         </div>
 
-        <div v-else class="sin-campos">
+        <div v-else-if="camposTitular.length === 0" class="sin-campos">
           Este plan todavía no tiene configurados los datos del titular. Comunícate con
           nosotros para completar tu compra.
         </div>
