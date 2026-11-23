@@ -308,7 +308,7 @@ onMounted(() => {
   aspect-ratio: 1 / 1;
   border-radius: 20em 0 20em 20em;
   overflow: hidden;
-  border: 4px solid #2563eb; /* azul-600 */
+  border: 4px solid #3232B3; /* azul-600 */
   background-color: white;
 }
 
@@ -318,7 +318,7 @@ onMounted(() => {
   object-fit: cover;
 }
 .image-bg {
-    background: linear-gradient(rgba(1, 60, 255, 0.5), rgba(0, 119, 255, 0.5)), 
+    background: linear-gradient(rgba(50, 50, 179, 0.5), rgba(50, 50, 179, 0.5)), 
                 url("/img/forms-bg-header.jpg");
 }
 </style>

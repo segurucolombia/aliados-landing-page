@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-primary-700 to-primary-900 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+  <div class="min-h-screen bg-brand-deep flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-lg overflow-hidden">
 
-      <div class="bg-gradient-to-br from-primary-600 to-primary-800 px-8 pt-10 pb-8 text-center text-white">
+      <div class="bg-brand px-8 pt-10 pb-8 text-center text-white">
         <div class="relative flex items-center justify-center mb-6 h-24">
           <div class="absolute w-24 h-24 rounded-full bg-white/10"></div>
           <div class="absolute w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
@@ -12,7 +12,7 @@
             </svg>
           </div>
         </div>
-        <h1 class="text-2xl font-bold mb-1">¡Estamos procesando tu pago!</h1>
+        <h1 class="text-2xl font-extrabold mb-1">¡Estamos procesando tu pago!</h1>
         <p class="text-blue-100 text-sm">Mercado Pago está cobrando tu plan en este momento</p>
       </div>
 
@@ -58,7 +58,7 @@
 
         <button
           @click="$emit('volver')"
-          class="w-full inline-flex items-center justify-center gap-2 bg-primary-700 hover:bg-primary-800 active:bg-primary-900 text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm cursor-pointer"
+          class="w-full inline-flex items-center justify-center gap-2 bg-primary-700 hover:bg-primary-800 active:bg-primary-900 text-white font-bold px-6 py-3 rounded-btn transition-colors text-sm cursor-pointer"
         >
           Volver al inicio
         </button>

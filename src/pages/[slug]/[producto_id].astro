@@ -1,0 +1,24 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import LandingProductoView from '../../components/club/landing/LandingProductoView.vue';
+
+/**
+ * Landing de producto para compartir: /{slug}/{productoId}
+ * p. ej. /exequias/c76bcc7f-c3a1-4e39-b0c8-0e2f4e1e7d22?aliado_id=…
+ *
+ * Las rutas fijas (/planes/…, /venta/…, /convenio/…) tienen prioridad sobre esta.
+ * El contenido se carga en el cliente desde la API (con respaldo local).
+ */
+const { slug, producto_id } = Astro.params;
+
+const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ES_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i;
+
+if (!slug || !producto_id || !ES_SLUG.test(slug) || !ES_UUID.test(producto_id)) {
+	return new Response('No encontrado', { status: 404 });
+}
+---
+
+<Layout title='SEGURU'>
+	<LandingProductoView client:only="vue" productoId={producto_id} slug={slug} />
+</Layout>

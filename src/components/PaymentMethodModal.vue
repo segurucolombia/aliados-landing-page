@@ -25,15 +25,15 @@
           </div>
           <ul class="payment-option-details">
             <li>
-              <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <svg width="14" height="14" fill="#1E8E5A" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               Tu seguro se renueva automáticamente — sin que tengas que hacer nada
             </li>
             <li>
-              <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <svg width="14" height="14" fill="#1E8E5A" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               Vincula tu tarjeta de forma segura con <strong>Mercado Pago</strong>
             </li>
             <li>
-              <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <svg width="14" height="14" fill="#1E8E5A" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               Precio especial por activar la renovación automática
             </li>
           </ul>
@@ -63,11 +63,11 @@
           </div>
           <ul class="payment-option-details payment-option-details-secondary">
             <li>
-              <svg width="14" height="14" fill="#6b7280" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              <svg width="14" height="14" fill="#58587A" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
               En cada renovación debes ingresar a la plataforma y gestionar el pago
             </li>
             <li>
-              <svg width="14" height="14" fill="#6b7280" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+              <svg width="14" height="14" fill="#58587A" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
               Procesado por <strong>Wompi</strong>
             </li>
           </ul>
@@ -75,7 +75,7 @@
           <!-- Cupón de descuento (solo para pago con Wompi) -->
           <div class="modal-cupon-section" @click.stop>
             <div v-if="cuponValidado" class="modal-cupon-aplicado">
-              <svg width="16" height="16" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              <svg width="16" height="16" fill="#1E8E5A" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
               Cupón {{ cuponAplicado?.codigo }} aplicado: <strong>-{{ formatCurrency(valorDescuento) }}</strong>
               <button type="button" class="cupon-quitar" @click.stop="quitarCupon">Quitar</button>
             </div>
@@ -221,14 +221,14 @@ const handleSelectDebitoAutomatico = () => {
 .payment-modal-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #16163A;
   margin: 0 0 0.25rem;
   text-align: center;
 }
 
 .payment-modal-subtitle {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #58587A;
   margin: 0 0 1.25rem;
   text-align: center;
 }
@@ -245,7 +245,7 @@ const handleSelectDebitoAutomatico = () => {
   flex-direction: column;
   gap: 0.75rem;
   padding: 1rem 1.1rem 1rem;
-  border: 2px solid #e5e7eb;
+  border: 2px solid #DCDCF0;
   border-radius: 12px;
   background: white;
   cursor: pointer;
@@ -255,25 +255,25 @@ const handleSelectDebitoAutomatico = () => {
 }
 
 .payment-option-recommended {
-  border-color: #3b82f6;
+  border-color: #4A4AD2;
   background: #f0f7ff;
 }
 
 .payment-option-recommended:hover {
-  border-color: #2563eb;
+  border-color: #3232B3;
   background: #e0effe;
 }
 
 .payment-option-secondary:hover {
-  border-color: #9ca3af;
-  background: #f9fafb;
+  border-color: #8E8EAE;
+  background: #F4F4FB;
 }
 
 .payment-option-badge {
   position: absolute;
   top: -11px;
   left: 1rem;
-  background: #3b82f6;
+  background: #4A4AD2;
   color: white;
   font-size: 0.7rem;
   font-weight: 700;
@@ -293,8 +293,8 @@ const handleSelectDebitoAutomatico = () => {
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: #dbeafe;
-  color: #2563eb;
+  background: #DEDEF7;
+  color: #3232B3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -302,8 +302,8 @@ const handleSelectDebitoAutomatico = () => {
 }
 
 .payment-option-icon-secondary {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: #ECECFA;
+  color: #58587A;
 }
 
 .payment-option-info {
@@ -316,29 +316,29 @@ const handleSelectDebitoAutomatico = () => {
 .payment-option-label {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #16163A;
 }
 
 .payment-option-price {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #2563eb;
+  color: #3232B3;
   line-height: 1.2;
 }
 
 .payment-option-price-secondary {
-  color: #6b7280;
+  color: #58587A;
 }
 
 .payment-option-period {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #6b7280;
+  color: #58587A;
 }
 
 .payment-option-saving {
-  background: #fbbf24;
-  color: #78350f;
+  background: #FEA640;
+  color: #3A2000;
   font-size: 0.72rem;
   font-weight: 700;
   padding: 0.25rem 0.6rem;
@@ -351,7 +351,7 @@ const handleSelectDebitoAutomatico = () => {
   list-style: none;
   padding: 0;
   margin: 0;
-  border-top: 1px solid #dbeafe;
+  border-top: 1px solid #DEDEF7;
   padding-top: 0.65rem;
   display: flex;
   flex-direction: column;
@@ -359,7 +359,7 @@ const handleSelectDebitoAutomatico = () => {
 }
 
 .payment-option-details-secondary {
-  border-top-color: #e5e7eb;
+  border-top-color: #DCDCF0;
 }
 
 .payment-option-details li {
@@ -367,7 +367,7 @@ const handleSelectDebitoAutomatico = () => {
   align-items: flex-start;
   gap: 0.4rem;
   font-size: 0.8rem;
-  color: #374151;
+  color: #3E3E62;
   line-height: 1.4;
 }
 
@@ -377,7 +377,7 @@ const handleSelectDebitoAutomatico = () => {
 }
 
 .payment-option-details-secondary li {
-  color: #6b7280;
+  color: #58587A;
 }
 
 .payment-modal-close {
@@ -387,14 +387,14 @@ const handleSelectDebitoAutomatico = () => {
   padding: 0.6rem;
   border: none;
   background: none;
-  color: #9ca3af;
+  color: #8E8EAE;
   font-size: 0.875rem;
   cursor: pointer;
   text-align: center;
 }
 
 .payment-modal-close:hover {
-  color: #6b7280;
+  color: #58587A;
 }
 
 /* Tarjeta Wompi como div seleccionable */
@@ -404,7 +404,7 @@ const handleSelectDebitoAutomatico = () => {
 
 /* Cupón dentro del modal */
 .modal-cupon-section {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #DCDCF0;
   padding-top: 0.65rem;
   margin-top: 0.1rem;
 }
@@ -414,14 +414,14 @@ const handleSelectDebitoAutomatico = () => {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.82rem;
-  color: #16a34a;
+  color: #1E8E5A;
   font-weight: 600;
 }
 
 .cupon-quitar {
   margin-left: auto;
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: #8E8EAE;
   background: none;
   border: none;
   cursor: pointer;
@@ -430,40 +430,40 @@ const handleSelectDebitoAutomatico = () => {
 }
 
 .cupon-quitar:hover {
-  color: #6b7280;
+  color: #58587A;
 }
 
 .modal-cupon-input {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #9ca3af;
+  color: #8E8EAE;
 }
 
 .modal-cupon-field {
   flex: 1;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid #DCDCF0;
   border-radius: 6px;
   padding: 0.4rem 0.6rem;
   font-size: 0.82rem;
-  color: #374151;
+  color: #3E3E62;
   outline: none;
   transition: border-color 0.15s;
   font-family: inherit;
 }
 
 .modal-cupon-field:focus {
-  border-color: #9ca3af;
+  border-color: #8E8EAE;
 }
 
 .modal-cupon-btn {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: #ECECFA;
+  border: 1px solid #C4C4DE;
   border-radius: 6px;
   padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #374151;
+  color: #3E3E62;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s;
@@ -471,7 +471,7 @@ const handleSelectDebitoAutomatico = () => {
 }
 
 .modal-cupon-btn:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: #DCDCF0;
 }
 
 .modal-cupon-btn:disabled {
@@ -480,19 +480,19 @@ const handleSelectDebitoAutomatico = () => {
 }
 
 .modal-cupon-field-error {
-  border-color: #dc2626;
+  border-color: #B3321F;
 }
 
 .modal-cupon-error {
   margin: 0.35rem 0 0;
   font-size: 0.75rem;
-  color: #dc2626;
+  color: #B3321F;
 }
 
 .cupon-applied-badge {
   font-size: 0.68rem;
-  background: #dcfce7;
-  color: #16a34a;
+  background: #E3F5EB;
+  color: #1E8E5A;
   font-weight: 700;
   padding: 0.15rem 0.45rem;
   border-radius: 20px;
@@ -509,7 +509,7 @@ const handleSelectDebitoAutomatico = () => {
   width: 100%;
   margin-top: 0.75rem;
   padding: 0.65rem 1rem;
-  background: #374151;
+  background: #3E3E62;
   color: white;
   border: none;
   border-radius: 8px;
@@ -521,7 +521,7 @@ const handleSelectDebitoAutomatico = () => {
 }
 
 .wompi-continue-btn:hover {
-  background: #1f2937;
+  background: #16163A;
 }
 
 .debito-continue-btn {
@@ -532,7 +532,7 @@ const handleSelectDebitoAutomatico = () => {
   width: 100%;
   margin-top: 0.75rem;
   padding: 0.65rem 1rem;
-  background: #2563eb;
+  background: #3232B3;
   color: white;
   border: none;
   border-radius: 8px;
@@ -544,6 +544,6 @@ const handleSelectDebitoAutomatico = () => {
 }
 
 .debito-continue-btn:hover {
-  background: #1d4ed8;
+  background: #141450;
 }
 </style>

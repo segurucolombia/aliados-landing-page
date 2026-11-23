@@ -41,11 +41,10 @@
 
           <div class="text-left">
             <div class="flex items-center gap-3 mb-2">
-              <div class="w-12 h-1 bg-white/70"></div>
-              <span class="text-white/90 font-semibold">Planes Disponibles</span>
+              <span class="text-[12.5px] font-bold tracking-[.1em] uppercase text-orange-300">Planes Disponibles</span>
             </div>
 
-            <h1 class="text-4xl md:text-5xl font-bold mb-6">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6">
               {{ productoPlanes.productoNombre }}
             </h1>
 
@@ -90,7 +89,7 @@
       <!-- Wave decoration -->
       <div class="absolute bottom-0 left-0 right-0 z-10">
         <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full">
-          <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="#F9FAFB"/>
+          <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="#F4F4FB"/>
         </svg>
       </div>
     </section>
@@ -111,7 +110,7 @@
               class="h-12 sm:h-16 lg:h-20 object-contain flex-shrink-0 sm:order-last hidden lg:block"
             />
             <div>
-              <h2 class="text-2xl md:text-4xl font-bold text-gray-900 mb-2 lg:mb-4"
+              <h2 class="text-2xl md:text-4xl font-extrabold text-gray-900 mb-2 lg:mb-4"
                   :class="logoAseguradoraUrl ? '' : 'text-center'">
                 Elige cómo estar protegido
               </h2>
@@ -167,7 +166,9 @@
             :coberturas="productoPlanes.coberturas"
             :estilos="aseguradoraEstilos"
             :imagen_aseguradora="logoAseguradoraUrl"
+            :ocultar-precios="!esMiembro"
             @seleccionar-plan="handleSeleccionarPlan"
+            @ver-precios="verPrecios"
           />
         </div>
       </div>
@@ -222,14 +223,14 @@
     <!-- CTA Section -->
     <section class="bg-primary-700 text-white py-16" :style="ctaBgStyle">
       <div class="container mx-auto px-4 text-center">
-        <h2 class="text-3xl md:text-4xl font-bold mb-4">
+        <h2 class="text-[clamp(26px,5vw,40px)] font-extrabold mb-4">
           ¿Necesitas ayuda para elegir?
         </h2>
         <p class="text-xl mb-8 text-blue-100 max-w-2xl mx-auto">
           Nuestros aliados están listos para ayudarte a encontrar el plan perfecto
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <button class="bg-white text-primary-700 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors text-lg inline-flex items-center justify-center gap-2">
+          <button class="bg-white text-primary-700 px-8 py-4 rounded-btn font-bold hover:bg-blue-50 transition-colors text-lg inline-flex items-center justify-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
             </svg>
@@ -265,6 +266,8 @@ import {
 } from '../services/ventas.service';
 import { ProductosService } from '../services/productos.service';
 import useCupon from '../composables/cupon';
+import useClubSesion from '../composables/clubSesion';
+import useClubModal from '../composables/clubModal';
 import type {
   ProductoPlanes,
   Plan,
@@ -301,7 +304,7 @@ const HERO_IMAGEN_DEFAULT = '/img/imagen-familia.png';
 const heroImagenUrl = computed(() => productoImagenUrl.value || HERO_IMAGEN_DEFAULT);
 
 // Color base del hero de inicio (Hero.vue); se usa cuando la aseguradora no tiene color configurado
-const HERO_COLOR_DEFAULT = '#1a3fa8';
+const HERO_COLOR_DEFAULT = '#141450';
 
 const colorConfigurado = (color?: string | null): string | null => {
   const valor = color?.trim();
@@ -347,6 +350,9 @@ const accentTextStyle = computed(() => {
   if (!aseguradoraEstilos.value) return {};
   return { color: aseguradoraEstilos.value.color_secundario };
 });
+
+const { esMiembro } = useClubSesion();
+const { abrir: abrirClub } = useClubModal();
 
 // Cupón de descuento aplicado en el resumen de compra
 const { valorDescuento, codigoParaVenta, sincronizarConPlan, rechazarCuponDesdeVenta } = useCupon();
@@ -474,12 +480,57 @@ const loadPlanes = async () => {
   }
 };
 
-const handleSeleccionarPlan = (plan: Plan) => {
-  console.log('Plan seleccionado:', plan);
-  selectedPlanId.value = plan.id;
+const abrirWizard = (planId: string) => {
+  selectedPlanId.value = planId;
   showPurchaseWizard.value = true;
   // Si venía un cupón aplicado a otro plan, se limpia y se revalida contra este
-  sincronizarConPlan(plan.id);
+  sincronizarConPlan(planId);
+};
+
+/** Parámetro con el que se vuelve a esta página, tras activar la cuenta, para seguir con el plan elegido */
+const PARAM_PLAN = 'plan';
+
+/**
+ * Los precios solo se ven con sesión del Club: sin sesión se abre el modal y, al entrar,
+ * la tabla los muestra sola (`esMiembro` es reactivo).
+ */
+const verPrecios = () => {
+  abrirClub({
+    pestana: 'unirme',
+    intencion: 'cotizacion',
+    retorno: window.location.pathname + window.location.search,
+  });
+};
+
+/**
+ * Para contratar hay que ser miembro del Club.
+ * Sin sesión se abre el modal del Club; al iniciar sesión sigue el wizard de compra.
+ */
+const handleSeleccionarPlan = (plan: Plan) => {
+  if (esMiembro.value) {
+    abrirWizard(plan.id);
+    return;
+  }
+  const retorno = new URL(window.location.href);
+  retorno.searchParams.set(PARAM_PLAN, plan.id);
+  abrirClub({
+    pestana: 'unirme',
+    intencion: 'contratar',
+    retorno: retorno.pathname + retorno.search,
+    alIniciarSesion: () => abrirWizard(plan.id),
+  });
+};
+
+/** Vuelve de activar la cuenta (`?plan=<id>`): si ya hay sesión, sigue con ese plan */
+const retomarPlanDesdeUrl = () => {
+  const url = new URL(window.location.href);
+  const planId = url.searchParams.get(PARAM_PLAN);
+  if (!planId) return;
+  url.searchParams.delete(PARAM_PLAN);
+  window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+  if (esMiembro.value && productoPlanes.value.planes.some(p => p.id === planId)) {
+    abrirWizard(planId);
+  }
 };
 
 const closePurchaseWizard = () => {
@@ -594,7 +645,7 @@ const mostrarErrorVenta = async (error: any, codigoCupon: string | undefined, da
     await Swal.fire({
       text: 'Este documento ya está registrado. Si eres tú, confirma tus datos para continuar',
       icon: 'info',
-      confirmButtonColor: '#1e40af'
+      confirmButtonColor: '#1E1E78'
     });
     purchaseWizard.value?.preguntarSiEsCliente();
     return;
@@ -604,7 +655,7 @@ const mostrarErrorVenta = async (error: any, codigoCupon: string | undefined, da
     title: 'Error',
     text: resolverErrorVenta(error, codigoCupon, data.camposTitular, !!data.clienteId),
     icon: 'error',
-    confirmButtonColor: '#1e40af'
+    confirmButtonColor: '#1E1E78'
   });
 };
 
@@ -893,7 +944,8 @@ const sendWompi = async (
   }
 };
 
-onMounted(() => {
-  loadPlanes();
+onMounted(async () => {
+  await loadPlanes();
+  retomarPlanDesdeUrl();
 });
 </script>

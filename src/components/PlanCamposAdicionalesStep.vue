@@ -147,12 +147,12 @@ const handleContinue = () => {
 <style scoped>
 .campos-adicionales-step-wrapper {
   min-height: 100vh;
-  background: #f9fafb;
+  background: #F4F4FB;
 }
 
 /* Hero Section */
 .form-hero {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #3232B3 0%, #3232B3 100%);
   color: white;
   padding: 2rem 1.5rem;
   margin-bottom: 2rem;
@@ -222,7 +222,7 @@ const handleContinue = () => {
   gap: 1rem;
   justify-content: flex-end;
   padding-top: 2rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #DCDCF0;
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);

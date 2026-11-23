@@ -3,13 +3,13 @@
   <Teleport to="body">
     <div
       v-if="visible"
-      class="fixed inset-0 z-[9999] bg-gradient-to-br from-primary-700 to-primary-900 flex items-center justify-center p-4"
+      class="fixed inset-0 z-[9999] bg-brand-deep flex items-center justify-center p-4"
       role="alertdialog"
       aria-modal="true"
       aria-live="polite"
       aria-labelledby="procesando-pago-titulo"
     >
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md px-6 py-10 text-center">
+      <div class="bg-white rounded-2xl shadow-lg w-full max-w-md px-6 py-10 text-center">
         <div class="relative w-20 h-20 mx-auto mb-6">
           <div class="absolute inset-0 rounded-full border-4 border-blue-100"></div>
           <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-600 animate-spin"></div>
@@ -18,7 +18,7 @@
           </svg>
         </div>
 
-        <h2 id="procesando-pago-titulo" class="text-2xl font-bold text-gray-900 mb-3">Procesando tu pago</h2>
+        <h2 id="procesando-pago-titulo" class="text-2xl font-extrabold text-gray-900 mb-3">Procesando tu pago</h2>
 
         <p class="text-sm text-gray-600 leading-relaxed">
           <template v-if="mensaje">{{ mensaje }}</template>

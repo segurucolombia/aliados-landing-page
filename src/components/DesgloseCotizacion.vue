@@ -107,7 +107,7 @@ const cobros = computed(() => lineasDeCobro(props.cotizacion?.adicionales));
 <style scoped>
 .desglose {
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #DCDCF0;
   border-radius: 12px;
   padding: 1.5rem;
 }
@@ -115,7 +115,7 @@ const cobros = computed(() => lineasDeCobro(props.cotizacion?.adicionales));
 .desglose-titulo {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #16163A;
   margin: 0 0 1rem 0;
 }
 
@@ -126,11 +126,11 @@ const cobros = computed(() => lineasDeCobro(props.cotizacion?.adicionales));
   gap: 1rem;
   padding: 0.35rem 0;
   font-size: 0.95rem;
-  color: #374151;
+  color: #3E3E62;
 }
 
 .linea-adicional {
-  color: #92400e;
+  color: #8A4700;
   font-size: 0.9rem;
 }
 
@@ -141,7 +141,7 @@ const cobros = computed(() => lineasDeCobro(props.cotizacion?.adicionales));
 .linea-total {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #16163A;
 }
 
 .monto {
@@ -150,24 +150,24 @@ const cobros = computed(() => lineasDeCobro(props.cotizacion?.adicionales));
 }
 
 .registro {
-  color: #6b7280;
+  color: #58587A;
   font-size: 0.8rem;
 }
 
 .separador {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #DCDCF0;
   margin: 0.5rem 0;
 }
 
 .desglose-rechazos {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: #FCEAE6;
+  border: 1px solid #F2B0A4;
   border-radius: 8px;
   padding: 1rem;
 }
 
 .rechazos-titulo {
-  color: #b91c1c;
+  color: #932818;
   font-weight: 600;
   margin: 0 0 0.5rem 0;
   font-size: 0.95rem;
@@ -188,19 +188,19 @@ const cobros = computed(() => lineasDeCobro(props.cotizacion?.adicionales));
 }
 
 .desglose-error {
-  color: #b91c1c;
+  color: #932818;
   font-size: 0.9rem;
   margin: 0;
 }
 
 .desglose-vacio {
-  color: #6b7280;
+  color: #58587A;
   font-size: 0.9rem;
   margin: 0;
 }
 
 .desglose-cargando {
-  color: #6b7280;
+  color: #58587A;
   font-size: 0.8rem;
   margin: 0.75rem 0 0 0;
 }

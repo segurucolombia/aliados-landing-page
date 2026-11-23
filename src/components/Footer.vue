@@ -1,5 +1,5 @@
 <template>
-    <div class="w-full background-footer mt-4 p-4 flex justify-center">
+    <footer class="w-full background-footer mt-12 px-4 py-10 flex justify-center">
         <div class="w-10/12">
             <div class="grid grid-cols-1 lg:grid-cols-3 py-2">
                 <div class="w-full lg:flex justify-center">
@@ -8,15 +8,16 @@
                             <img class="w-48" src="/img/logo-aib.png" alt="">
                         </div>
                         <div class="mt-4 text-center px-14">
-                            <p class="text-lg text-white">{{ t('footer.text') }}</p>
+                            <p class="text-base text-[#D6D6F5]">{{ t('footer.text') }}</p>
                         </div>
                     </div>
                 </div>
                 <div class="w-full lg:flex justify-center  mt-4 lg:mt-0">
                     <div>
                         <div class="w-full flex justify-center">
-                            <div class="border-l-2 border-blue-300 px-2 text-center">
-                                <p class="font-bold text-white">{{ t('footer.social_media_title') }}</p>
+                            <div class="flex items-center gap-2 text-center">
+                                <i class="block w-6 h-1.5 rounded-[3px] bg-accent" aria-hidden="true"></i>
+                                <p class="font-display font-extrabold tracking-[.14em] uppercase text-[15px] text-white">{{ t('footer.social_media_title') }}</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-3 gap-4 mt-4">
@@ -47,29 +48,30 @@
                 <div class="w-full lg:flex justify-center mt-4 lg:mt-0">
                     <div>
                         <div class="w-full flex justify-center">
-                            <div class="border-l-2 border-blue-300 px-2">
-                                <p class="font-bold text-white">{{ t('footer.about_title') }}</p>
+                            <div class="flex items-center gap-2">
+                                <i class="block w-6 h-1.5 rounded-[3px] bg-accent" aria-hidden="true"></i>
+                                <p class="font-display font-extrabold tracking-[.14em] uppercase text-[15px] text-white">{{ t('footer.about_title') }}</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 gap-4 mt-4 text-center lg:text-start">
                             <button class="w-full text-center lg:text-start">
-                                <p class="text-white">{{ t('nav.work_with_us') }}</p>
+                                <p class="text-[#D6D6F5] hover:text-white transition-colors">{{ t('nav.work_with_us') }}</p>
                             </button>
                             <button class="w-full text-center lg:text-start">
-                                <p class="text-white">{{ t('nav.frequently_asked_questions') }}</p>
+                                <p class="text-[#D6D6F5] hover:text-white transition-colors">{{ t('nav.frequently_asked_questions') }}</p>
                             </button>
                             <button class="w-full text-center lg:text-start" >
-                                <p class="text-white">{{ t('nav.pqr') }}</p>
+                                <p class="text-[#D6D6F5] hover:text-white transition-colors">{{ t('nav.pqr') }}</p>
                             </button>
                             <a href="/programa-afiliados" class="w-full text-center lg:text-start">
-                                <p class="text-white">{{ t('nav.affiliate') }}</p>
+                                <p class="text-[#D6D6F5] hover:text-white transition-colors">{{ t('nav.affiliate') }}</p>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </footer>
 </template>
 <script setup lang="ts">
 import { useTranslations } from '../i18n/utils';
@@ -78,6 +80,6 @@ const {t} = useTranslations();
 </script>
 <style>
 .background-footer {
-    background-color: #13287e;
+    background-color: var(--brand-deep, #141450);
 }
 </style>

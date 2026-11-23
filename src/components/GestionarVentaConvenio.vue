@@ -11,19 +11,19 @@
 
   <!-- 404 / 422: la venta no existe o el id no es válido -->
   <div v-else-if="state === 'no-encontrada'" class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 text-center">
+    <div class="bg-white rounded-2xl shadow-md w-full max-w-md p-8 text-center">
       <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
         <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
-      <h1 class="text-xl font-bold text-gray-900 mb-2">Venta no encontrada</h1>
+      <h1 class="text-xl font-extrabold text-gray-900 mb-2">Venta no encontrada</h1>
       <p class="text-sm text-gray-600 mb-6">
         No pudimos encontrar la venta de este enlace. Asegúrate de abrirlo tal como lo recibiste.
       </p>
       <button
         @click="volverInicio"
-        class="w-full bg-primary-700 hover:bg-primary-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+        class="w-full bg-primary-700 hover:bg-primary-800 text-white font-bold px-6 py-3 rounded-btn transition-colors"
       >
         Volver al inicio
       </button>
@@ -32,12 +32,12 @@
 
   <!-- Error genérico al cargar -->
   <div v-else-if="state === 'error'" class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 text-center">
-      <h1 class="text-xl font-bold text-gray-900 mb-2">No pudimos cargar la venta</h1>
+    <div class="bg-white rounded-2xl shadow-md w-full max-w-md p-8 text-center">
+      <h1 class="text-xl font-extrabold text-gray-900 mb-2">No pudimos cargar la venta</h1>
       <p class="text-sm text-gray-600 mb-6">{{ errorCarga }}</p>
       <button
         @click="cargarVenta"
-        class="w-full bg-primary-700 hover:bg-primary-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+        class="w-full bg-primary-700 hover:bg-primary-800 text-white font-bold px-6 py-3 rounded-btn transition-colors"
       >
         Reintentar
       </button>
@@ -828,11 +828,11 @@ onMounted(cargarVenta);
 /* Encabezado, contenedor y botones: los mismos de PlanPurchaseFormStep */
 .purchase-form-wrapper {
   min-height: 100vh;
-  background: #f9fafb;
+  background: #F4F4FB;
 }
 
 .form-hero {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #3232B3 0%, #3232B3 100%);
   color: white;
   padding: 2rem 1.5rem;
   margin-bottom: 2rem;
@@ -897,12 +897,12 @@ onMounted(cargarVenta);
   justify-content: flex-end;
   padding-top: 2rem;
   margin-top: 2rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #DCDCF0;
 }
 
 /* Datos del titular en solo lectura */
 .desglose {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #DCDCF0;
   border-radius: 12px;
   padding: 1.5rem;
 }
@@ -910,7 +910,7 @@ onMounted(cargarVenta);
 .desglose-titulo {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #16163A;
   margin: 0 0 1rem 0;
 }
 
@@ -920,11 +920,11 @@ onMounted(cargarVenta);
   gap: 1rem;
   padding: 0.35rem 0;
   font-size: 0.95rem;
-  color: #374151;
+  color: #3E3E62;
 }
 
 .linea > span:first-child {
-  color: #6b7280;
+  color: #58587A;
 }
 
 /* Vista de pago: resumen a la izquierda, pago a la derecha */
@@ -972,7 +972,7 @@ onMounted(cargarVenta);
   align-items: center;
   gap: 0.375rem;
   font-size: 0.8rem;
-  color: #6b7280;
+  color: #58587A;
 }
 
 .field-completo {
@@ -981,12 +981,12 @@ onMounted(cargarVenta);
 
 .field label {
   font-weight: 600;
-  color: #374151;
+  color: #3E3E62;
   font-size: 0.95rem;
 }
 
 .required {
-  color: #dc2626;
+  color: #B3321F;
 }
 
 .field :deep(.p-select),

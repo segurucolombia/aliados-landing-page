@@ -1,19 +1,19 @@
 <template>
   <!-- Sin venta_id → error -->
   <div v-if="state === 'no-venta-id'" class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 text-center">
+    <div class="bg-white rounded-2xl shadow-md w-full max-w-md p-8 text-center">
       <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
         <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
-      <h1 class="text-xl font-bold text-gray-900 mb-2">Enlace inválido</h1>
+      <h1 class="text-xl font-extrabold text-gray-900 mb-2">Enlace inválido</h1>
       <p class="text-sm text-gray-600 mb-6">
         No pudimos identificar la venta a reintentar. Asegúrate de abrir el enlace tal como lo recibiste por correo.
       </p>
       <button
         @click="volverInicio"
-        class="w-full bg-primary-700 hover:bg-primary-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+        class="w-full bg-primary-700 hover:bg-primary-800 text-white font-bold px-6 py-3 rounded-btn transition-colors"
       >
         Volver al inicio
       </button>
@@ -54,7 +54,7 @@
     </div>
 
     <div v-if="submitting" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div class="bg-white rounded-xl p-6 flex items-center gap-3 shadow-2xl">
+      <div class="bg-white rounded-xl p-6 flex items-center gap-3 shadow-lg">
         <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
         <p class="text-gray-700 font-medium">Registrando reintento...</p>
       </div>

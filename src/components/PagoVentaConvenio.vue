@@ -116,14 +116,14 @@ watch(procesando, (ocupado) => emit('update:ocupado', ocupado));
 .pago-titulo {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #16163A;
   margin: 0;
 }
 
 /* Mismo diseño que ResumenVentaConvenio */
 .desglose {
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #DCDCF0;
   border-radius: 12px;
   padding: 1.5rem;
 }
@@ -135,18 +135,18 @@ watch(procesando, (ocupado) => emit('update:ocupado', ocupado));
   gap: 1rem;
   padding: 0.35rem 0;
   font-size: 0.95rem;
-  color: #374151;
+  color: #3E3E62;
 }
 
 .linea-secundaria {
-  color: #6b7280;
+  color: #58587A;
   font-size: 0.9rem;
 }
 
 .linea-total {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #16163A;
 }
 
 .monto {
@@ -155,20 +155,20 @@ watch(procesando, (ocupado) => emit('update:ocupado', ocupado));
 }
 
 .separador {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #DCDCF0;
   margin: 0.5rem 0;
 }
 
 .nota-cobro {
   font-size: 0.85rem;
-  color: #6b7280;
+  color: #58587A;
   margin: 0.5rem 0 0 0;
 }
 
 .error-banner {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
+  background: #FCEAE6;
+  border: 1px solid #F2B0A4;
+  color: #B3321F;
   font-size: 0.9rem;
   padding: 0.85rem 1rem;
   border-radius: 8px;
@@ -180,9 +180,9 @@ watch(procesando, (ocupado) => emit('update:ocupado', ocupado));
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1e3a8a;
+  background: #EEEEFB;
+  border: 1px solid #C0C0F0;
+  color: #141450;
   font-size: 0.9rem;
   padding: 1rem 1.25rem;
   border-radius: 10px;

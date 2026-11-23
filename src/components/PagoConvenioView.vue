@@ -18,25 +18,25 @@
 
     <!-- 404 / 422 -->
     <div v-else-if="state === 'no-encontrada'" class="min-h-screen flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 text-center">
+      <div class="bg-white rounded-2xl shadow-md w-full max-w-md p-8 text-center">
         <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
           <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h1 class="text-xl font-bold text-gray-900 mb-2">No encontramos este plan</h1>
+        <h1 class="text-xl font-extrabold text-gray-900 mb-2">No encontramos este plan</h1>
         <p class="text-sm text-gray-600">Verifica el enlace que te compartió tu asesor.</p>
       </div>
     </div>
 
     <!-- Error al cargar (500, sin conexión) -->
     <div v-else-if="state === 'error-carga'" class="min-h-screen flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 text-center">
-        <h1 class="text-xl font-bold text-gray-900 mb-2">No pudimos cargar tu plan</h1>
+      <div class="bg-white rounded-2xl shadow-md w-full max-w-md p-8 text-center">
+        <h1 class="text-xl font-extrabold text-gray-900 mb-2">No pudimos cargar tu plan</h1>
         <p class="text-sm text-gray-600 mb-6">Revisa tu conexión e intenta de nuevo.</p>
         <button
           @click="cargarVenta"
-          class="w-full bg-primary-700 hover:bg-primary-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+          class="w-full bg-primary-700 hover:bg-primary-800 text-white font-bold px-6 py-3 rounded-btn transition-colors"
         >
           Reintentar
         </button>
@@ -44,15 +44,15 @@
     </div>
 
     <!-- Pago aprobado -->
-    <div v-else-if="state === 'exito' && venta" class="min-h-screen bg-gradient-to-br from-primary-700 to-primary-900 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-        <div class="bg-gradient-to-br from-green-500 to-green-600 px-6 pt-10 pb-8 text-center text-white">
+    <div v-else-if="state === 'exito' && venta" class="min-h-screen bg-brand-deep flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-lg w-full max-w-lg overflow-hidden">
+        <div class="bg-green-600 px-6 pt-10 pb-8 text-center text-white">
           <div class="w-20 h-20 mx-auto mb-5 rounded-full bg-white/20 flex items-center justify-center">
             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 class="text-2xl font-bold mb-1">¡Pago exitoso!</h1>
+          <h1 class="text-2xl font-extrabold mb-1">¡Pago exitoso!</h1>
           <p class="text-green-50">Tu plan {{ venta.version_producto?.nombre }} ya está activo</p>
         </div>
 
@@ -82,7 +82,7 @@
 
           <button
             @click="irPlataforma"
-            class="w-full bg-primary-700 hover:bg-primary-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+            class="w-full bg-primary-700 hover:bg-primary-800 text-white font-bold px-6 py-3 rounded-btn transition-colors"
           >
             Ir a la plataforma
           </button>
@@ -91,7 +91,7 @@
     </div>
 
     <div v-else-if="venta" class="max-w-xl mx-auto px-4 py-6 md:py-10 space-y-4">
-      <h1 class="text-2xl font-bold text-gray-900">
+      <h1 class="text-2xl font-extrabold text-gray-900">
         Hola{{ venta.nombres ? `, ${venta.nombres}` : '' }}
       </h1>
 
@@ -163,7 +163,7 @@
           </p>
           <button
             @click="verificarDeNuevo"
-            class="w-full mt-6 bg-primary-700 hover:bg-primary-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+            class="w-full mt-6 bg-primary-700 hover:bg-primary-800 text-white font-bold px-6 py-3 rounded-btn transition-colors"
           >
             Verificar de nuevo
           </button>

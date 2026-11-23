@@ -15,8 +15,8 @@ defineProps<{ cliente: ClientePorDocumento }>();
 
 <style scoped>
 .datos-cliente {
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
+  border: 1px solid #C0C0F0;
+  background: #EEEEFB;
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
 }
@@ -27,12 +27,12 @@ defineProps<{ cliente: ClientePorDocumento }>();
   gap: 1rem;
   padding: 0.25rem 0;
   font-size: 0.95rem;
-  color: #374151;
+  color: #3E3E62;
 }
 
 .linea span:last-child {
   font-weight: 600;
-  color: #111827;
+  color: #16163A;
   text-align: right;
   word-break: break-word;
 }

@@ -1,18 +1,19 @@
 <template>
-  <section id="productos" class="py-20 bg-gray-50">
+  <section id="productos" class="py-12 md:py-16 bg-page">
     <div class="container mx-auto px-4">
       <!-- Section Header -->
-      <div class="text-center mb-16">
-        <h2 class="text-3xl md:text-5xl font-bold text-gray-900 mb-4">
+      <div class="text-center mb-10">
+        <p class="text-[12.5px] font-bold tracking-[.1em] uppercase text-brand mb-1.5">Catálogo</p>
+        <h2 class="text-[clamp(25px,6vw,36px)] font-extrabold text-ink mb-3">
           Nuestros Productos
         </h2>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+        <p class="text-lg text-muted max-w-[36em] mx-auto">
           Descubre nuestra amplia gama de seguros diseñados para protegerte en cada etapa de tu vida
         </p>
       </div>
 
       <!-- Products Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-10">
         <ProductCard
           v-for="producto in displayedProducts"
           :key="producto.id"
@@ -24,7 +25,7 @@
       <div class="text-center">
         <a
           href="/productos"
-          class="inline-flex items-center gap-3 bg-primary-600 text-white px-8 py-4 rounded-lg hover:bg-primary-700 transition-all transform hover:scale-105 shadow-lg font-semibold text-lg"
+          class="inline-flex items-center justify-center gap-3 min-h-[50px] bg-brand text-white px-[22px] py-3 rounded-btn hover:bg-primary-700 transition font-bold text-[17px]"
         >
           Ver Todos los Productos
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

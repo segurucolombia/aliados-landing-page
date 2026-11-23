@@ -161,6 +161,7 @@ import useCupon from '../composables/cupon';
 import type { CampoTitular, DatosTitular } from '../types/planes';
 import type { CotizacionVenta, RechazoVenta } from '../types/cotizacion';
 import { claveDeAccesoTitular } from '../utils/titularVenta';
+import useClubSesion, { type PerfilClub } from '../composables/clubSesion';
 
 /**
  * Datos del titular capturados en este paso. El titular va indexado por la `clave`
@@ -247,6 +248,35 @@ const isFormValid = computed(
   () => props.camposTitular.length > 0 && titularValido.value && props.puedeContinuar,
 );
 
+// Miembro del Club: se prellenan los datos que ya conocemos de su cuenta. Corre antes
+// de que se monte CamposTitular, que toma el valor inicial del v-model al montarse.
+const { esMiembro, perfil } = useClubSesion();
+const PRELLENADO_POR_CLAVE_SISTEMA: Record<string, (p: PerfilClub) => string | undefined> = {
+  EMAIL: (p) => p.email,
+  NUMERO_DOCUMENTO: (p) => p.numero_documento,
+  TIPO_DOCUMENTO: (p) => p.tipo_documento,
+  TELEFONO: (p) => p.telefono,
+  NOMBRES: (p) => p.nombres,
+  APELLIDOS: (p) => p.apellidos,
+  FECHA_NACIMIENTO: (p) => (p.dob && /^\d{4}-\d{2}-\d{2}/.test(p.dob) ? p.dob.slice(0, 10) : undefined),
+};
+
+watch(
+  () => props.camposTitular,
+  (campos) => {
+    if (!esMiembro.value || props.clienteExistente || campos.length === 0) return;
+    const prellenado: DatosTitular = { ...titular.value };
+    for (const campo of campos) {
+      const obtener = campo.clave_sistema ? PRELLENADO_POR_CLAVE_SISTEMA[campo.clave_sistema] : undefined;
+      const valor = obtener?.(perfil.value);
+      const actual = prellenado[campo.clave];
+      if (valor && (actual === undefined || actual === null || actual === '')) prellenado[campo.clave] = valor;
+    }
+    titular.value = prellenado;
+  },
+  { immediate: true },
+);
+
 // Cada cambio del titular se avisa hacia arriba para volver a cotizar
 watch(titular, () => emit('update:titular', { ...titular.value }), { deep: true });
 
@@ -310,12 +340,12 @@ const handleCancel = () => {
 <style scoped>
 .purchase-form-wrapper {
   min-height: 100vh;
-  background: #f9fafb;
+  background: #F4F4FB;
 }
 
 /* Hero Section */
 .form-hero {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #3232B3 0%, #3232B3 100%);
   color: white;
   padding: 2rem 1.5rem;
   margin-bottom: 2rem;
@@ -380,9 +410,9 @@ const handleCancel = () => {
 }
 
 .sin-campos {
-  background: #fef3c7;
-  border: 1px solid #fcd34d;
-  color: #92400e;
+  background: #FFF0DC;
+  border: 1px solid #FFC27A;
+  color: #8A4700;
   border-radius: 8px;
   padding: 1rem;
 }
@@ -403,7 +433,7 @@ const handleCancel = () => {
 
 .cliente-existente-titulo {
   font-weight: 600;
-  color: #374151;
+  color: #3E3E62;
   margin: 0;
 }
 
@@ -413,7 +443,7 @@ const handleCancel = () => {
 }
 
 .discount-card {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  background: linear-gradient(135deg, #E3F5EB 0%, #E3F5EB 100%);
   border: 2px solid #86efac;
   border-radius: 12px;
   padding: 1.5rem;
@@ -425,7 +455,7 @@ const handleCancel = () => {
 .discount-icon {
   width: 48px;
   height: 48px;
-  background: #22c55e;
+  background: #27A067;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -448,7 +478,7 @@ const handleCancel = () => {
 
 .discount-content label {
   font-weight: 600;
-  color: #166534;
+  color: #135A3A;
   font-size: 1rem;
 }
 
@@ -472,7 +502,7 @@ const handleCancel = () => {
 
 .price-note {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #58587A;
   margin: 0.5rem 0 0 0;
 }
 
@@ -487,7 +517,7 @@ const handleCancel = () => {
   gap: 1rem;
   justify-content: flex-end;
   padding-top: 2rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #DCDCF0;
 }
 
 /* Responsive */

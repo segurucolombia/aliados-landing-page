@@ -329,12 +329,12 @@ defineExpose({ validarTodo });
 
 .field label {
   font-weight: 600;
-  color: #374151;
+  color: #3E3E62;
   font-size: 0.95rem;
 }
 
 .required {
-  color: #dc2626;
+  color: #B3321F;
 }
 
 .campo-avisos {
@@ -346,13 +346,13 @@ defineExpose({ validarTodo });
 .aviso-recargo {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #b45309;
+  color: #B85F00;
 }
 
 .aviso-rechazo {
   font-size: 0.75rem;
   font-style: italic;
-  color: #6b7280;
+  color: #58587A;
 }
 
 .opcion {
@@ -366,14 +366,14 @@ defineExpose({ validarTodo });
 .opcion-recargo {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #b45309;
+  color: #B85F00;
   white-space: nowrap;
 }
 
 .opcion-rechazo {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #dc2626;
+  color: #B3321F;
   white-space: nowrap;
 }
 

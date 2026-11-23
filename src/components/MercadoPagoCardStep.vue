@@ -328,7 +328,7 @@ const handleSubmit = async () => {
 <style scoped>
 .card-step-wrapper {
   min-height: 100vh;
-  background: #f9fafb;
+  background: #F4F4FB;
 }
 
 .card-step-wrapper.embebido {
@@ -343,7 +343,7 @@ const handleSubmit = async () => {
 
 /* Hero */
 .card-hero {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #3232B3 0%, #3232B3 100%);
   color: white;
   padding: 2rem 1.5rem;
   margin-bottom: 2rem;
@@ -401,15 +401,15 @@ const handleSubmit = async () => {
   display: flex;
   gap: 1rem;
   align-items: flex-start;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: #EEEEFB;
+  border: 1px solid #C0C0F0;
   border-radius: 10px;
   padding: 1rem 1.25rem;
   margin-bottom: 1.5rem;
 }
 
 .mp-info-icon {
-  color: #2563eb;
+  color: #3232B3;
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -420,14 +420,14 @@ const handleSubmit = async () => {
 
 .mp-info-title {
   font-weight: 700;
-  color: #1e3a8a;
+  color: #141450;
   font-size: 0.9rem;
   margin: 0 0 0.25rem;
 }
 
 .mp-info-desc {
   font-size: 0.8rem;
-  color: #3b82f6;
+  color: #4A4AD2;
   margin: 0;
   line-height: 1.5;
 }
@@ -461,7 +461,7 @@ const handleSubmit = async () => {
 
 .field label {
   font-weight: 600;
-  color: #374151;
+  color: #3E3E62;
   font-size: 0.875rem;
   display: flex;
   align-items: center;
@@ -470,7 +470,7 @@ const handleSubmit = async () => {
 }
 
 .required {
-  color: #dc2626;
+  color: #B3321F;
 }
 
 .cvv-hint {
@@ -479,17 +479,17 @@ const handleSubmit = async () => {
   gap: 0.2rem;
   font-size: 0.75rem;
   font-weight: 400;
-  color: #9ca3af;
+  color: #8E8EAE;
   margin-left: 0.25rem;
 }
 
 .field input,
 .field select {
   padding: 0.65rem 0.9rem;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid #C4C4DE;
   border-radius: 8px;
   font-size: 0.95rem;
-  color: #1f2937;
+  color: #16163A;
   background: white;
   transition: border-color 0.15s, box-shadow 0.15s;
   font-family: inherit;
@@ -500,17 +500,17 @@ const handleSubmit = async () => {
 .field input:focus,
 .field select:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #4A4AD2;
+  box-shadow: 0 0 0 3px rgba(50, 50, 179, 0.1);
 }
 
 .field input.input-error,
 .field select.input-error {
-  border-color: #dc2626;
+  border-color: #B3321F;
 }
 
 .field-error {
-  color: #dc2626;
+  color: #B3321F;
   font-size: 0.78rem;
 }
 
@@ -541,9 +541,9 @@ const handleSubmit = async () => {
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
+  background: #FCEAE6;
+  border: 1px solid #F2B0A4;
+  color: #B3321F;
   font-size: 0.85rem;
   padding: 0.85rem 1rem;
   border-radius: 8px;
@@ -556,7 +556,7 @@ const handleSubmit = async () => {
   gap: 1rem;
   justify-content: flex-end;
   padding-top: 0.5rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #DCDCF0;
   margin-top: 0.25rem;
 }
 
@@ -574,30 +574,30 @@ const handleSubmit = async () => {
 }
 
 .btn-primary {
-  background: #3b82f6;
+  background: #4A4AD2;
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #2563eb;
+  background: #3232B3;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(50, 50, 179, 0.4);
 }
 
 .btn-primary:disabled {
-  background: #9ca3af;
+  background: #8E8EAE;
   cursor: not-allowed;
   opacity: 0.7;
 }
 
 .btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background: #ECECFA;
+  color: #3E3E62;
+  border: 1px solid #C4C4DE;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: #DCDCF0;
 }
 
 .btn-secondary:disabled {

@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50 overflow-x-hidden">
     <!-- Hero -->
-    <section class="relative bg-gradient-to-br from-primary-700 to-primary-900 text-white pt-10 pb-24 lg:pt-16 lg:pb-44">
+    <section class="relative bg-brand-deep text-white pt-10 pb-24 lg:pt-16 lg:pb-44">
       <div class="container mx-auto px-4">
         <div class="max-w-4xl mx-auto text-center">
           <nav class="mb-4 lg:mb-6">
@@ -11,7 +11,7 @@
               <li class="text-white font-semibold">Contacto</li>
             </ol>
           </nav>
-          <h1 class="text-4xl md:text-5xl font-bold mb-3 lg:mb-4">Contacto</h1>
+          <h1 class="text-4xl md:text-5xl font-extrabold mb-3 lg:mb-4">Contacto</h1>
           <p class="text-base lg:text-xl text-blue-100 max-w-md mx-auto">
             Estamos aquí para ayudarte. Elige el canal que prefieras.
           </p>
@@ -19,7 +19,7 @@
       </div>
       <div class="absolute bottom-0 left-0 right-0">
         <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full">
-          <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="#F9FAFB"/>
+          <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="#F4F4FB"/>
         </svg>
       </div>
     </section>
@@ -34,7 +34,7 @@
               :href="whatsappUrl"
               target="_blank"
               rel="noopener noreferrer"
-              class="block bg-white hover:bg-green-50 rounded-2xl p-5 lg:p-6 shadow-sm hover:shadow-md transition-all border-2 border-[#25D366]"
+              class="block bg-white hover:bg-green-50 rounded-2xl p-5 lg:p-6 transition-all border-2 border-[#25D366] hover:border-brand"
             >
               <div class="flex items-center gap-3 lg:gap-4">
                 <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-[#25D366]/10 flex items-center justify-center flex-shrink-0">
@@ -56,7 +56,7 @@
             <!-- Teléfono -->
             <a
               href="tel:+573154603134"
-              class="block bg-white hover:bg-gray-50 rounded-2xl p-5 lg:p-6 shadow-sm hover:shadow-md transition-all border border-gray-200"
+              class="block bg-white hover:bg-gray-50 rounded-2xl p-5 lg:p-6 transition-all border border-gray-200 hover:border-brand"
             >
               <div class="flex items-center gap-3 lg:gap-4">
                 <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
@@ -75,7 +75,7 @@
             <!-- Correo -->
             <a
               href="mailto:contacto@segurucolombia.com"
-              class="block bg-white hover:bg-gray-50 rounded-2xl p-5 lg:p-6 shadow-sm hover:shadow-md transition-all border border-gray-200"
+              class="block bg-white hover:bg-gray-50 rounded-2xl p-5 lg:p-6 transition-all border border-gray-200 hover:border-brand"
             >
               <div class="flex items-center gap-3 lg:gap-4">
                 <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
@@ -92,7 +92,7 @@
             </a>
 
             <!-- Ubicación -->
-            <div class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-gray-200">
+            <div class="bg-white rounded-2xl p-5 lg:p-6 border border-gray-200">
               <div class="flex items-start gap-3 lg:gap-4">
                 <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
                   <svg class="w-6 h-6 lg:w-7 lg:h-7 text-primary-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,8 +110,8 @@
           </div>
 
           <!-- Formulario -->
-          <div class="bg-white rounded-2xl shadow-md p-6 lg:p-8 border border-gray-100">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">Envíanos un mensaje</h2>
+          <div class="bg-white rounded-2xl p-6 lg:p-8 border border-line">
+            <h2 class="text-2xl font-extrabold text-gray-900 mb-2">Envíanos un mensaje</h2>
             <p class="text-gray-600 mb-6">Cuéntanos qué necesitas y te contactaremos.</p>
 
             <form @submit.prevent="handleSubmit" class="space-y-4">
@@ -180,7 +180,7 @@
               <button
                 type="submit"
                 :disabled="enviando"
-                class="w-full bg-primary-700 hover:bg-primary-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                class="w-full bg-primary-700 hover:bg-primary-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-btn font-bold transition-colors shadow-sm hover:shadow-sm flex items-center justify-center gap-2"
               >
                 <svg v-if="enviando" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle>
@@ -243,7 +243,7 @@ const handleSubmit = async () => {
       title: '¡Mensaje enviado!',
       text: 'Te contactaremos en menos de 24 horas.',
       icon: 'success',
-      confirmButtonColor: '#1e40af',
+      confirmButtonColor: '#1E1E78',
     });
 
     resetForm();
@@ -257,7 +257,7 @@ const handleSubmit = async () => {
       title: 'Error al enviar',
       text: errorMessage,
       icon: 'error',
-      confirmButtonColor: '#1e40af',
+      confirmButtonColor: '#1E1E78',
     });
   } finally {
     enviando.value = false;

@@ -44,7 +44,7 @@ defineProps<{ venta: VentaConvenioDetalle }>();
 <style scoped>
 .desglose {
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #DCDCF0;
   border-radius: 12px;
   padding: 1.5rem;
 }
@@ -52,7 +52,7 @@ defineProps<{ venta: VentaConvenioDetalle }>();
 .desglose-titulo {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #16163A;
   margin: 0 0 1rem 0;
 }
 
@@ -63,18 +63,18 @@ defineProps<{ venta: VentaConvenioDetalle }>();
   gap: 1rem;
   padding: 0.35rem 0;
   font-size: 0.95rem;
-  color: #374151;
+  color: #3E3E62;
 }
 
 .linea-secundaria {
-  color: #6b7280;
+  color: #58587A;
   font-size: 0.9rem;
 }
 
 .linea-total {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #16163A;
 }
 
 .monto {
@@ -83,7 +83,7 @@ defineProps<{ venta: VentaConvenioDetalle }>();
 }
 
 .separador {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #DCDCF0;
   margin: 0.5rem 0;
 }
 </style>

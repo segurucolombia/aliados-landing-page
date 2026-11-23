@@ -119,7 +119,7 @@
             :key="cob.cobertura_id"
             class="flex items-start gap-2"
           >
-            <svg width="16" height="16" fill="#16a34a" viewBox="0 0 20 20" class="mt-0.5 flex-shrink-0"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            <svg width="16" height="16" fill="#1E8E5A" viewBox="0 0 20 20" class="mt-0.5 flex-shrink-0"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
             <span>
               {{ cob.cobertura?.nombre }}
               <span v-if="cob.valor && Number(cob.valor) > 0" class="text-gray-500">— {{ formatPrice(Number(cob.valor)) }}</span>
@@ -184,15 +184,15 @@
           </div>
           <ul class="payment-option-details">
             <li>
-              <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <svg width="14" height="14" fill="#1E8E5A" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               Tu seguro se renueva automáticamente — sin que tengas que hacer nada
             </li>
             <li>
-              <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <svg width="14" height="14" fill="#1E8E5A" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               Vincula tu tarjeta de forma segura con <strong>Mercado Pago</strong>
             </li>
             <li>
-              <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <svg width="14" height="14" fill="#1E8E5A" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               Precio especial por activar la renovación automática
             </li>
           </ul>
@@ -227,11 +227,11 @@
           </div>
           <ul class="payment-option-details payment-option-details-secondary">
             <li>
-              <svg width="14" height="14" fill="#6b7280" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              <svg width="14" height="14" fill="#58587A" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
               En cada renovación debes ingresar a la plataforma y gestionar el pago
             </li>
             <li>
-              <svg width="14" height="14" fill="#6b7280" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+              <svg width="14" height="14" fill="#58587A" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
               Procesado por <strong>Wompi</strong>
             </li>
           </ul>
@@ -239,14 +239,14 @@
           <!-- Cupón: si la venta ya trae uno se muestra aplicado; si no, se puede agregar -->
           <div v-if="ventaRecotizable || cuponDeLaVenta" class="modal-cupon-section">
             <div v-if="cuponDeLaVenta" class="modal-cupon-aplicado">
-              <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <svg width="14" height="14" fill="#1E8E5A" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
               Cupón {{ cuponDeLaVenta.codigo }} aplicado:
               <strong>- {{ formatPrice(cuponDeLaVenta.valor) }}</strong>
             </div>
 
             <template v-else>
               <div v-if="cuponAgregado" class="modal-cupon-aplicado">
-                <svg width="14" height="14" fill="#16a34a" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                <svg width="14" height="14" fill="#1E8E5A" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                 Cupón {{ cuponAgregado }} aplicado:
                 <strong>- {{ formatPrice(descuentoVigente) }}</strong>
                 <button type="button" class="cupon-quitar" @click="quitarCupon">Quitar</button>
@@ -760,7 +760,7 @@ const cargarVenta = async () => {
   } catch (error: any) {
     console.error('Error al cargar la venta:', error);
     const msg = error?.response?.data?.message || 'No se pudo cargar la información de tu compra.';
-    Swal.fire({ title: 'Error', text: msg, icon: 'error', confirmButtonColor: '#1e40af' });
+    Swal.fire({ title: 'Error', text: msg, icon: 'error', confirmButtonColor: '#1E1E78' });
   } finally {
     isProcessing.value = false;
   }
@@ -800,7 +800,7 @@ const construirResumen = (transaccionId: string, precio: number, debito = false)
 const mostrarError = async (error: any, fallback: string) => {
   console.error(fallback, error, 'respuesta backend:', error?.response?.data);
   const msg = error?.response?.data?.message || error?.message || fallback;
-  Swal.fire({ title: 'Error', text: msg, icon: 'error', confirmButtonColor: '#1e40af' });
+  Swal.fire({ title: 'Error', text: msg, icon: 'error', confirmButtonColor: '#1E1E78' });
 };
 
 /* ----------------------------- Wompi ----------------------------- */
@@ -979,7 +979,7 @@ cargarVenta();
   background: none;
   border: none;
   padding: 0;
-  color: #2563eb;
+  color: #3232B3;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -989,12 +989,12 @@ cargarVenta();
 
 .aviso-cambios {
   margin-top: 0.75rem;
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
+  border: 1px solid #C0C0F0;
+  background: #EEEEFB;
   border-radius: 8px;
   padding: 0.75rem 0.9rem;
   font-size: 0.85rem;
-  color: #1e40af;
+  color: #1E1E78;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1010,10 +1010,10 @@ cargarVenta();
 
 .aviso-cambios-btn {
   background: white;
-  border: 1px solid #93c5fd;
+  border: 1px solid #9A9AE5;
   border-radius: 6px;
   padding: 0.35rem 0.75rem;
-  color: #1d4ed8;
+  color: #141450;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -1021,24 +1021,24 @@ cargarVenta();
 }
 
 .aviso-cambios-btn:hover {
-  background: #dbeafe;
+  background: #DEDEF7;
 }
 
 .nota-debito {
   margin-top: 1rem;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border: 1px solid #DCDCF0;
+  background: #F4F4FB;
   border-radius: 10px;
   padding: 0.75rem 0.9rem;
   font-size: 0.82rem;
-  color: #4b5563;
+  color: #58587A;
   line-height: 1.45;
 }
 
 .aviso-pago-en-curso {
   margin-top: 1rem;
-  border: 1px solid #fde68a;
-  background: #fffbeb;
+  border: 1px solid #FFDDB0;
+  background: #FFF7EC;
   border-radius: 12px;
   padding: 0.9rem 1rem;
   display: flex;
@@ -1050,16 +1050,16 @@ cargarVenta();
 
 .aviso-pago-en-curso p {
   margin: 0;
-  color: #78350f;
+  color: #3A2000;
   font-size: 0.85rem;
   line-height: 1.45;
   flex: 1 1 16rem;
 }
 
 .aviso-pago-btn {
-  border: 1px solid #f59e0b;
+  border: 1px solid #FD8701;
   background: #fff;
-  color: #92400e;
+  color: #8A4700;
   font-size: 0.8rem;
   font-weight: 700;
   border-radius: 8px;
@@ -1068,13 +1068,13 @@ cargarVenta();
 }
 
 .aviso-pago-btn:hover {
-  background: #fef3c7;
+  background: #FFF0DC;
 }
 
 .motivo-bloqueo {
   margin: 0 0 0.75rem;
   font-size: 0.85rem;
-  color: #6b7280;
+  color: #58587A;
   text-align: right;
 }
 
@@ -1104,14 +1104,14 @@ cargarVenta();
 .payment-modal-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #16163A;
   margin: 0 0 0.25rem;
   text-align: center;
 }
 
 .payment-modal-subtitle {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #58587A;
   margin: 0 0 1.25rem;
   text-align: center;
 }
@@ -1128,7 +1128,7 @@ cargarVenta();
   flex-direction: column;
   gap: 0.75rem;
   padding: 1rem 1.1rem 1rem;
-  border: 2px solid #e5e7eb;
+  border: 2px solid #DCDCF0;
   border-radius: 12px;
   background: white;
   cursor: pointer;
@@ -1138,25 +1138,25 @@ cargarVenta();
 }
 
 .payment-option-recommended {
-  border-color: #3b82f6;
+  border-color: #4A4AD2;
   background: #f0f7ff;
 }
 
 .payment-option-recommended:hover {
-  border-color: #2563eb;
+  border-color: #3232B3;
   background: #e0effe;
 }
 
 .payment-option-secondary:hover {
-  border-color: #9ca3af;
-  background: #f9fafb;
+  border-color: #8E8EAE;
+  background: #F4F4FB;
 }
 
 .payment-option-badge {
   position: absolute;
   top: -11px;
   left: 1rem;
-  background: #3b82f6;
+  background: #4A4AD2;
   color: white;
   font-size: 0.7rem;
   font-weight: 700;
@@ -1176,8 +1176,8 @@ cargarVenta();
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: #dbeafe;
-  color: #2563eb;
+  background: #DEDEF7;
+  color: #3232B3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1185,8 +1185,8 @@ cargarVenta();
 }
 
 .payment-option-icon-secondary {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: #ECECFA;
+  color: #58587A;
 }
 
 .payment-option-info {
@@ -1199,29 +1199,29 @@ cargarVenta();
 .payment-option-label {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #16163A;
 }
 
 .payment-option-price {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #2563eb;
+  color: #3232B3;
   line-height: 1.2;
 }
 
 .payment-option-price-secondary {
-  color: #6b7280;
+  color: #58587A;
 }
 
 .payment-option-period {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #6b7280;
+  color: #58587A;
 }
 
 .payment-option-saving {
-  background: #fbbf24;
-  color: #78350f;
+  background: #FEA640;
+  color: #3A2000;
   font-size: 0.72rem;
   font-weight: 700;
   padding: 0.25rem 0.6rem;
@@ -1234,7 +1234,7 @@ cargarVenta();
   list-style: none;
   padding: 0;
   margin: 0;
-  border-top: 1px solid #dbeafe;
+  border-top: 1px solid #DEDEF7;
   padding-top: 0.65rem;
   display: flex;
   flex-direction: column;
@@ -1242,7 +1242,7 @@ cargarVenta();
 }
 
 .payment-option-details-secondary {
-  border-top-color: #e5e7eb;
+  border-top-color: #DCDCF0;
 }
 
 .payment-option-details li {
@@ -1250,7 +1250,7 @@ cargarVenta();
   align-items: flex-start;
   gap: 0.4rem;
   font-size: 0.8rem;
-  color: #374151;
+  color: #3E3E62;
   line-height: 1.4;
 }
 
@@ -1260,7 +1260,7 @@ cargarVenta();
 }
 
 .payment-option-details-secondary li {
-  color: #6b7280;
+  color: #58587A;
 }
 
 .payment-modal-close {
@@ -1270,14 +1270,14 @@ cargarVenta();
   padding: 0.6rem;
   border: none;
   background: none;
-  color: #9ca3af;
+  color: #8E8EAE;
   font-size: 0.875rem;
   cursor: pointer;
   text-align: center;
 }
 
 .payment-modal-close:hover {
-  color: #6b7280;
+  color: #58587A;
 }
 
 .payment-option-wompi {
@@ -1285,7 +1285,7 @@ cargarVenta();
 }
 
 .modal-cupon-section {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #DCDCF0;
   padding-top: 0.75rem;
 }
 
@@ -1295,9 +1295,9 @@ cargarVenta();
   gap: 0.4rem;
   flex-wrap: wrap;
   font-size: 0.82rem;
-  color: #166534;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  color: #135A3A;
+  background: #E3F5EB;
+  border: 1px solid #A3DFBF;
   border-radius: 8px;
   padding: 0.5rem 0.65rem;
 }
@@ -1306,7 +1306,7 @@ cargarVenta();
   margin-left: auto;
   background: none;
   border: none;
-  color: #6b7280;
+  color: #58587A;
   font-size: 0.75rem;
   font-weight: 600;
   text-decoration: underline;
@@ -1315,7 +1315,7 @@ cargarVenta();
 }
 
 .cupon-quitar:hover {
-  color: #374151;
+  color: #3E3E62;
 }
 
 .modal-cupon-input {
@@ -1326,17 +1326,17 @@ cargarVenta();
 .modal-cupon-field {
   flex: 1;
   min-width: 0;
-  border: 1px solid #d1d5db;
+  border: 1px solid #C4C4DE;
   border-radius: 8px;
   padding: 0.5rem 0.7rem;
   font-size: 0.85rem;
   font-family: inherit;
-  color: #1f2937;
+  color: #16163A;
 }
 
 .modal-cupon-field:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: #3232B3;
 }
 
 .modal-cupon-field-error {
@@ -1344,20 +1344,20 @@ cargarVenta();
 }
 
 .modal-cupon-btn {
-  border: 1px solid #d1d5db;
+  border: 1px solid #C4C4DE;
   background: white;
   border-radius: 8px;
   padding: 0.5rem 0.9rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #374151;
+  color: #3E3E62;
   cursor: pointer;
   font-family: inherit;
   white-space: nowrap;
 }
 
 .modal-cupon-btn:hover:not(:disabled) {
-  background: #f9fafb;
+  background: #F4F4FB;
 }
 
 .modal-cupon-btn:disabled {
@@ -1368,13 +1368,13 @@ cargarVenta();
 .modal-cupon-error {
   margin: 0.4rem 0 0;
   font-size: 0.78rem;
-  color: #b91c1c;
+  color: #932818;
 }
 
 .motivo-bloqueo-modal {
   margin: 1rem 0 0;
   font-size: 0.8rem;
-  color: #6b7280;
+  color: #58587A;
   text-align: center;
 }
 
@@ -1386,8 +1386,8 @@ cargarVenta();
 
 .cupon-applied-badge {
   font-size: 0.68rem;
-  background: #dcfce7;
-  color: #16a34a;
+  background: #E3F5EB;
+  color: #1E8E5A;
   font-weight: 700;
   padding: 0.15rem 0.45rem;
   border-radius: 20px;
@@ -1403,7 +1403,7 @@ cargarVenta();
   width: 100%;
   margin-top: 0.75rem;
   padding: 0.65rem 1rem;
-  background: #374151;
+  background: #3E3E62;
   color: white;
   border: none;
   border-radius: 8px;
@@ -1415,7 +1415,7 @@ cargarVenta();
 }
 
 .wompi-continue-btn:hover:not(:disabled) {
-  background: #1f2937;
+  background: #16163A;
 }
 
 .debito-continue-btn {
@@ -1426,7 +1426,7 @@ cargarVenta();
   width: 100%;
   margin-top: 0.75rem;
   padding: 0.65rem 1rem;
-  background: #2563eb;
+  background: #3232B3;
   color: white;
   border: none;
   border-radius: 8px;
@@ -1438,6 +1438,6 @@ cargarVenta();
 }
 
 .debito-continue-btn:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: #141450;
 }
 </style>

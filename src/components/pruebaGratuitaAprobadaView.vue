@@ -1,17 +1,17 @@
 <template>
-  <section class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+  <section class="min-h-screen bg-page flex items-center justify-center p-4">
     <Toast />
     <LoadingSpinner :visible="isLoading" />
 
     <!-- Estado de Carga -->
-    <div v-if="isLoading" class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+    <div v-if="isLoading" class="max-w-md w-full bg-white rounded-2xl shadow-md p-8 text-center">
       <div class="animate-spin rounded-full h-20 w-20 border-b-4 border-blue-600 mx-auto mb-6"></div>
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Activando tu prueba gratuita...</h2>
+      <h2 class="text-2xl font-extrabold text-gray-800 mb-4">Activando tu prueba gratuita...</h2>
       <p class="text-gray-600 mb-4">Por favor espera un momento</p>
     </div>
 
     <!-- Estado Aprobado -->
-    <div v-else class="max-w-lg w-full bg-white rounded-2xl shadow-xl p-8 text-center transform animate-fade-in">
+    <div v-else class="max-w-lg w-full bg-white rounded-2xl shadow-md p-8 text-center transform animate-fade-in">
       <!-- Ícono de éxito animado -->
       <div class="relative mb-8">
         <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto animate-bounce-slow">
@@ -28,7 +28,7 @@
       </div>
 
       <!-- Título principal -->
-      <h1 class="text-3xl font-bold text-gray-800 mb-4">
+      <h1 class="text-3xl font-extrabold text-gray-800 mb-4">
         ¡Prueba Gratuita Activada!
       </h1>
 
@@ -64,7 +64,7 @@
       </div>
 
       <!-- Instrucciones -->
-      <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-8">
+      <div class="bg-primary-50 border border-blue-200 rounded-lg p-6 mb-8">
         <div class="flex items-start">
           <svg class="w-6 h-6 text-blue-600 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -106,7 +106,7 @@
       <div class="space-y-4">
         <button
           @click="goToPlatform"
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center group"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-btn transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center group"
         >
           <svg class="w-5 h-5 mr-2 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>

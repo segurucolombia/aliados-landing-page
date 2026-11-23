@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.vue';
+import ActivarCuentaView from '../components/club/ActivarCuentaView.vue';
+import Footer from '../components/Footer.vue';
+---
+
+<Layout title="Activar cuenta - Club SEGURU">
+	<Navbar client:load />
+	<ActivarCuentaView client:only="vue" />
+	<Footer client:only="vue" />
+</Layout>

@@ -1,6 +1,6 @@
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
 
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
@@ -10,7 +10,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
             </svg>
           </div>
-          <h2 class="text-lg font-bold text-gray-900">Registro de Aliado</h2>
+          <h2 class="text-lg font-extrabold text-gray-900">Registro de Aliado</h2>
         </div>
         <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
@@ -223,7 +223,7 @@
                   </svg>
                 </button>
               </div>
-              <div v-if="showCiudadDropdown && ciudadesFiltradas.length > 0" class="absolute z-20 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-44 overflow-y-auto">
+              <div v-if="showCiudadDropdown && ciudadesFiltradas.length > 0" class="absolute z-20 w-full bg-white border border-gray-200 rounded-xl shadow-sm mt-1 max-h-44 overflow-y-auto">
                 <button
                   v-for="ciudad in ciudadesFiltradas"
                   :key="ciudad.id"
@@ -234,7 +234,7 @@
                   {{ ciudad.nombre }}
                 </button>
               </div>
-              <div v-if="showCiudadDropdown && buscandoCiudad" class="absolute z-20 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 px-4 py-3 text-sm text-gray-400">
+              <div v-if="showCiudadDropdown && buscandoCiudad" class="absolute z-20 w-full bg-white border border-gray-200 rounded-xl shadow-sm mt-1 px-4 py-3 text-sm text-gray-400">
                 Buscando...
               </div>
             </div>
@@ -670,8 +670,8 @@ async function handleSubmit() {
           showCancelButton: true,
           confirmButtonText: 'Sí, continuar sin aliado',
           cancelButtonText: 'Volver y corregir',
-          confirmButtonColor: '#2563eb',
-          cancelButtonColor: '#6b7280',
+          confirmButtonColor: '#3232B3',
+          cancelButtonColor: '#58587A',
           reverseButtons: true,
         });
 
@@ -688,8 +688,8 @@ async function handleSubmit() {
         showCancelButton: true,
         confirmButtonText: 'Sí, continuar',
         cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#2563eb',
-        cancelButtonColor: '#6b7280',
+        confirmButtonColor: '#3232B3',
+        cancelButtonColor: '#58587A',
         reverseButtons: true,
       });
 
@@ -727,7 +727,7 @@ async function handleSubmit() {
       html: `Tu cuenta de Afiliado ha sido creada.<br><strong>${form.value.persona.nombre}</strong>, ya puedes iniciar sesión y comenzar a compartir tu enlace.`,
       icon: 'success',
       confirmButtonText: 'Entendido',
-      confirmButtonColor: '#2563eb',
+      confirmButtonColor: '#3232B3',
     });
 
     resetForm();

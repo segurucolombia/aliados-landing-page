@@ -1,7 +1,7 @@
 <template>
-  <div class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-gray-100 flex flex-col">
+  <div class="bg-white rounded-2xl transition-all duration-300 overflow-hidden border border-line flex flex-col hover:border-brand">
     <!-- Imagen -->
-    <div class="relative h-48 bg-gradient-to-br from-primary-50 to-primary-100 overflow-hidden">
+    <div class="relative h-48 bg-soft overflow-hidden">
       <img
         v-if="producto.imagen?.url"
         :src="getImagenUrl(producto.imagen)"
@@ -17,7 +17,7 @@
 
       <!-- Badge categoría -->
       <div v-if="producto.categoria" class="absolute top-3 left-3">
-        <span class="bg-white/90 backdrop-blur-sm text-primary-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+        <span class="bg-accent-soft text-accent-ink text-[13px] font-bold px-[11px] py-1 rounded-full">
           {{ producto.categoria.nombre }}
         </span>
       </div>
@@ -41,10 +41,10 @@
         <span v-else class="text-xs text-gray-400">Seguru</span>
 
         <a
-          :href="`/planes/${producto.id}`"
-          class="inline-flex items-center gap-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-4 py-2 rounded-full transition-all duration-200 shadow-sm hover:shadow-md"
+          :href="enlace"
+          class="inline-flex items-center gap-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-4 py-2 rounded-btn transition-all duration-200 shadow-sm hover:shadow-sm"
         >
-          Ver Planes
+          Ver producto
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
           </svg>
@@ -55,13 +55,21 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { Producto, ImagenAws } from '../types/productos';
+import { slugDeTexto } from '../config/clubProductos';
 
 interface Props {
   producto: Producto;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+
+/**
+ * Ruta del producto: /{slug}/{productoId}. La landing consulta su información por el id;
+ * el slug sale del nombre y, si no coincide con el de la landing, ella lo corrige.
+ */
+const enlace = computed(() => `/${slugDeTexto(props.producto.nombre)}/${props.producto.id}`);
 defineEmits(['cotizar', 'ver-detalle']);
 
 const getImagenUrl = (imagen: ImagenAws) => imagen?.url ?? '';

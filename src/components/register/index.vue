@@ -5,7 +5,7 @@
         <div class="p-2 md:p-4 xl:p-12 grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div class="lg:px-12 lg:h-[calc(100vh-20rem)] lg:overflow-auto">
             <div class="w-full p-2 rounded-md h-max ">
-              <div class="card-header w-full drop-shadow-xl rounded-lg py-2 content-center hidden lg:block">
+              <div class="card-header w-full drop-shadow-md rounded-lg py-2 content-center hidden lg:block">
                   <div class="w-full flex justify-center">
                       <div class="px-3 py-1 w-full rounded-full text-center">
                           <p class=" font-bold justify-center text-lg lg:text-xl mb-4 hidden lg:flex">PLAN SELECCIONADO</p>
@@ -20,12 +20,12 @@
                         <p>PRECIO</p>
                     </div>
               </div>
-              <div class="card-header w-full drop-shadow-xl rounded-lg py-2 content-center lg:hidden">
+              <div class="card-header w-full drop-shadow-md rounded-lg py-2 content-center lg:hidden">
                 <div class="flex gap-2 justify-center items-center">
                   <p class="font-medium text-xl text-center">{{ plan?.nombre ?? '' }} - COP {{ formatPriceNoDecimal(plan?.precio ?? 0) }}</p>
                   <button
                     @click="showDetail = !showDetail"
-                    class="min-w-[44px] min-h-[44px] rounded-full shadow-md p-2 flex items-center justify-center"
+                    class="min-w-[44px] min-h-[44px] rounded-full shadow-sm p-2 flex items-center justify-center"
                     :aria-label="showDetail ? 'Ocultar detalles del plan' : 'Mostrar detalles del plan'"
                     :aria-expanded="showDetail"
                   >
@@ -383,7 +383,7 @@
                     <p>Número de alojamientos: <span class="font-medium">{{ hoteles.length }}</span></p>
                     <p>Plan seleccionado: <span class="font-medium">{{ plan?.nombre ?? '' }}</span></p>
                   </div>
-                  <div class="p-4 bg-blue-50 border-2 border-blue-400 rounded-lg mt-4 shadow-md" v-if="prueba_gratuita">
+                  <div class="p-4 bg-blue-50 border-2 border-blue-400 rounded-lg mt-4 shadow-sm" v-if="prueba_gratuita">
                     <div class="flex items-start gap-3">
                       <div class="flex-shrink-0 mt-1">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 text-blue-600">
@@ -436,7 +436,7 @@
                     <p class="font-bold my-2" :class="cuponDescuento.validado ? 'text-green-700' : 'text-gray-800'">Descuentos: {{ cuponDescuento.validado ? formatPrice(cuponDescuento.valor) : 0 }}</p>
                     <p class="font-bold my-2 text-gray-900 text-xl">Total: {{ cuponDescuento.validado ? formatPrice(cuponDescuento.valor_pagar_descuento) : formatPriceNoDecimal(plan?.precio ?? 0) }}</p>
                   </div>
-                  <!-- <div v-else class="w-full text-center mt-12 p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border-2 border-orange-300">
+                  <!-- <div v-else class="w-full text-center mt-12 p-4 bg-accent-soft rounded-lg border-2 border-orange-300">
                     <p class="text-orange-800 font-bold text-xl mb-1">¡Sin costo por ahora! 🎉</p>
                     <p class="text-orange-600 text-sm">Tu prueba gratuita comienza hoy sin ningún cargo</p>
                   </div> -->
@@ -1015,16 +1015,16 @@ onMounted(async () => {
 </script>
 <style>
 .blue-steps .p-steps-item.p-highlight .p-steps-number {
-  background-color: #2563eb !important;
-  border-color: #2563eb !important;
+  background-color: #3232B3 !important;
+  border-color: #3232B3 !important;
 }
 
 .blue-steps .p-steps-item.p-highlight .p-steps-title {
-  color: #2563eb !important;
+  color: #3232B3 !important;
 }
 
 .blue-steps .p-steps-item.p-highlight .p-menuitem-link {
-  border-color: #2563eb !important;
+  border-color: #3232B3 !important;
 }
 
 /* Screen reader only - para accesibilidad */

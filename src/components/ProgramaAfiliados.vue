@@ -9,7 +9,7 @@
     />
 
     <!-- BLOQUE 1 – HERO PRINCIPAL -->
-    <section class="relative bg-gradient-to-br from-primary-700 to-primary-900 text-white pt-40 pb-36 overflow-hidden">
+    <section class="relative bg-brand-deep text-white pt-40 pb-36 overflow-hidden">
       <div class="absolute inset-0 opacity-10">
         <div class="absolute top-10 left-10 w-64 h-64 bg-white rounded-full blur-3xl"></div>
         <div class="absolute bottom-10 right-10 w-96 h-96 bg-blue-300 rounded-full blur-3xl"></div>
@@ -17,11 +17,9 @@
       <div class="relative container mx-auto px-4">
         <div class="max-w-3xl mx-auto text-center">
           <div class="flex items-center justify-center gap-3 mb-6">
-            <div class="w-12 h-1 bg-blue-300"></div>
             <span class="text-blue-200 font-semibold tracking-widest uppercase text-sm">Programa de Afiliados</span>
-            <div class="w-12 h-1 bg-blue-300"></div>
           </div>
-          <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+          <h1 class="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
             Genera ingresos adicionales compartiendo protección
           </h1>
           <p class="text-xl text-blue-100 mb-10 leading-relaxed">
@@ -30,7 +28,7 @@
           <div class="flex flex-col items-center gap-4">
             <button
               @click="mostrarFormulario = true"
-              class="inline-flex items-center gap-2 bg-white text-primary-700 px-10 py-4 rounded-xl font-bold text-lg hover:bg-blue-50 transition-all transform hover:scale-105 shadow-xl"
+              class="inline-flex items-center gap-2 bg-white text-primary-700 px-10 py-4 rounded-xl font-bold text-lg hover:bg-blue-50 transition-all transform hover:scale-105 shadow-md"
             >
               👉 Quiero ser Afiliado
             </button>
@@ -57,7 +55,7 @@
       </div>
       <div class="absolute bottom-0 left-0 right-0">
         <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full">
-          <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="#F9FAFB"/>
+          <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="#F4F4FB"/>
         </svg>
       </div>
     </section>
@@ -71,13 +69,13 @@
             <span class="text-primary-600 font-semibold uppercase text-sm tracking-widest">¿Cómo funciona?</span>
             <div class="w-10 h-1 bg-primary-600"></div>
           </div>
-          <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Es simple</h2>
+          <h2 class="text-[clamp(26px,5vw,40px)] font-extrabold text-gray-900">Es simple</h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
           <div
             v-for="step in steps"
             :key="step.number"
-            class="relative rounded-3xl p-10 text-center flex flex-col items-center gap-5 shadow-lg hover:scale-105 transition-transform duration-300"
+            class="relative rounded-3xl p-10 text-center flex flex-col items-center gap-5 shadow-sm hover:scale-105 transition-transform duration-300"
             :class="step.cardClass"
           >
             <span class="w-14 h-14 flex items-center justify-center" :class="step.iconClass" v-html="step.icon"></span>
@@ -98,7 +96,7 @@
               <span class="text-primary-600 font-semibold uppercase text-sm tracking-widest">Productos</span>
               <div class="w-10 h-1 bg-primary-600"></div>
             </div>
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-900">
+            <h2 class="text-[clamp(26px,5vw,40px)] font-extrabold text-gray-900">
               Productos claros y fáciles de recomendar
             </h2>
           </div>
@@ -127,11 +125,11 @@
               <span class="text-primary-600 font-semibold uppercase text-sm tracking-widest">Beneficios</span>
               <div class="w-10 h-1 bg-primary-600"></div>
             </div>
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-900">
+            <h2 class="text-[clamp(26px,5vw,40px)] font-extrabold text-gray-900">
               Ventajas de ser Afiliado SEGURU
             </h2>
           </div>
-          <div class="bg-white rounded-2xl shadow-md p-8">
+          <div class="bg-white rounded-2xl shadow-sm p-8">
             <ul class="space-y-4">
               <li v-for="benefit in benefits" :key="benefit" class="flex items-center gap-4">
                 <div class="w-7 h-7 bg-green-100 text-green-600 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">✓</div>
@@ -152,7 +150,7 @@
             <span class="text-blue-200 font-semibold uppercase text-sm tracking-widest">Transparencia</span>
             <div class="w-10 h-1 bg-blue-300"></div>
           </div>
-          <h2 class="text-3xl md:text-4xl font-bold mb-6">Modelo 100% digital</h2>
+          <h2 class="text-[clamp(26px,5vw,40px)] font-extrabold mb-6">Modelo 100% digital</h2>
           <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 space-y-4 text-left border border-white/20">
             <p class="text-blue-100 leading-relaxed">
               SEGURU opera bajo un modelo de contratación directa. Los afiliados no realizan asesoría ni intermediación de seguros.
@@ -176,12 +174,12 @@
               <span class="text-primary-600 font-semibold uppercase text-sm tracking-widest">¿Para quién es?</span>
               <div class="w-10 h-1 bg-primary-600"></div>
             </div>
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-900">
+            <h2 class="text-[clamp(26px,5vw,40px)] font-extrabold text-gray-900">
               Este programa es para ti
             </h2>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div v-for="profile in profiles" :key="profile.label" class="flex flex-col items-center gap-3 bg-gray-50 rounded-2xl p-6 text-center hover:bg-primary-50 hover:shadow-md transition-all">
+            <div v-for="profile in profiles" :key="profile.label" class="flex flex-col items-center gap-3 bg-gray-50 rounded-2xl p-6 text-center hover:bg-primary-50 hover:shadow-sm transition-all">
               <div class="text-3xl">{{ profile.icon }}</div>
               <span class="text-gray-800 font-semibold">{{ profile.label }}</span>
             </div>
@@ -191,19 +189,19 @@
     </section>
 
     <!-- BLOQUE 7 – CTA FINAL -->
-    <section class="py-24 bg-gradient-to-br from-primary-700 to-primary-900 text-white relative overflow-hidden">
+    <section class="py-24 bg-brand-deep text-white relative overflow-hidden">
       <div class="absolute inset-0 opacity-10">
         <div class="absolute top-10 right-10 w-64 h-64 bg-white rounded-full blur-3xl"></div>
         <div class="absolute bottom-10 left-10 w-80 h-80 bg-blue-300 rounded-full blur-3xl"></div>
       </div>
       <div class="relative container mx-auto px-4 text-center">
-        <h2 class="text-3xl md:text-5xl font-bold mb-4">Empieza hoy</h2>
+        <h2 class="text-[clamp(26px,5vw,40px)] font-extrabold mb-4">Empieza hoy</h2>
         <p class="text-xl text-blue-100 mb-10 max-w-xl mx-auto">
           Regístrate y comienza a generar ingresos compartiendo protección.
         </p>
         <button
           @click="mostrarFormulario = true"
-          class="inline-flex items-center gap-2 bg-white text-primary-700 px-10 py-4 rounded-xl font-bold text-lg hover:bg-blue-50 transition-all transform hover:scale-105 shadow-xl"
+          class="inline-flex items-center gap-2 bg-white text-primary-700 px-10 py-4 rounded-xl font-bold text-lg hover:bg-blue-50 transition-all transform hover:scale-105 shadow-md"
         >
           👉 Crear mi cuenta de Afiliado
         </button>

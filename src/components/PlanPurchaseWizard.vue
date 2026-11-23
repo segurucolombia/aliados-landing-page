@@ -595,12 +595,12 @@ const handleCancel = () => {
 <style scoped>
 .purchase-wizard {
   min-height: 100vh;
-  background: #f9fafb;
+  background: #F4F4FB;
 }
 
 .steps-indicator-wrapper {
   background: white;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #DCDCF0;
   padding: 1.5rem 1rem;
   position: sticky;
   top: 0;
@@ -627,28 +627,28 @@ const handleCancel = () => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #e5e7eb;
-  color: #9ca3af;
+  background: #DCDCF0;
+  color: #8E8EAE;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
   font-size: 0.95rem;
   transition: all 0.3s ease;
-  border: 2px solid #e5e7eb;
+  border: 2px solid #DCDCF0;
 }
 
 .step.active .step-circle {
-  background: #3b82f6;
+  background: #4A4AD2;
   color: white;
-  border-color: #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  border-color: #4A4AD2;
+  box-shadow: 0 2px 8px rgba(50, 50, 179, 0.3);
 }
 
 .step.completed .step-circle {
-  background: #10b981;
+  background: #1E8E5A;
   color: white;
-  border-color: #10b981;
+  border-color: #1E8E5A;
 }
 
 .check-icon {
@@ -658,23 +658,23 @@ const handleCancel = () => {
 .step-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #6b7280;
+  color: #58587A;
   text-align: center;
   transition: color 0.3s ease;
 }
 
 .step.active .step-label {
-  color: #3b82f6;
+  color: #4A4AD2;
 }
 
 .step.completed .step-label {
-  color: #10b981;
+  color: #1E8E5A;
 }
 
 .step-divider {
   width: 80px;
   height: 2px;
-  background: #e5e7eb;
+  background: #DCDCF0;
   margin: 0 0.75rem;
   position: relative;
   top: -10px;
@@ -682,7 +682,7 @@ const handleCancel = () => {
 }
 
 .step-divider.completed {
-  background: #10b981;
+  background: #1E8E5A;
 }
 
 .wizard-content {

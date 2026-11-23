@@ -1,10 +1,11 @@
 <template>
-  <section class="py-14 bg-gradient-to-b from-blue-50 to-white">
-    <div class="container mx-auto px-6 md:px-10">
+  <section class="py-12 md:py-16 bg-page">
+    <div class="container mx-auto px-4 md:px-10">
 
       <!-- Título -->
       <div class="text-center mb-10">
-        <h2 class="text-2xl md:text-3xl font-bold text-gray-800">
+        <p class="text-[12.5px] font-bold tracking-[.1em] uppercase text-brand mb-1.5">Nuestras soluciones</p>
+        <h2 class="text-[clamp(25px,6vw,36px)] font-extrabold text-ink">
           ¿Qué solución estás buscando?
         </h2>
       </div>
@@ -14,7 +15,7 @@
         <div
           v-for="i in 4"
           :key="i"
-          class="w-44 bg-white rounded-2xl shadow-md p-6 flex flex-col items-center gap-3 animate-pulse"
+          class="w-44 bg-white rounded-card border border-line p-6 flex flex-col items-center gap-3 animate-pulse"
         >
           <div class="w-20 h-20 bg-gray-200 rounded-2xl"></div>
           <div class="h-4 bg-gray-200 rounded w-24"></div>
@@ -32,7 +33,7 @@
           v-for="categoria in categorias"
           :key="categoria.id"
           href="/productos"
-          class="group w-44 bg-white rounded-2xl shadow-md hover:shadow-xl p-6 flex flex-col items-center gap-3 transition-all duration-300 hover:-translate-y-1 cursor-pointer border border-gray-100 hover:border-primary-200"
+          class="group w-44 bg-white rounded-card p-6 flex flex-col items-center gap-3 transition-colors duration-200 cursor-pointer border border-line hover:border-brand"
         >
           <!-- Imagen de la categoría -->
           <div class="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center bg-transparent">
@@ -57,7 +58,7 @@
       <div class="flex justify-center mt-10">
         <a
           href="/productos"
-          class="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-full font-semibold text-base transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
+          class="inline-flex items-center justify-center gap-2 min-h-[50px] bg-accent text-accent-ink hover:brightness-105 px-[22px] py-3 rounded-btn font-bold text-[17px] leading-tight transition"
         >
           Cotiza tu protección ahora
         </a>

@@ -6,7 +6,7 @@ const { title } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="es">
 	<!-- En el <head> -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css"/>
 	<head>
@@ -14,6 +14,12 @@ const { title } = Astro.props;
 		<meta name="description" content="Seguru - Seguros confiables para tu tranquilidad" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/png" href="/img/logo-seguru.png" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap"
+		/>
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 	</head>
@@ -45,10 +51,10 @@ const { title } = Astro.props;
 				`;
 
 				const iconColor = {
-					success: '#22c55e',
-					error: '#ef4444',
-					warn: '#f59e0b',
-					info: '#3b82f6'
+					success: '#1E8E5A',
+					error: '#B3321F',
+					warn: '#FD8701',
+					info: '#3232B3'
 				}[severity];
 
 				const icon = {
@@ -63,8 +69,8 @@ const { title } = Astro.props;
 						${icon}
 					</div>
 					<div style="flex: 1;">
-						<div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${summary}</div>
-						<div style="font-size: 14px; color: #6b7280;">${detail}</div>
+						<div style="font-weight: 600; color: #16163A; margin-bottom: 4px;">${summary}</div>
+						<div style="font-size: 14px; color: #58587A;">${detail}</div>
 					</div>
 				`;
 
@@ -138,6 +144,13 @@ const { title } = Astro.props;
 								|| aliado.usuario?.usuario
 								|| 'tu aliado';
 
+							// La página del Club muestra "Te lo compartió {nombre}…" solo con el nombre de la
+							// persona (el usuario puede ser un número de documento)
+							const nombrePersona = aliado.usuario?.persona?.nombre?.trim();
+							if (nombrePersona) localStorage.setItem('aliado_nombre', nombrePersona);
+							else localStorage.removeItem('aliado_nombre');
+							window.dispatchEvent(new CustomEvent('aliado:enlazado', { detail: { id: aliadoId, nombre: nombrePersona || null } }));
+
 							showToast('success', `Aliado: ${nombreAsesor}`, `Has sido enlazado correctamente con tu aliado`);
 						}
 					}).catch((error) => {
@@ -176,20 +189,53 @@ const { title } = Astro.props;
 	</body>
 </html>
 <style is:global>
+	/* Tokens SEGURU (mismos valores que tailwind.config.mjs) */
 	:root {
-		--accent: 136, 58, 234;
-		--accent-light: 224, 204, 250;
-		--accent-dark: 49, 10, 101;
-		--accent-gradient: linear-gradient(
-			45deg,
-			rgb(var(--accent)),
-			rgb(var(--accent-light)) 30%,
-			white 60%
-		);
+		--bg: #F4F4FB;
+		--surface: #FFFFFF;
+		--ink: #16163A;
+		--muted: #58587A;
+		--line: #DCDCF0;
+		--soft: #ECECFA;
+		--brand: #3232B3;
+		--brand-text: #3232B3;
+		--brand-deep: #141450;
+		--on-brand: #FFFFFF;
+		--accent: #FD8701;
+		--accent-ink: #3A2000;
+		--accent-soft: #FFF0DC;
+		--ok: #1E8E5A;
+		--ok-soft: #E3F5EB;
+		--bad: #B3321F;
+		--bad-soft: #FCEAE6;
+		--overlay: rgba(20, 20, 80, .55);
+		--display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+		--body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 	}
 	html {
-		font-family: system-ui, sans-serif;
-		background: rgb(255, 255, 255);
+		font-family: var(--body);
+		background: var(--bg);
+		color: var(--ink);
+	}
+	body {
+		background: var(--bg);
+		color: var(--ink);
+		font-family: var(--body);
+		line-height: 1.55;
+	}
+	h1, h2, h3, h4 {
+		font-family: var(--display);
+		line-height: 1.1;
+		letter-spacing: -.01em;
+		text-wrap: balance;
+	}
+	:focus-visible {
+		outline: 3px solid var(--accent);
+		outline-offset: 2px;
+	}
+	::selection {
+		background: var(--accent-soft);
+		color: var(--accent-ink);
 	}
 	code {
 		font-family:

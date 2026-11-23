@@ -9,7 +9,7 @@
             <img
               src="/img/about.jpg"
               alt="Protege lo que más importa"
-              class="w-full rounded-3xl shadow-2xl relative z-10"
+              class="w-full rounded-band relative z-10"
               loading="lazy"
             />
 
@@ -25,10 +25,9 @@
         <div class="w-full lg:w-6/12 lg:ml-auto">
           <div class="mb-8">
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-12 h-1 bg-primary-600"></div>
-              <span class="text-primary-600 font-semibold">¿Por qué elegirnos?</span>
+              <span class="text-[12.5px] font-bold tracking-[.1em] uppercase text-brand">¿Por qué elegirnos?</span>
             </div>
-            <h2 class="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h2 class="text-[clamp(26px,5vw,40px)] font-extrabold text-gray-900 mb-6">
               Protege lo que más importa
             </h2>
             <p class="text-xl text-gray-600 leading-relaxed mb-8">
@@ -57,7 +56,7 @@
 
           <!-- CTA Button -->
           <div class="mt-10">
-            <button class="bg-primary-600 text-white px-8 py-4 rounded-lg hover:bg-primary-700 transition-all transform hover:scale-105 shadow-lg font-semibold inline-flex items-center gap-2">
+            <button class="bg-primary-600 text-white px-8 py-4 rounded-btn hover:bg-primary-700 transition-all shadow-sm font-bold inline-flex items-center gap-2">
               Conocer Más
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>

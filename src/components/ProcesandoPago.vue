@@ -5,11 +5,11 @@
     @volver="volverInicio"
   />
   <div v-else :class="transaccionEstado === 'APPROVED' ? 'from-green-300 to-green-400' : 'from-primary-700 to-primary-900'" class="min-h-screen bg-gradient-to-br flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-lg overflow-hidden">
 
       <!-- Header: PENDING -->
       <div v-if="transaccionEstado === 'PENDING'"
-        class="bg-gradient-to-br from-primary-600 to-primary-800 px-8 pt-10 pb-8 text-center text-white">
+        class="bg-brand px-8 pt-10 pb-8 text-center text-white">
         <div class="relative flex items-center justify-center mb-6 h-28">
           <div class="absolute w-28 h-28 rounded-full border-4 border-white/20 animate-ping"></div>
           <div class="absolute w-24 h-24 rounded-full border-4 border-white/20"></div>
@@ -21,7 +21,7 @@
             </svg>
           </div>
         </div>
-        <h1 class="text-2xl font-bold mb-1">Procesando tu pago</h1>
+        <h1 class="text-2xl font-extrabold mb-1">Procesando tu pago</h1>
         <p class="text-blue-100 text-sm">Por favor espera mientras confirmamos tu transacción</p>
         <div class="flex justify-center gap-2 mt-4">
           <span class="w-2 h-2 bg-white rounded-full animate-bounce" style="animation-delay: 0ms"></span>
@@ -32,7 +32,7 @@
 
       <!-- Header: APPROVED -->
       <div v-else-if="transaccionEstado === 'APPROVED'"
-        class="bg-gradient-to-br from-green-500 to-green-700 px-8 pt-10 pb-8 text-center text-white">
+        class="bg-green-600 px-8 pt-10 pb-8 text-center text-white">
         <div class="relative flex items-center justify-center mb-6 h-28">
           <div class="absolute w-28 h-28 rounded-full bg-white/10"></div>
           <div class="absolute w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
@@ -41,13 +41,13 @@
             </svg>
           </div>
         </div>
-        <h1 class="text-2xl font-bold mb-1">¡Pago completado!</h1>
+        <h1 class="text-2xl font-extrabold mb-1">¡Pago completado!</h1>
         <p class="text-green-100 text-sm">Tu transacción fue aprobada exitosamente</p>
       </div>
 
       <!-- Header: DECLINED / ERROR -->
       <div v-else
-        class="bg-gradient-to-br from-red-500 to-red-700 px-8 pt-10 pb-8 text-center text-white">
+        class="bg-red-600 px-8 pt-10 pb-8 text-center text-white">
         <div class="relative flex items-center justify-center mb-6 h-28">
           <div class="absolute w-28 h-28 rounded-full bg-white/10"></div>
           <div class="absolute w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
@@ -56,7 +56,7 @@
             </svg>
           </div>
         </div>
-        <h1 class="text-2xl font-bold mb-1">{{ transaccionEstado === 'DECLINED' ? 'Pago rechazado' : 'Error en el pago' }}</h1>
+        <h1 class="text-2xl font-extrabold mb-1">{{ transaccionEstado === 'DECLINED' ? 'Pago rechazado' : 'Error en el pago' }}</h1>
         <p class="text-red-100 text-sm">{{ transaccionEstado === 'DECLINED' ? 'Tu pago no pudo ser procesado' : 'Ocurrió un error durante el pago' }}</p>
       </div>
 
@@ -92,7 +92,7 @@
           </div>
           <button
             @click="irAPlataforma"
-            class="mt-4 w-full inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors text-sm cursor-pointer"
+            class="mt-4 w-full inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold px-6 py-3 rounded-btn transition-colors text-sm cursor-pointer"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

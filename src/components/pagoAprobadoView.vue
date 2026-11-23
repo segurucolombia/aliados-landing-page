@@ -1,12 +1,12 @@
 <template>
-  <section class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+  <section class="min-h-screen bg-page flex items-center justify-center p-4">
     <Toast />
     <LoadingSpinner :visible="isLoading" />
     
     <!-- Estado de Carga -->
-    <div v-if="transactionState === 'CHECKING'" class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+    <div v-if="transactionState === 'CHECKING'" class="max-w-md w-full bg-white rounded-2xl shadow-md p-8 text-center">
       <div class="animate-spin rounded-full h-20 w-20 border-b-4 border-blue-600 mx-auto mb-6"></div>
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Verificando tu pago...</h2>
+      <h2 class="text-2xl font-extrabold text-gray-800 mb-4">Verificando tu pago...</h2>
       <p class="text-gray-600 mb-4">Por favor espera mientras confirmamos tu transacción</p>
       <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
         <p class="text-sm text-blue-800">
@@ -16,7 +16,7 @@
     </div>
 
     <!-- Estado Aprobado -->
-    <div v-else-if="transactionState === 'APPROVED'" class="max-w-lg w-full bg-white rounded-2xl shadow-xl p-8 text-center transform animate-fade-in">
+    <div v-else-if="transactionState === 'APPROVED'" class="max-w-lg w-full bg-white rounded-2xl shadow-md p-8 text-center transform animate-fade-in">
       <!-- Ícono de éxito animado -->
       <div class="relative mb-8">
         <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto animate-bounce-slow">
@@ -33,7 +33,7 @@
       </div>
 
       <!-- Título principal -->
-      <h1 class="text-3xl font-bold text-gray-800 mb-4">
+      <h1 class="text-3xl font-extrabold text-gray-800 mb-4">
         ¡Pago Aprobado!
       </h1>
       
@@ -95,7 +95,7 @@
         <button 
           v-if="dataPreventaCreada?.cliente_id"
           @click="modalDocumentosClientes = true"
-          class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-300 flex items-center justify-center group"
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-btn transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-300 flex items-center justify-center group"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15m0-3-3-3m0 0-3 3m3-3V15" />
@@ -105,7 +105,7 @@
         </button>
         <button 
           @click="goToPlatform"
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center group"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-btn transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center justify-center group"
         >
           <svg class="w-5 h-5 mr-2 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
@@ -142,7 +142,7 @@
     </div>
 
     <!-- Estado de Error -->
-    <div v-else-if="transactionState === 'DECLINED' || transactionState === 'ERROR'" class="max-w-lg w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+    <div v-else-if="transactionState === 'DECLINED' || transactionState === 'ERROR'" class="max-w-lg w-full bg-white rounded-2xl shadow-md p-8 text-center">
       <div class="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
         <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center">
           <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,7 +151,7 @@
         </div>
       </div>
 
-      <h1 class="text-3xl font-bold text-gray-800 mb-4">
+      <h1 class="text-3xl font-extrabold text-gray-800 mb-4">
         Pago {{ transactionState === 'DECLINED' ? 'Rechazado' : 'Con Error' }}
       </h1>
       
@@ -162,7 +162,7 @@
       <div class="space-y-4">
         <button 
           @click="retryPayment"
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-300"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-btn transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-blue-300"
         >
           Intentar Nuevamente
         </button>

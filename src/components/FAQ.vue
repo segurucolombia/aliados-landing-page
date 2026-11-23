@@ -9,13 +9,13 @@
               <img
                 src="/img/resources/faq-2-1.png"
                 alt="Preguntas Frecuentes"
-                class="w-full max-w-md rounded-3xl shadow-2xl"
+                class="w-full max-w-md rounded-band"
                 loading="lazy"
               />
               <div class="absolute -top-4 -left-4 w-32 h-32 bg-primary-200 rounded-full -z-10"></div>
               <div class="absolute -bottom-4 -right-4 w-24 h-24 bg-blue-100 rounded-full -z-10"></div>
             </div>
-            <!-- <span class="absolute top-10 -right-10 w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-lg">
+            <!-- <span class="absolute top-10 -right-10 w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-sm">
               <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
@@ -29,10 +29,9 @@
             <!-- Section Header -->
             <div class="mb-8">
               <div class="flex items-center gap-3 mb-4">
-                <div class="w-12 h-1 bg-primary-600"></div>
-                <span class="text-primary-600 font-semibold">Preguntas Frecuentes</span>
+                <span class="text-[12.5px] font-bold tracking-[.1em] uppercase text-brand">Preguntas Frecuentes</span>
               </div>
-              <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              <h2 class="text-[clamp(26px,5vw,40px)] font-extrabold text-gray-900 mb-4">
                 Preguntas que quizás tú también<br class="hidden md:block" /> te haces
               </h2>
             </div>
@@ -43,7 +42,7 @@
                 v-for="(faq, index) in faqs"
                 :key="faq.id"
                 class="border border-gray-200 rounded-lg overflow-hidden transition-all duration-300"
-                :class="{ 'border-primary-600 shadow-lg': activeIndex === index }"
+                :class="{ 'border-primary-600 shadow-sm': activeIndex === index }"
               >
                 <button
                   @click="toggleAccordion(index)"

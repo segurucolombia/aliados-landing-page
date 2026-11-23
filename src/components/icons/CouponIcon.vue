@@ -6,22 +6,22 @@
     <!-- Cupón de descuento en verde oscuro -->
     <g transform="translate(65, 35)">
       <!-- Contorno del cupón -->
-      <rect x="0" y="0" width="70" height="45" rx="4" ry="4" fill="none" stroke="#155724" stroke-width="5"/>
+      <rect x="0" y="0" width="70" height="45" rx="4" ry="4" fill="none" stroke="#135A3A" stroke-width="5"/>
 
       <!-- Muesca izquierda -->
-      <path d="M0,22 C-3,22 -3,16 0,16" fill="none" stroke="#155724" stroke-width="5" stroke-linecap="round"/>
+      <path d="M0,22 C-3,22 -3,16 0,16" fill="none" stroke="#135A3A" stroke-width="5" stroke-linecap="round"/>
 
       <!-- Muesca derecha -->
-      <path d="M70,22 C73,22 73,16 70,16" fill="none" stroke="#155724" stroke-width="5" stroke-linecap="round"/>
+      <path d="M70,22 C73,22 73,16 70,16" fill="none" stroke="#135A3A" stroke-width="5" stroke-linecap="round"/>
 
       <!-- Punto izquierdo del símbolo de porcentaje -->
-      <circle cx="25" cy="20" r="4" fill="#155724"/>
+      <circle cx="25" cy="20" r="4" fill="#135A3A"/>
 
       <!-- Punto derecho del símbolo de porcentaje -->
-      <circle cx="45" cy="30" r="4" fill="#155724"/>
+      <circle cx="45" cy="30" r="4" fill="#135A3A"/>
 
       <!-- Línea diagonal del símbolo de porcentaje -->
-      <line x1="20" y1="33" x2="48" y2="15" stroke="#155724" stroke-width="4" stroke-linecap="round"/>
+      <line x1="20" y1="33" x2="48" y2="15" stroke="#135A3A" stroke-width="4" stroke-linecap="round"/>
     </g>
   </svg>
 </template>

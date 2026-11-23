@@ -1,5 +1,5 @@
 <template>
-  <nav class="bg-white sticky top-0 z-50 shadow-md">
+  <nav class="bg-white/95 backdrop-blur sticky top-0 z-50 border-b border-line">
     <div class="container mx-auto px-4">
       <div class="flex justify-between items-center h-[72px]">
         <!-- Logo -->
@@ -16,9 +16,9 @@
             :key="item.key"
             :href="item.href"
             :class="[
-              'font-medium text-sm transition-all duration-200',
+              'font-semibold text-[15px] transition-all duration-200',
               activeSection === item.key
-                ? 'text-primary-600 border-b-2 border-primary-600 pb-0.5'
+                ? 'text-brand border-b-2 border-accent pb-0.5'
                 : 'text-gray-700 hover:text-primary-600'
             ]"
           >
@@ -26,11 +26,31 @@
           </a>
         </div>
 
-        <!-- Phone CTA -->
-        <div class="hidden md:flex items-center">
+        <!-- Club SEGURU + Phone CTA -->
+        <div class="hidden md:flex items-center gap-3">
+          <template v-if="montado">
+            <template v-if="esMiembro">
+              <span class="inline-flex items-center gap-1 bg-green-50 text-green-600 px-[11px] py-1 rounded-full text-[13px] font-bold">
+                {{ CLUB.etiquetaMiembro }}<span v-if="saludo" class="font-normal">· {{ saludo }}</span>
+              </span>
+              <button type="button" class="text-sm font-medium text-gray-600 hover:text-primary-700" @click="salir">
+                Cerrar sesión
+              </button>
+            </template>
+            <template v-else>
+              <button
+                type="button"
+                class="bg-accent-soft text-accent-ink px-[11px] py-1 rounded-full text-[13px] font-bold hover:brightness-95"
+                @click="abrir({ pestana: 'unirme' })"
+              >
+                {{ CLUB.etiquetaInvitado }}
+              </button>
+              <ClubLogin />
+            </template>
+          </template>
           <a
             href="tel:+573154603134"
-            class="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+            class="hidden xl:flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-btn font-semibold text-sm transition-all duration-200 shadow-sm hover:shadow-sm"
           >
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
@@ -39,13 +59,26 @@
           </a>
         </div>
 
-        <!-- Mobile Menu Button -->
-        <button @click="toggleMenu" class="md:hidden text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+        <!-- Mobile: etiqueta del Club + menú -->
+        <div class="md:hidden flex items-center gap-2">
+          <button
+            v-if="montado && !esMiembro"
+            type="button"
+            class="bg-accent-soft text-accent-ink px-2.5 py-1 rounded-full text-[13px] font-bold"
+            @click="abrir({ pestana: 'unirme' })"
+          >
+            {{ CLUB.etiquetaInvitado }}
+          </button>
+          <span v-else-if="montado && esMiembro" class="bg-green-50 text-green-600 px-2.5 py-1 rounded-full text-[13px] font-bold">
+            {{ CLUB.etiquetaMiembro }}
+          </span>
+        <button @click="toggleMenu" :aria-expanded="isMenuOpen ? 'true' : 'false'" aria-label="Abrir menú" class="md:hidden text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path v-if="!isMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
             <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
         </button>
+        </div>
       </div>
 
       <!-- Mobile Menu -->
@@ -64,10 +97,30 @@
         >
           {{ item.label }}
         </a>
+        <div v-if="montado" class="pt-2 px-4 space-y-2">
+          <template v-if="esMiembro">
+            <p class="text-sm font-semibold text-green-800">
+              {{ CLUB.etiquetaMiembro }}<span v-if="saludo" class="font-normal"> · {{ saludo }}</span>
+            </p>
+            <button type="button" class="w-full py-2.5 rounded-btn border-2 border-line text-brand font-bold" @click="salir">
+              Cerrar sesión
+            </button>
+          </template>
+          <template v-else>
+            <button
+              type="button"
+              class="w-full py-2.5 rounded-btn bg-accent-soft text-accent-ink font-bold text-sm"
+              @click="isMenuOpen = false; abrir({ pestana: 'unirme' })"
+            >
+              {{ CLUB.etiquetaInvitado }}
+            </button>
+            <ClubLogin bloque @click="isMenuOpen = false" />
+          </template>
+        </div>
         <div class="pt-2 pb-1 px-4">
           <a
             href="tel:+573154603134"
-            class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-full font-semibold text-sm transition-all duration-200 w-full"
+            class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-btn font-semibold text-sm transition-all duration-200 w-full"
           >
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
@@ -78,10 +131,28 @@
       </div>
     </div>
   </nav>
+  <!-- Modal del Club: se monta una sola vez por página y lo abren las demás islas -->
+  <ClubModal />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import ClubLogin from './navbar/components/login.vue';
+import ClubModal from './club/ClubModal.vue';
+import useClubSesion, { primerNombre } from '../composables/clubSesion';
+import useClubModal from '../composables/clubModal';
+import { CLUB } from '../config/club';
+
+const { esMiembro, nombre, cerrarSesion } = useClubSesion();
+const { abrir } = useClubModal();
+// El estado del Club sale de localStorage: se pinta después de montar para no
+// romper la hidratación del HTML que se renderiza en el servidor
+const montado = ref(false);
+const saludo = computed(() => primerNombre(nombre.value));
+const salir = async () => {
+  isMenuOpen.value = false;
+  await cerrarSesion();
+};
 
 type SectionKey = 'inicio' | 'productos' | 'nosotros' | 'contacto';
 
@@ -139,6 +210,7 @@ const updateActiveSection = () => {
 };
 
 onMounted(() => {
+  montado.value = true;
   const path = window.location.pathname;
   isHome.value = path === '/' || path === '/index.html';
 

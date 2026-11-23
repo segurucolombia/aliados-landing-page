@@ -18,35 +18,35 @@
                         
                         <div class="space-y-2 sm:space-y-3">
                             <div class="flex items-start md:items-center justify-center text-center max-w-sm mx-auto sm:max-w-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="rgb(30 64 175)" class="w-4 h-4 mt-1 md:mt-0 mr-1.5 sm:mr-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="rgb(30 30 120)" class="w-4 h-4 mt-1 md:mt-0 mr-1.5 sm:mr-2 flex-shrink-0">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                 </svg>
                                 <p class="text-sm sm:text-base">Evita sanciones mayores a $75 millones y protege tu negocio de demandas.</p>
                             </div>
                             
                             <div class="flex items-start md:items-center justify-center text-center max-w-sm mx-auto sm:max-w-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="rgb(30 64 175)" class="w-4 h-4 mt-1 md:mt-0 mr-1.5 sm:mr-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="rgb(30 30 120)" class="w-4 h-4 mt-1 md:mt-0 mr-1.5 sm:mr-2 flex-shrink-0">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                 </svg>
                                 <p class="text-sm sm:text-base">Ahorra tiempo con procesos 100% automáticos.</p>
                             </div>
                             
                             <div class="flex items-start md:items-center justify-center text-center max-w-sm mx-auto sm:max-w-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="rgb(30 64 175)" class="w-4 h-4 mt-1 md:mt-0 mr-1.5 sm:mr-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="rgb(30 30 120)" class="w-4 h-4 mt-1 md:mt-0 mr-1.5 sm:mr-2 flex-shrink-0">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                 </svg>
                                 <p class="text-sm sm:text-base">Soporte legal y gastos de defensa jurídica incluidos.</p>
                             </div>
                             
                             <div class="flex items-start md:items-center justify-center text-center max-w-sm mx-auto sm:max-w-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="rgb(30 64 175)" class="w-4 h-4 mt-1 md:mt-0 mr-1.5 sm:mr-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="rgb(30 30 120)" class="w-4 h-4 mt-1 md:mt-0 mr-1.5 sm:mr-2 flex-shrink-0">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                 </svg>
                                 <p class="text-sm sm:text-base">Garantía "Cumplimos por ti o pagamos".</p>
                             </div>
                             
                             <div class="flex items-start md:items-center justify-center text-center max-w-sm mx-auto sm:max-w-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="rgb(30 64 175)" class="w-4 h-4 mt-1 md:mt-0 mr-1.5 sm:mr-2 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="rgb(30 30 120)" class="w-4 h-4 mt-1 md:mt-0 mr-1.5 sm:mr-2 flex-shrink-0">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                 </svg>
                                 <p class="text-sm sm:text-base">

@@ -8,7 +8,7 @@
                 </div>
             </div>
             <div class="px-20 py-10 flex justify-center">
-                <div class="border p-4 shadow-md rounded-md w-full lg:w-4/12">
+                <div class="border p-4 shadow-sm rounded-md w-full lg:w-4/12">
                     <p class="font-bold text-blue-800 text-2xl text-center mb-4">Alojamientos incluidos en esta cotización</p>
                     <DataTable class="text-sm overflow-y-auto" style="max-height: 8rem;" :value="hoteles">
                         <Column field="nombre" header="Alojamiento"></Column>
@@ -27,7 +27,7 @@
                             'w-full border-1 border p-2 rounded-md border-blue-600'
                         ]"
                     >
-                        <div :class="planPromicionar(plan.id) ? 'bg-blue-800' : 'bg-blue-600'" class="h-[calc(12rem)] card-header w-full drop-shadow-xl rounded-lg py-2 content-center">
+                        <div :class="planPromicionar(plan.id) ? 'bg-blue-800' : 'bg-blue-600'" class="h-[calc(12rem)] card-header w-full drop-shadow-md rounded-lg py-2 content-center">
                             <div class="w-full flex justify-center">
                                 <div class="px-6 py-3 w-full rounded-full text-center">
                                     <p class="text-white font-medium text-2xl">{{ plan.nombre }}</p>
@@ -46,7 +46,7 @@
                                 <p class="text-lg font-bold text-center mb-4">Servicios incluidos</p>
                                 <div v-for="coverage of plan.coberturas" class="flex gap-2 items-center mb-1">
                                     <div class="w-6 h-6">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2563eb" class="size-6">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#3232B3" class="size-6">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                         </svg>
                                     </div>

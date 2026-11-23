@@ -352,8 +352,8 @@ defineExpose({ abrirPdf, manejarClick })
 }
 
 .iframe-fallback {
-    border: 1px solid #f59e0b;
-    background: linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%);
+    border: 1px solid #FD8701;
+    background: linear-gradient(135deg, #FFF0DC 0%, #FFC27A 100%);
 }
 
 /* Responsive */

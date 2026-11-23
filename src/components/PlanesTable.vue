@@ -13,7 +13,7 @@
 
       <!-- Card -->
       <div
-        class="flex-1 rounded-2xl border-2 overflow-hidden shadow-md"
+        class="flex-1 rounded-2xl border-2 overflow-hidden shadow-sm"
       >
       <!-- Card Header -->
       <div
@@ -28,7 +28,7 @@
             class="h-8 object-contain flex-shrink-0"
           />
         </div>
-        <div style="margin-top: -0.25rem;">
+        <div v-if="!ocultarPrecios" style="margin-top: -0.25rem;">
           <template v-if="plan.valor_debito_automatico != null">
             <span class="inline-block bg-green-50 text-green-700 text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap mb-1">
               Pagando con débito automático
@@ -48,6 +48,9 @@
             </div>
           </template>
         </div>
+        <button v-else type="button" class="inline-flex items-center gap-1.5 mt-1 text-sm font-bold text-brand underline underline-offset-2 hover:text-primary-700" @click.stop="$emit('ver-precios')">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" stroke-width="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke-width="2" stroke-linecap="round"/></svg> Únete gratis para ver el precio
+        </button>
       </div>
 
       <!-- Coberturas list -->
@@ -89,7 +92,7 @@
           @click="$emit('seleccionar-plan', plan)"
           :style="getButtonStyle(plan)"
           :class="[
-            'w-full px-6 py-3 rounded-lg font-semibold transition-all shadow-md text-white',
+            'w-full px-6 py-3 rounded-lg font-semibold transition-all shadow-sm text-white',
             !estilos && (plan.destacado
               ? 'bg-primary-700 hover:bg-primary-800 ring-2 ring-primary-600 ring-offset-2'
               : 'bg-primary-600 hover:bg-primary-700')
@@ -103,7 +106,7 @@
   <!-- Vista Desktop: Tabla -->
   <div class="hidden md:block overflow-x-auto">
     <div class="min-w-full inline-block align-middle">
-      <div class="overflow-hidden border border-gray-200 rounded-2xl shadow-lg">
+      <div class="overflow-hidden border border-gray-200 rounded-2xl shadow-sm">
         <table class="min-w-full divide-y divide-gray-200">
           <!-- Table Header -->
           <thead class="bg-gradient-to-b from-gray-50 to-white border-b-2 border-primary-600 shadow-sm">
@@ -122,24 +125,29 @@
                 <div class="flex flex-col items-center">
                   <span class="text-xl font-bold text-gray-900 mb-1">{{ plan.nombre }}</span>
                   <span class="text-sm text-gray-600 mb-2">{{ plan.descripcion }}</span>
-                  <template v-if="plan.valor_debito_automatico != null">
-                    <span class="inline-block bg-green-50 text-green-700 text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap mb-1">
-                      Pagando con débito automático
-                    </span>
-                    <div class="flex items-baseline gap-1">
-                      <span class="text-2xl font-bold text-green-700">${{ formatPrice(plan.valor_debito_automatico) }}</span>
-                      <span class="text-[11px] text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
-                    </div>
-                    <div class="text-[11px] text-gray-400 leading-tight mt-0.5">
-                      ${{ formatPrice(plan.precio) }} Otros medios de pago
-                    </div>
+                  <template v-if="!ocultarPrecios">
+                    <template v-if="plan.valor_debito_automatico != null">
+                      <span class="inline-block bg-green-50 text-green-700 text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap mb-1">
+                        Pagando con débito automático
+                      </span>
+                      <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-bold text-green-700">${{ formatPrice(plan.valor_debito_automatico) }}</span>
+                        <span class="text-[11px] text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
+                      </div>
+                      <div class="text-[11px] text-gray-400 leading-tight mt-0.5">
+                        ${{ formatPrice(plan.precio) }} Otros medios de pago
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-bold text-primary-700">${{ formatPrice(plan.precio) }}</span>
+                        <span class="text-[11px] text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
+                      </div>
+                    </template>
                   </template>
-                  <template v-else>
-                    <div class="flex items-baseline gap-1">
-                      <span class="text-2xl font-bold text-primary-700">${{ formatPrice(plan.precio) }}</span>
-                      <span class="text-[11px] text-gray-500">{{ plan.moneda }} / {{ formatVigencia(plan.vigencia_numero_meses) }}</span>
-                    </div>
-                  </template>
+                  <button v-else type="button" class="inline-flex items-center gap-1.5 mt-1 text-sm font-bold text-brand underline underline-offset-2 hover:text-primary-700" @click.stop="$emit('ver-precios')">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" stroke-width="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke-width="2" stroke-linecap="round"/></svg> Únete gratis para ver el precio
+                  </button>
                 </div>
               </th>
             </tr>
@@ -232,7 +240,7 @@
                   @click="$emit('seleccionar-plan', plan)"
                   :style="getButtonStyle(plan)"
                   :class="[
-                    'w-full px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-md text-white',
+                    'w-full px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-sm text-white',
                     !estilos && (plan.destacado
                       ? 'bg-primary-700 hover:bg-primary-800 ring-2 ring-primary-600 ring-offset-2'
                       : 'bg-primary-600 hover:bg-primary-700')
@@ -259,10 +267,12 @@ interface Props {
   coberturas: Cobertura[];
   estilos?: EstilosAseguradora | null;
   imagen_aseguradora?: string | null;
+  /** Sin sesión del Club no se muestran precios: se ofrece unirse para verlos */
+  ocultarPrecios?: boolean;
 }
 
 const props = defineProps<Props>();
-defineEmits(['seleccionar-plan']);
+defineEmits(['seleccionar-plan', 'ver-precios']);
 
 const primaryColor = computed(() => props.estilos?.color_primario || null);
 
