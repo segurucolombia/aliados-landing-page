@@ -65,6 +65,9 @@
     :fondo="fondo('obj')"
   />
 
+  <!-- Reseñas de Google (Trustindex): prueba social justo antes de los precios -->
+  <ClubResenas :fondo="fondo('resenas')" />
+
   <ClubPrecios
     :producto="producto"
     :planes="planesFp"
@@ -162,6 +165,7 @@ import ClubFunerarias from './ClubFunerarias.vue';
 import ClubCalculadora from './ClubCalculadora.vue';
 import ClubAcordeon from './ClubAcordeon.vue';
 import ClubPrecios from './ClubPrecios.vue';
+import ClubResenas from './ClubResenas.vue';
 import { BTN, CONTENEDOR, TARJETA } from './clubEstilos';
 import { FAQ_CLUB, MOSTRAR_DATOS_SIN_VALIDAR, whatsappUrl } from '../../../config/club';
 import { MARCA_SEGURU, TEXTO_LEGAL, VERIFICABLE, mensajeWhatsapp, type ProductoClub } from '../../../config/clubProductos';
@@ -248,6 +252,7 @@ const ordenSecciones = computed(() =>
     producto.value.funerarias && 'fun',
     calculadoraVisible.value && 'calc',
     ver.value.obj && 'obj',
+    'resenas',
   ].filter(Boolean) as string[],
 );
 const fondo = (seccion: string): 'azulClaro' | 'blanco' => {

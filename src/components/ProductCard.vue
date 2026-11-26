@@ -25,6 +25,14 @@
 
     <!-- Contenido -->
     <div class="p-5 flex flex-col flex-1">
+      <!-- Los precios y la contratación son solo para miembros del Club -->
+      <span class="self-start inline-flex items-center gap-1.5 bg-primary-900 text-white text-[13px] font-bold px-3 py-1.5 rounded-full mb-3">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="5" y="11" width="14" height="10" rx="2" />
+          <path stroke-linecap="round" d="M8 11V7a4 4 0 0 1 8 0v4" />
+        </svg>
+        Exclusivo para miembros
+      </span>
       <h3 class="text-lg font-bold text-gray-900 mb-2 leading-snug">
         {{ producto.nombre }}
       </h3>

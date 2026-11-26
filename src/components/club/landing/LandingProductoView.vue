@@ -1,6 +1,7 @@
 <template>
   <div class="bg-page text-ink min-h-screen" :class="producto ? 'pb-32 md:pb-24' : ''">
-    <ClubEncabezado :productos="otrosProductos" :actual="productoId" @entrar="acciones.entrar" />
+    <!-- Sin menú "Otros seguros": la página de un producto se enfoca solo en ese producto -->
+    <ClubEncabezado @entrar="acciones.entrar" />
 
     <!-- Cargando: esqueleto con la estructura del hero y las tarjetas -->
     <div v-if="!producto && cargando" role="status" aria-live="polite">
@@ -65,17 +66,6 @@ const { producto, cargando } = useLandingProducto(toRef(props, 'productoId'));
 const productoAcciones = computed<ProductoClub>(() => producto.value ?? PRODUCTOS_CLUB.eq);
 const acciones = useClubAcciones(productoAcciones);
 const whatsapp = computed(() => whatsappUrl(mensajeWhatsapp(productoAcciones.value)));
-
-/**
- * "Otros seguros" del encabezado: enlaces a la landing de los demás productos.
- * El aliado viaja guardado en localStorage (Layout.astro), así que no hace falta repetirlo en la URL.
- * TODO(backend): cuando exista un listado público de landings activas, tomarlo de la API.
- */
-const otrosProductos = Object.values(PRODUCTOS_CLUB).map((p) => ({
-  clave: p.productoId,
-  etiqueta: p.chip,
-  href: `/${p.slug}/${p.productoId}`,
-}));
 
 const ponerMeta =(nombre: string, valor: string, atributo: 'name' | 'property' = 'name') => {
   let meta = document.head.querySelector<HTMLMetaElement>(`meta[${atributo}="${nombre}"]`);

@@ -45,10 +45,10 @@
         </div>
 
         <!-- Video: solo aparece cuando hay una URL configurada -->
-        <div v-if="producto.video.url" class="rounded-card overflow-hidden border border-white/15 bg-brand-deep aspect-video">
+        <div v-if="urlVideo" class="rounded-card overflow-hidden border border-white/15 bg-brand-deep aspect-video">
           <video
             v-if="esArchivo"
-            :src="producto.video.url"
+            :src="urlVideo"
             controls
             preload="metadata"
             playsinline
@@ -57,7 +57,7 @@
           ></video>
           <iframe
             v-else
-            :src="producto.video.url"
+            :src="urlVideo"
             :title="`${producto.video.titulo}: ${producto.video.subtitulo}`"
             class="w-full h-full border-0"
             loading="lazy"
@@ -75,6 +75,7 @@ import { computed } from 'vue';
 import { CLUB, MOSTRAR_DATOS_SIN_VALIDAR } from '../../../config/club';
 import type { ProductoClub } from '../../../config/clubProductos';
 import { BTN, CONTENEDOR, KICK } from './clubEstilos';
+import { extraerIdYoutube } from '../../../utils/videoYoutube';
 
 const props = defineProps<{ producto: ProductoClub; aliado: string | null }>();
 const emit = defineEmits<{ contratar: []; 'ir-a-precios': [] }>();
@@ -83,4 +84,12 @@ const titulo = computed(() =>
   MOSTRAR_DATOS_SIN_VALIDAR && props.producto.h1SinValidar ? props.producto.h1SinValidar : props.producto.h1,
 );
 const esArchivo = computed(() => /\.(mp4|webm|ogg)(\?|$)/i.test(props.producto.video.url));
+
+/** Cualquier enlace de YouTube (watch, youtu.be, shorts…) se muestra como /embed/ */
+const urlVideo = computed(() => {
+  const url = props.producto.video.url.trim();
+  if (!url || esArchivo.value) return url;
+  const id = extraerIdYoutube(url);
+  return id ? `https://www.youtube.com/embed/${id}` : '';
+});
 </script>

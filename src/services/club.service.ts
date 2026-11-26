@@ -3,7 +3,8 @@ import axios from 'axios';
 /** Base del backend de aliados (la misma de aliados.service.ts) */
 export const API_ALIADOS_URL = import.meta.env.PUBLIC_BASE_URL + '/api-aliados';
 
-export type TipoDocumento = 'CC' | 'CE' | 'NIT' | 'PP' | 'TI' | 'DNI' | 'RG';
+/** Documentos aceptados en el registro al Club (ver CLUB_DOCUMENT_TYPES) */
+export type TipoDocumento = 'CC' | 'CE' | 'OTRO';
 export type TipoPersona = 'Natural' | 'Juridica';
 
 export interface RegistroClienteInput {
@@ -13,8 +14,6 @@ export interface RegistroClienteInput {
   apellidos: string;
   email: string;
   telefono: string;
-  clave: string;
-  dob: string;
   tipo_persona: TipoPersona;
   nit: string | null;
   empresa_nombre: string | null;

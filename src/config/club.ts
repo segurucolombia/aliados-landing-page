@@ -19,6 +19,13 @@ export const whatsappUrl = (mensaje = 'Hola, quiero información sobre los plane
  */
 export const MOSTRAR_DATOS_SIN_VALIDAR = false;
 
+/**
+ * Widget de reseñas de Google (Trustindex, cuenta segurucolombia.com, widget
+ * "Landing Club SEGURU"). Es el código que da "Save and get code". Para cambiar el
+ * diseño o los filtros se edita el widget en admin.trustindex.io, no aquí.
+ */
+export const TRUSTINDEX_RESENAS_SRC = 'https://cdn.trustindex.io/loader.js?7ffdbfc8608a66408e26aa4bba9';
+
 export const CLUB = {
   nombre: 'Club SEGURU',
   etiquetaInvitado: 'Club SEGURU · Gratis',
